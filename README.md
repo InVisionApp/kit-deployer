@@ -172,4 +172,3 @@ See the [Contributing guide](/CONTRIBUTING.md) for steps on how to contribute to
 
 - [ ] Write proper documentation
 - [ ] Improve the diff used on arrays that use `name` as keys (such as `env`) such that the order shouldn't matter in these situations, just that the key -> value remains the same
-- [ ] Check the manifests and verify they match `SELECTOR` before every deploying them

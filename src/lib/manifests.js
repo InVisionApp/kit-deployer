@@ -12,6 +12,7 @@ const yaml = require("js-yaml");
 const EventEmitter = require("events");
 const Dependencies = require("./dependencies");
 const Status = require("./status");
+const matchSelector = require("../util/match-selector");
 const writeFileAsync = Promise.promisify(fs.writeFile);
 const supportedTypes = [
 	"deployment",
@@ -55,8 +56,6 @@ class Manifests extends EventEmitter {
 			kubectl: undefined
 		}, options);
 		this.kubectl = this.options.kubectl;
-
-		this.manifests = this.load();
 	}
 
 	get supportedTypes() {
@@ -68,12 +67,20 @@ class Manifests extends EventEmitter {
 		if (!this.options.dir) {
 			return manifests;
 		}
-		var files = glob.sync(path.join(this.options.dir, this.options.clusterName + "/**/*.yaml"));
+		var files = glob.sync(path.join(this.options.dir, this.options.cluster.metadata.name + "/**/*.yaml"));
 		_.each(files, (file) => {
-			manifests.push({
-				path: file,
-				content: yaml.safeLoad(fs.readFileSync(file, "utf8"))
-			});
+			// only add file if it matches selector
+			const content = yaml.safeLoad(fs.readFileSync(file, "utf8"));
+			let labels;
+			if (_.has(content, ["metadata", "labels"])) {
+				labels = content.metadata.labels;
+			}
+			if (matchSelector(labels, this.options.selector)) {
+				manifests.push({
+					path: file,
+					content: content
+				});
+			}
 		});
 		return manifests;
 	}
@@ -134,10 +141,10 @@ class Manifests extends EventEmitter {
 					var kubePromises = [];
 					var promiseFuncsWithDependencies = [];
 					var remaining = _.cloneDeep(existing);
-					var manifestFiles = glob.sync(path.join(this.options.dir, this.options.cluster.metadata.name + "/**/*.yaml"));
+					var manifestFiles = this.load();
 
 					_.each(manifestFiles, (manifestFile) => {
-						var manifest = yaml.safeLoad(fs.readFileSync(manifestFile, "utf8"));
+						var manifest = manifestFile.content;
 						var differences = {};
 						var method, lastAppliedConfiguration;
 
@@ -234,7 +241,7 @@ class Manifests extends EventEmitter {
 										manifest.metadata.name = manifestName;
 
 										// Add our custom annotations before deploying
-										var tmpApplyingConfigurationPath = path.join("/tmp", this.options.cluster.metadata.name + "-" + path.basename(manifestFile) + ".json");
+										var tmpApplyingConfigurationPath = path.join("/tmp", this.options.cluster.metadata.name + "-" + path.basename(manifestFile.path) + ".json");
 										manifest.metadata.annotations[lastAppliedConfigurationKey] = applyingConfiguration;
 										manifest.metadata.annotations[lastAppliedConfigurationHashKey] = applyingConfigurationHash;
 
