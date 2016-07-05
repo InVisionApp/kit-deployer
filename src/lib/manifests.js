@@ -2,7 +2,7 @@
 
 const _ = require("lodash");
 const crypto = require("crypto");
-const diff = require("deep-diff");
+const manifestDiff = require("../util/manifest-diff");
 const fs = require("fs");
 const glob = require("glob");
 const Github = require("./github");
@@ -187,7 +187,7 @@ class Manifests extends EventEmitter {
 								var lastAppliedConfigurationString = found.metadata.annotations[lastAppliedConfigurationKey];
 								lastAppliedConfiguration = JSON.parse(lastAppliedConfigurationString);
 							}
-							differences = diff(lastAppliedConfiguration, manifest);
+							differences = manifestDiff(lastAppliedConfiguration, manifest);
 							if (this.options.diff) {
 								if (differences) {
 									this.emit("info", "Differences for " + manifestName + ": " + JSON.stringify(differences, null, 2));
