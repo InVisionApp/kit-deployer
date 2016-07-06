@@ -167,8 +167,3 @@ The following environment variables are used by this service.
 ## Contributing
 
 See the [Contributing guide](/CONTRIBUTING.md) for steps on how to contribute to this project.
-
-## TODO
-
-- [ ] Write proper documentation
-- [ ] Improve the diff used on arrays that use `name` as keys (such as `env`) such that the order shouldn't matter in these situations, just that the key -> value remains the same
