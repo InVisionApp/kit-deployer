@@ -22,6 +22,7 @@ class Deployer extends EventEmitter {
 			isRollback: false,
 			diff: false,
 			force: false,
+			tmpDir: "/tmp",
 			available: {
 				enabled: false,
 				webhooks: [],
@@ -114,6 +115,7 @@ class Deployer extends EventEmitter {
 							sha: self.options.sha,
 							cluster: config,
 							dir: manifestsDir,
+							tmpDir: self.options.tmpDir,
 							selector: self.options.selector,
 							github: self.options.github,
 							dependency: self.options.dependency,

@@ -36,6 +36,7 @@ class Manifests extends EventEmitter {
 			cluster: undefined,
 			dir: undefined,
 			selector: undefined,
+			tmpDir: "/tmp",
 			available: {
 				enabled: false,
 				keepAlive: false,
@@ -241,7 +242,7 @@ class Manifests extends EventEmitter {
 										manifest.metadata.name = manifestName;
 
 										// Add our custom annotations before deploying
-										var tmpApplyingConfigurationPath = path.join("/tmp", this.options.cluster.metadata.name + "-" + path.basename(manifestFile.path) + ".json");
+										var tmpApplyingConfigurationPath = path.join(this.options.tmpDir, this.options.cluster.metadata.name + "-" + path.basename(manifestFile.path) + ".json");
 										manifest.metadata.annotations[lastAppliedConfigurationKey] = applyingConfiguration;
 										manifest.metadata.annotations[lastAppliedConfigurationHashKey] = applyingConfigurationHash;
 

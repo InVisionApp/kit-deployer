@@ -21,6 +21,7 @@ program
 	.option("-n, --namespaces-dir <dir>", "Set the directory where all the namespace files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to", process.env.NAMESPACES_DIR)
 	.option("-m, --manifests-dir <dir>", "Set the directory where all the manifest files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to", process.env.MANIFESTS_DIR)
 	.option("-d, --dry-run <boolean>", "Will only show the diff and will not push anything to the cluster", parseBoolean, parseBoolean(process.env.DRY_RUN))
+	.option("--tmp-dir <dir>", "The directory where temporary files will be stored", process.env.TMP_DIR)
 	.option("--is-rollback <boolean>", "A boolean flag that is passed in the available payload post", parseBoolean, parseBoolean(process.env.IS_ROLLBACK))
 	.option("--diff <boolean>", "Will show a diff", parseBoolean, parseBoolean(process.env.DIFF))
 	.option("--force <boolean>", "Will push all changes even if there are no differences", parseBoolean, parseBoolean(process.env.FORCE))
@@ -51,6 +52,7 @@ const options = {
 	isRollback: program.isRollback,
 	diff: program.diff,
 	force: program.force,
+	tmpDir: program.tmpDir,
 	available: {
 		enabled: program.availableEnabled,
 		webhooks: convertStringToArray(program.availableWebhook),

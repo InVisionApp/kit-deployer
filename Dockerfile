@@ -16,6 +16,7 @@ ENV \
 	PATH=/src:/node_modules/.bin:/bin:$PATH\
 	API_VERSION=v1\
 	SELECTOR=\
+	TMP_DIR=/tmp\
 	CONFIGS_PATTERN=/configs/**/kubeconfig\
 	NAMESPACES_DIR=/namespaces\
 	MANIFESTS_DIR=/manifests\
