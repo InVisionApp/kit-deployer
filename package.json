@@ -33,8 +33,11 @@
     "glob": "6.0.4",
     "js-yaml": "3.5.2",
     "lodash": "4.3.0",
+    "mkdirp": "0.5.1",
     "request-promise": "3.0.0",
-    "traverse": "0.6.6"
+    "rimraf": "2.5.3",
+    "traverse": "0.6.6",
+    "uuid": "2.0.2"
   },
   "devDependencies": {
     "chai": "3.5.0",

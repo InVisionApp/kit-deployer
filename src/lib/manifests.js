@@ -14,6 +14,9 @@ const Dependencies = require("./dependencies");
 const Status = require("./status");
 const matchSelector = require("../util/match-selector");
 const writeFileAsync = Promise.promisify(fs.writeFile);
+const uuid = require("uuid");
+const mkdirp = Promise.promisify(require("mkdirp"));
+const rimraf = Promise.promisify(require("rimraf"));
 const supportedTypes = [
 	"deployment",
 	"service",
@@ -95,6 +98,7 @@ class Manifests extends EventEmitter {
 	 */
 	deploy() {
 		return new Promise((resolve, reject) => {
+			const tmpDir = path.join("/tmp/kit-deployer", uuid.v4());
 			var availablePromises = [];
 			var dependencies = new Dependencies({
 				kubectl: this.kubectl
@@ -136,6 +140,10 @@ class Manifests extends EventEmitter {
 				.then((results) => {
 					this.emit("info", "Found " + results.items.length + " resources");
 					existing = results.items;
+				})
+				.then(() => {
+					this.emit("info", "Generating tmp directory: " + tmpDir);
+					return mkdirp(tmpDir);
 				})
 				.then(() => {
 					var kubePromises = [];
@@ -241,7 +249,7 @@ class Manifests extends EventEmitter {
 										manifest.metadata.name = manifestName;
 
 										// Add our custom annotations before deploying
-										var tmpApplyingConfigurationPath = path.join("/tmp", this.options.cluster.metadata.name + "-" + path.basename(manifestFile.path) + ".json");
+										var tmpApplyingConfigurationPath = path.join(tmpDir, this.options.cluster.metadata.name + "-" + path.basename(manifestFile.path) + ".json");
 										manifest.metadata.annotations[lastAppliedConfigurationKey] = applyingConfiguration;
 										manifest.metadata.annotations[lastAppliedConfigurationHashKey] = applyingConfigurationHash;
 
@@ -384,6 +392,11 @@ class Manifests extends EventEmitter {
 						manifest: this.options.cluster
 					});
 					reject(err);
+				})
+				.finally(() => {
+					return rimraf(tmpDir).then(() => {
+						this.emit("info", "Deleted tmp directory: " + tmpDir);
+					});
 				});
 		});
 	}

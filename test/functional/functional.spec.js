@@ -28,6 +28,7 @@ describe("Functional", function() {
 				expect(error).to.be.null;
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
+				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("example-cluster - Getting list of namespaces");
 				expect(stdout).to.contain("example-cluster - Create example namespace");
 				expect(stdout).to.contain("example-cluster - namespace \"example\" created");
@@ -38,6 +39,7 @@ describe("Functional", function() {
 				expect(stdout).to.contain("example-cluster - service \"auth-svc\" created");
 				expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
 				expect(stdout).to.contain("Finished successfully");
+				expect(stdout).to.contain("Deleted tmp directory:");
 				done();
 			});
 		});
@@ -58,6 +60,7 @@ describe("Functional", function() {
 				expect(error).to.be.null;
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
+				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("multi-deployments-cluster - Getting list of namespaces");
 				expect(stdout).to.contain("multi-deployments-cluster - Create multi-deployments namespace");
 				expect(stdout).to.contain("multi-deployments-cluster - namespace \"multi-deployments\" created");
@@ -74,6 +77,7 @@ describe("Functional", function() {
 				expect(stdout).to.contain("multi-deployments-cluster - Deployment:nginx1-deployment has 1/1 replicas available");
 				expect(stdout).to.contain("multi-deployments-cluster - Deployment:nginx2-deployment has 1/1 replicas available");
 				expect(stdout).to.contain("Finished successfully");
+				expect(stdout).to.contain("Deleted tmp directory:");
 				done();
 			});
 		});
@@ -94,6 +98,7 @@ describe("Functional", function() {
 				expect(error).to.be.null;
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
+				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("no-namespaces-cluster - Getting list of namespaces");
 				expect(stdout).to.contain("no-namespaces-cluster - Getting list of deployment,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
 				expect(stdout).to.contain("no-namespaces-cluster - Found 0 resources");
@@ -111,6 +116,7 @@ describe("Functional", function() {
 				expect(error).to.be.null;
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
+				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("single-job-cluster - Getting list of namespaces");
 				expect(stdout).to.contain("Sending payload to http://example.com/test/ls-job for ls-job with status STARTED/IN_PROGRESS");
 				expect(stdout).to.contain("single-job-cluster - Getting list of deployment,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
@@ -122,6 +128,7 @@ describe("Functional", function() {
 				expect(stdout).to.match(/.*single-job-cluster - Job:ls-job-\b[0-9a-f]{5,40}\b is available.*/);
 				expect(stdout).to.match(/.*single-job-cluster - Job:ls-job-\b[0-9a-f]{5,40}\b has 1\/1 succeeded.*/);
 				expect(stdout).to.contain("Finished successfully");
+				expect(stdout).to.contain("Deleted tmp directory:");
 				done();
 			});
 		});
