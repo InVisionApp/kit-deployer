@@ -29,6 +29,7 @@ const supportedTypes = [
 const commitKey = "kit-deployer/commit";
 const lastAppliedConfigurationKey = "kit-deployer/last-applied-configuration";
 const lastAppliedConfigurationHashKey = "kit-deployer/last-applied-configuration-sha1";
+const originalNameKey = "kit-deployer/original-name";
 
 class Manifests extends EventEmitter {
 	constructor(options) {
@@ -246,6 +247,7 @@ class Manifests extends EventEmitter {
 										}
 
 										// Update manifest name before deploying (necessary for manifests we need to give a unique name to like Jobs)
+										manifest.metadata.annotations[originalNameKey] = manifest.metadata.name;
 										manifest.metadata.name = manifestName;
 
 										// Add our custom annotations before deploying

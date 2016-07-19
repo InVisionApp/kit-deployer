@@ -86,10 +86,18 @@ class Webhook extends EventEmitter {
 		return Promise.all(promises);
 	}
 
-	// TODO: this is a bit yucky, would like to remove it as it's specific to our use-case
-	getServiceName(status) {
-		const serviceNameKey = "kit-deployer/service-name";
-		return (_.has(status.manifest, ["metadata", "annotations", serviceNameKey])) ? status.manifest.metadata.annotations[serviceNameKey] : status.manifest.metadata.name;
+	// Allows setting an alias via annotations as well as support for manifests that are renamed dynamically (such as jobs)
+	// so that the real name is sent in the webhook instead of the dynamically generated name.
+	getManifestName(status) {
+		const aliasNameKey = "kit-deployer/alias-name";
+		const originalNameKey = "kit-deployer/original-name";
+		if (_.has(status.manifest, ["metadata", "annotations", aliasNameKey])) {
+			return status.manifest.metadata.annotations[aliasNameKey];
+		} else if (_.has(status.manifest, ["metadata", "annotations", originalNameKey])) {
+			return status.manifest.metadata.annotations[originalNameKey];
+		} else {
+			return status.manifest.metadata.name;
+		}
 	}
 
 	// Call this method whenever there is a status update to check if the
@@ -111,7 +119,7 @@ class Webhook extends EventEmitter {
 			if (this.clusters.length === 0) {
 				const promises = [];
 				_.each(this.manifests, (manifestStatus) => {
-					const name = this.getServiceName(manifestStatus);
+					const name = this.getManifestName(manifestStatus);
 					promises.push(this.send(name, manifestStatus.phase, manifestStatus.status));
 				});
 				Promise
@@ -124,7 +132,7 @@ class Webhook extends EventEmitter {
 					});
 			}
 		} else {
-			const name = this.getServiceName(status);
+			const name = this.getManifestName(status);
 			if (!this.manifests[name]) {
 				// Always send the first status we receive for a manifest
 				this.manifests[name] = status;
