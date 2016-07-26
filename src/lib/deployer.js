@@ -53,7 +53,7 @@ class Deployer extends EventEmitter {
 			var promises = [];
 
 			if (!configFiles.length) {
-				self.emit("warn", "No config files found using pattern: ", configPattern);
+				self.emit("warn", "No config files found using pattern: " + configPattern);
 				return resolve();
 			}
 
