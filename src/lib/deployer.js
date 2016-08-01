@@ -51,8 +51,9 @@ class Deployer extends EventEmitter {
 			var configFiles = glob.sync(configPattern);
 
 			let webhook = undefined;
-			var errors = [];
-			var promises = [];
+			const errors = [];
+			const promises = [];
+			const webhookPromises = [];
 
 			if (!configFiles.length) {
 				self.emit("warn", "No config files found using pattern: " + configPattern);
@@ -129,7 +130,7 @@ class Deployer extends EventEmitter {
 							self.emit("status", status);
 							if (webhook) {
 								try {
-									webhook.change(status);
+									webhookPromises.push(webhook.change(status));
 								} catch (err) {
 									clusterError(err);
 									errors.push(err);
@@ -149,9 +150,9 @@ class Deployer extends EventEmitter {
 			Promise
 				.all(promises)
 				.then(() => {
-					// If a webhook is set and available is required, only resolve once the webhook has finished
+					// Wait for webhooks to complete if using webhooks and available is required
 					if (webhook && self.options.available.enabled && self.options.available.required) {
-						return webhook.sent();
+						return Promise.all(webhookPromises);
 					}
 				})
 				.catch(function(err) {

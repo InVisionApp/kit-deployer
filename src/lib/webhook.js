@@ -23,19 +23,9 @@ class Webhook extends EventEmitter {
 		if (!this.options.urls.length) {
 			throw new Error("Must provide at least 1 url");
 		}
-
-		this._sentPromise = new Promise((resolve, reject) => {
-			this.on("done", (err) => {
-				if (!err) {
-					resolve();
-				} else {
-					reject(err);
-				}
-			});
-		});
 	}
 
-	send(name, phase, status) {
+	send(cluster, name, phase, status) {
 		const payload = {
 			// TODO: dynamic name for payload?
 			name: "kubernetes-deploy",
@@ -69,14 +59,14 @@ class Webhook extends EventEmitter {
 		const promises = [];
 		_.each(this.options.urls, (url) => {
 			const urlWithService = url + "/" + name;
-			this.emit("info", "Sending payload to " + urlWithService + " for " + name + " with status " + phase + "/" + status);
+			this.emit("info", cluster + " - Sending payload to " + urlWithService + " for " + name + " with status " + phase + "/" + status);
 			promises.push(request({
 				method: "POST",
 				uri: urlWithService,
 				body: payload,
 				json: true
 			}).then((res) => {
-				this.emit("info", "Successfully sent payload to " + urlWithService + " for " + name + " with status " + phase + "/" + status);
+				this.emit("info", cluster + " - Successfully sent payload to " + urlWithService + " for " + name + " with status " + phase + "/" + status);
 				return res;
 			}).catch((err) => {
 				// TODO: webhook can silently fail (only printing the error message and not causing a "failed" deploy because we don't wait for the webhook to finish)
@@ -104,52 +94,13 @@ class Webhook extends EventEmitter {
 		}
 	}
 
-	// Call this method whenever there is a status update to check if the
-	// deployment was successful or not. It will automatically send a payload to
-	// the webhook once the deployment is finished with all clusters.
+	// Call this method whenever there is a status update. It will automatically send
+	// a payload to the webhook.
 	change(status) {
 		if (status.kind === "Cluster") {
-			switch (status.phase) {
-				case "STARTED":
-					this.clusters.push(status);
-					break;
-				case "COMPLETED":
-					this.clusters = _.reject(this.clusters, {name: status.name});
-					break;
-				default:
-					this.emit("error", "Unknown phase for cluster: " + status.phase);
-			}
-			// If deployer is done and all clusters have completed
-			if (this.clusters.length === 0) {
-				const promises = [];
-				_.each(this.manifests, (manifestStatus) => {
-					const name = this.getManifestName(manifestStatus);
-					promises.push(this.send(name, manifestStatus.phase, manifestStatus.status));
-				});
-				Promise
-					.all(promises)
-					.then(() => {
-						this.emit("done", null);
-					})
-					.catch((err) => {
-						this.emit("done", err);
-					});
-			}
-		} else {
 			const name = this.getManifestName(status);
-			if (!this.manifests[name]) {
-				// Always send the first status we receive for a manifest
-				this.manifests[name] = status;
-				this.send(name, status.phase, status.status);
-			} else if (this.manifests[name].status !== "FAILURE") {
-				// If the status is failure for any cluster, we consider the deployment as a whole a failure, so keep failure status
-				this.manifests[name] = status;
-			}
+			return this.send(status.name, name, status.phase, status.status);
 		}
-	}
-
-	sent() {
-		return this._sentPromise;
 	}
 }
 
