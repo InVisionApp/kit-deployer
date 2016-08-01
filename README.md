@@ -152,6 +152,8 @@ The following environment variables are used by this service.
 | `DIFF` | Will show a diff | yes | `false` |
 | `FORCE` | Will push all changes even if there are no differences | yes | `false` |
 | `AVAILABLE_ENABLED` | Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled | yes | `false` |
+| `AVAILABLE_HEALTH_CHECK` | Will monitor for issues during the deployment | yes | `true` |
+| `AVAILABLE_HEALTH_CHECK_GRACE_PERIOD` | The amount of time in seconds that the health check will wait for a deployment to self-heal before triggering a failure | yes | `10` |
 | `AVAILABLE_WEBHOOK` | The URL you want to send the status payload of the deployment progress to. You can provide multiple endpoints by using a JSON array of URLs | no | *empty* |
 | `AVAILABLE_REQUIRED` | Will only finish once the manifest is considered available in the cluster | yes | `false` |
 | `AVAILABLE_KEEP_ALIVE` | Will print the status of the available check every `AVAILABLE_KEEP_ALIVE_INTERVAL` seconds (useful for CI tools that require log output to prevent timeouts) | yes | `false` |

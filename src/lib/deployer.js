@@ -25,6 +25,8 @@ class Deployer extends EventEmitter {
 			available: {
 				enabled: false,
 				webhooks: [],
+				healthCheck: true,
+				healthCheckGracePeriod: undefined,
 				keepAlive: false,
 				keepAliveInterval: 30,
 				required: false,

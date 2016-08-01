@@ -42,6 +42,8 @@ class Manifests extends EventEmitter {
 			selector: undefined,
 			available: {
 				enabled: false,
+				healthCheck: true,
+				healthCheckGracePeriod: undefined,
 				keepAlive: false,
 				keepAliveInterval: 30,
 				required: false,
@@ -111,6 +113,7 @@ class Manifests extends EventEmitter {
 			dependencies.timeout = parseInt(this.options.dependency.timeout);
 
 			var status = new Status({
+				healthCheck: this.options.available.healthCheck,
 				keepAlive: this.options.available.keepAlive,
 				keepAliveInterval: this.options.available.keepAliveInterval,
 				timeout: this.options.available.timeout,
@@ -118,6 +121,9 @@ class Manifests extends EventEmitter {
 			});
 			status.on("info", (msg) => {
 				this.emit("info", msg);
+			});
+			status.on("error", (err) => {
+				this.emit("error", err);
 			});
 
 			this.emit("status", {

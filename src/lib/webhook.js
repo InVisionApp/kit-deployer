@@ -80,7 +80,11 @@ class Webhook extends EventEmitter {
 				return res;
 			}).catch((err) => {
 				// TODO: webhook can silently fail (only printing the error message and not causing a "failed" deploy because we don't wait for the webhook to finish)
-				this.emit("error", err);
+				if (err.message) {
+					this.emit("error", err.message);
+				} else {
+					this.emit("error", err);
+				}
 			}));
 		});
 		return Promise.all(promises);

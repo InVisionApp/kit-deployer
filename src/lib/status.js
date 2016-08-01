@@ -4,6 +4,7 @@ const _ = require("lodash");
 const Promise = require("bluebird");
 const EventEmitter = require("events").EventEmitter;
 const KeepAlive = require("./keep-alive");
+const HealthCheck = require("./health-check");
 const supportedTypes = [
 	"deployment",
 	"service",
@@ -17,6 +18,8 @@ class Status extends EventEmitter {
 	constructor(options) {
 		super();
 		this.options = _.merge({
+			healthCheck: true,
+			healthCheckGracePeriod: undefined,
 			keepAlive: false,
 			keepAliveInterval: 30, // 30 seconds
 			timeout: 10 * 60, // 10 minutes
@@ -53,22 +56,35 @@ class Status extends EventEmitter {
 				keepAlive.start();
 			}
 
-			// Start watching the resource name
+			// Setup healthcheck
+			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod);
+			healthCheck.on("error", (err) => {
+				this.emit("_error", err);
+			});
+
+			// Setup watcher
 			const watcher = this.kubectl.watch(resource, name);
 
-			watcher.on("error", (err) => {
+			// Setup error listener
+			this.on("_error", (err) => {
 				this.emit("error", err);
 				watcher.stop();
+				healthCheck.stop();
 				if (keepAlive) {
 					keepAlive.stop();
 				}
 				clearTimeout(timeoutId);
 				reject(err);
 			});
+
+			watcher.on("error", (err) => {
+				this.emit("_error", err);
+			});
 			watcher.on("change", (res) => {
 				function stop(context) {
 					context.emit("info", resource + ":" + name + " is available");
 					watcher.stop();
+					healthCheck.stop();
 					if (keepAlive) {
 						keepAlive.stop();
 					}
@@ -148,8 +164,17 @@ class Status extends EventEmitter {
 				}
 			});
 
+			// Start watching
+			watcher.start();
+
+			// Start observing health of deployment
+			if (this.options.healthCheck) {
+				healthCheck.start(name);
+			}
+
 			timeoutId = setTimeout(() => {
 				watcher.stop();
+				healthCheck.stop();
 				if (keepAlive) {
 					keepAlive.stop();
 				}

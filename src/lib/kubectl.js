@@ -4,6 +4,7 @@ const spawn = require("child_process").spawn;
 const Promise = require("bluebird");
 const EventEmitter = require("events").EventEmitter;
 const diff = require("deep-diff");
+const _ = require("lodash");
 
 class KubectlWatcher extends EventEmitter {
 	constructor(kubectl, resource, name) {
@@ -13,12 +14,13 @@ class KubectlWatcher extends EventEmitter {
 		this.resource = resource;
 		this.name = name;
 		this._previousResult;
-
-		// init
-		this.start();
 	}
 
 	start() {
+		this.query();
+	}
+
+	query() {
 		this._timeoutId = setTimeout(() => {
 			this.kubectl
 				.get(this.resource, this.name)
@@ -32,7 +34,56 @@ class KubectlWatcher extends EventEmitter {
 				.catch((err) => {
 					this.emit("error", err);
 				});
-			this.start();
+			this.query();
+		}, this.interval);
+	}
+
+	stop() {
+		clearTimeout(this._timeoutId);
+		this.removeAllListeners();
+	}
+}
+
+class KubectlEventWatcher extends EventEmitter {
+	constructor(kubectl) {
+		super();
+		this.kubectl = kubectl;
+		this.interval = 3 * 1000; // 3 second polling
+		this._previousEvents = {};
+	}
+
+	start() {
+		this._startTime = new Date().getTime();
+		this.query();
+	}
+
+	query() {
+		this._timeoutId = setTimeout(() => {
+			this.kubectl
+				.get("events")
+				.then((result) => {
+					// Store UIDs of events so we know which events are new
+					if (_.has(result, ["items"])) {
+						_.each(result.items, (event) => {
+							// All events should have UIDs as described by kubernetes metadata spec (but just being safe)
+							if (_.has(event, ["metadata", "uid"])) {
+								if (this._previousEvents[event.metadata.uid]) {
+									// We already emitted this event, so do nothing
+								} else if (_.has(event, ["metadata", "creationTimestamp"]) && new Date(event.metadata.creationTimestamp).getTime() < this._startTime) {
+									// Ignore events that occurred before we started watching
+								} else {
+									// New event, emit it
+									this._previousEvents[event.metadata.uid] = event;
+									this.emit("new", event);
+								}
+							}
+						});
+					}
+				})
+				.catch((err) => {
+					this.emit("error", err);
+				});
+			this.query();
 		}, this.interval);
 	}
 
@@ -89,7 +140,11 @@ class Kubectl {
 
 	get(resource, name) {
 		return new Promise((resolve, reject) => {
-			this.spawn(["get", "--output=json", resource, name], (err, data) => {
+			const cmd = ["get", "--output=json", resource];
+			if (name) {
+				cmd.push(name);
+			}
+			this.spawn(cmd, (err, data) => {
 				if (err) {
 					return reject(err);
 				}
@@ -176,11 +231,23 @@ class Kubectl {
 	/**
 	 * Watches given resource and emits events on changes.
 	 * @param {string} resource - A single resource type to watch
+	 * @param {string} name - The name of the resource to watch
 	 * @fires KubectlWatcher#change
 	 * @fires KubectlWatcher#error
 	 */
 	watch(resource, name) {
 		return new KubectlWatcher(this, resource, name);
+	}
+
+	/**
+	 * Watches events for given resource and emits events on new events.
+	 * @param {string} resource - A single resource type to watch events for
+	 * @param {string} name - The name of the resource to watch events for
+	 * @fires KubectlWatcher#new
+	 * @fires KubectlWatcher#error
+	 */
+	events() {
+		return new KubectlEventWatcher(this);
 	}
 }
 
