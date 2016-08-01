@@ -56,6 +56,8 @@ const options = {
 	force: program.force,
 	available: {
 		enabled: program.availableEnabled,
+		healthCheck: program.availableHealthCheck,
+		healthCheckGracePeriod: program.availableHealthCheckGracePeriod,
 		webhooks: convertStringToArray(program.availableWebhook),
 		required: program.availableRequired,
 		keepAlive: program.availableKeepAlive,
