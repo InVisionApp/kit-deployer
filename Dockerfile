@@ -1,7 +1,7 @@
 FROM quay.io/invision/alpine-node:5.5.0
 
 # Defines the version of the kubectl binary
-ARG KUBE_VERSION=v1.2.2
+ARG KUBE_VERSION=v1.3.4
 
 # Add kubectl binary
 COPY scripts/download-kubectl.js scripts/download-kubectl.js
