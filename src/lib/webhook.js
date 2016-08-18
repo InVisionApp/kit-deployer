@@ -69,21 +69,23 @@ class Webhook extends EventEmitter {
 		const promises = [];
 		_.each(this.options.urls, (url) => {
 			const urlWithService = url + "/" + name;
-			this.emit("info", "Sending payload to " + urlWithService + " for " + name + " with status " + phase + "/" + status);
+			const phaseStatusMessage = urlWithService + " for " + name + " with status " + phase + "/" + status;
+			this.emit("info", "Sending payload to " + phaseStatusMessage);
 			promises.push(request({
 				method: "POST",
 				uri: urlWithService,
 				body: payload,
 				json: true
 			}).then((res) => {
-				this.emit("info", "Successfully sent payload to " + urlWithService + " for " + name + " with status " + phase + "/" + status);
+				this.emit("info", "Successfully sent payload to " + phaseStatusMessage);
 				return res;
 			}).catch((err) => {
 				// TODO: webhook can silently fail (only printing the error message and not causing a "failed" deploy because we don't wait for the webhook to finish)
-				if (err.message) {
-					this.emit("error", err.message);
+				const errPrefix = "Error sending payload to " + phaseStatusMessage + ": ";
+				if (err && err.message) {
+					this.emit("error", errPrefix + err.message);
 				} else {
-					this.emit("error", err);
+					this.emit("error", errPrefix + err);
 				}
 			}));
 		});
