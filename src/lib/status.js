@@ -7,6 +7,7 @@ const KeepAlive = require("./keep-alive");
 const HealthCheck = require("./health-check");
 const supportedTypes = [
 	"deployment",
+	"ingress",
 	"service",
 	"secret",
 	"job",
@@ -159,6 +160,7 @@ class Status extends EventEmitter {
 					case "Service":
 					case "Secret":
 					case "PersistentVolumeClaim":
+					case "Ingress":
 					default:
 						stop(this);
 				}

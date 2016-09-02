@@ -19,6 +19,7 @@ const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
 const supportedTypes = [
 	"deployment",
+	"ingress",
 	"service",
 	"secret",
 	"job",
