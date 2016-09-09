@@ -30,9 +30,15 @@
       encrypted_dockercfg_path: codeship-dockercfg.encrypted
     - name: Push branch tag
       type: push
-      tag: master
       service: app
       image_tag: "{{ .Branch }}"
+      registry: quay.io
+      image_name: quay.io/invision/kit-deployer
+      encrypted_dockercfg_path: codeship-dockercfg.encrypted
+    - name: Push branch-commit tag
+      type: push
+      service: app
+      image_tag: "{{ .Branch }}-{{ .CommitID }}"
       registry: quay.io
       image_name: quay.io/invision/kit-deployer
       encrypted_dockercfg_path: codeship-dockercfg.encrypted
