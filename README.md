@@ -151,6 +151,7 @@ The following environment variables are used by this service.
 | `IS_ROLLBACK` | A boolean flag that is passed in the available payload post | yes | `false` |
 | `DIFF` | Will show a diff | yes | `false` |
 | `FORCE` | Will push all changes even if there are no differences | yes | `false` |
+| `DELETE_RESOURCES` | Delete resources that are deployed to cluster but no manifest found locally | yes | `true` |
 | `AVAILABLE_ENABLED` | Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled | yes | `false` |
 | `AVAILABLE_HEALTH_CHECK` | Will monitor for issues during the deployment | yes | `true` |
 | `AVAILABLE_HEALTH_CHECK_GRACE_PERIOD` | The amount of time in seconds that the health check will wait for a deployment to self-heal before triggering a failure | yes | `10` |
