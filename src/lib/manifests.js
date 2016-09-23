@@ -41,6 +41,7 @@ class Manifests extends EventEmitter {
 			cluster: undefined,
 			dir: undefined,
 			selector: undefined,
+			deleteResources: undefined,
 			available: {
 				enabled: false,
 				healthCheck: true,
@@ -74,6 +75,8 @@ class Manifests extends EventEmitter {
 		if (!this.options.dir) {
 			return manifests;
 		}
+		// validate directory, if it doesnt exist, skip processing.
+		//
 		var files = glob.sync(path.join(this.options.dir, this.options.cluster.metadata.name + "/**/*.yaml"));
 		_.each(files, (file) => {
 			// only add file if it matches selector
@@ -158,7 +161,11 @@ class Manifests extends EventEmitter {
 					var promiseFuncsWithDependencies = [];
 					var remaining = _.cloneDeep(existing);
 					var manifestFiles = this.load();
-
+					// there are no files to process, skip cluster
+					if (Array.isArray(manifestFiles) && manifestFiles.length === 0) {
+							this.emit("info", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
+							return Promise.resolve();
+					}
 					_.each(manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
 						var differences = {};
@@ -344,22 +351,33 @@ class Manifests extends EventEmitter {
 						}
 					});
 
-					// Delete remaining resources
-					_.each(remaining, (resource) => {
-						// TODO: we have encountered a lot of issues with deleting Job type resources, so we will skip trying to delete them
-						if (resource.kind !== "Job") {
-							this.emit("info", "Delete " + resource.metadata.name);
-							if (!this.options.dryRun) {
-								kubePromises.push(this.kubectl.deleteByName(resource.kind, resource.metadata.name)
-									.then((msg) => {
-										this.emit("info", msg);
-									})
-									.catch((err) => {
-										this.emit("error", "Error running kubectl.deleteByName('" + resource.kind + "', '" + resource.metadata.name + "')' " + err);
-									}));
+					// Delete remaining resources, if specified
+					if (this.options.deleteResources === true) {
+						_.each(remaining, (resource) => {
+							// TODO: we have encountered a lot of issues with deleting Job type resources, so we will skip trying to delete them
+							if (resource.kind !== "Job") {
+								this.emit("info", "Delete " + resource.metadata.name);
+								if (!this.options.dryRun) {
+									kubePromises.push(this.kubectl.deleteByName(resource.kind, resource.metadata.name)
+										.then((msg) => {
+											this.emit("info", msg);
+										})
+										.catch((err) => {
+											this.emit("error", "Error running kubectl.deleteByName('" + resource.kind + "', '" + resource.metadata.name + "')' " + err);
+										}));
+								}
 							}
-						}
-					});
+						});
+					} else {
+						this.emit("info", "Removal of resources disabled existing resources are not removed");
+						_.each(remaining, (resource) => {
+							// Old jobs are not removed, taking out this conditional will display
+							//   a list of old jobs that can be removed.
+							if (resource.kind !== "Job") {
+								this.emit("info", "Not removing " + resource.metadata.name);
+							}
+						});
+					}
 
 					return Promise
 						.all(kubePromises)

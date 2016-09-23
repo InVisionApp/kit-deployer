@@ -25,6 +25,7 @@ program
 	.option("--is-rollback <boolean>", "A boolean flag that is passed in the available payload post", parseBoolean, parseBoolean(process.env.IS_ROLLBACK))
 	.option("--diff <boolean>", "Will show a diff", parseBoolean, parseBoolean(process.env.DIFF))
 	.option("--force <boolean>", "Will push all changes even if there are no differences", parseBoolean, parseBoolean(process.env.FORCE))
+	.option("--deleteResources <boolean>", "Delete manifest resources that were not generated", parseBoolean, parseBoolean(process.env.DELETE_RESOURCES))
 	.option("--available-enabled <boolean>", "Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled", parseBoolean, parseBoolean(process.env.AVAILABLE_ENABLED))
 	.option("--available-health-check <boolean>", "Will monitor for issues during the deployment", parseBoolean, parseBoolean(process.env.AVAILABLE_HEALTH_CHECK))
 	.option("--available-health-check-grace-period <int>", "The amount of time in seconds that the health check will wait for a deployment to self-heal before triggering a failure", parseInt, parseInt(process.env.AVAILABLE_HEALTH_CHECK_GRACE_PERIOD))
@@ -54,6 +55,7 @@ const options = {
 	isRollback: program.isRollback,
 	diff: program.diff,
 	force: program.force,
+	deleteResources: program.deleteResources,
 	available: {
 		enabled: program.availableEnabled,
 		healthCheck: program.availableHealthCheck,
