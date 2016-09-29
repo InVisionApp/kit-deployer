@@ -319,6 +319,7 @@ class Manifests extends EventEmitter {
 																		this.emit("error", err);
 																		this.emit("status", {
 																			cluster: this.options.cluster.metadata.name,
+																			reason: (err.name === "TimeoutError" ? "timeout" : "other"),
 																			name: manifestName,
 																			kind: manifest.kind,
 																			phase: "COMPLETED",

@@ -5,6 +5,7 @@ const Promise = require("bluebird");
 const EventEmitter = require("events").EventEmitter;
 const KeepAlive = require("./keep-alive");
 const HealthCheck = require("./health-check");
+const TimeoutError = require("../util/timeout-error");
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -180,7 +181,7 @@ class Status extends EventEmitter {
 				if (keepAlive) {
 					keepAlive.stop();
 				}
-				reject(new Error("Timeout waiting for " + resource + ":" + name));
+				reject(new TimeoutError("Timeout waiting for " + resource + ":" + name));
 			}, parseInt(this.options.timeout) * 1000);
 		});
 	}
