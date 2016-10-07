@@ -127,7 +127,7 @@ class Webhook extends EventEmitter {
 				const promises = [];
 				_.each(this.manifests, (manifestStatus) => {
 					const name = this.getManifestName(manifestStatus);
-					promises.push(this.send(name, manifestStatus.phase, manifestStatus.status));
+					promises.push(this.send(name, manifestStatus.phase, manifestStatus.status, manifestStatus.reason));
 				});
 				Promise
 					.all(promises)
@@ -143,6 +143,7 @@ class Webhook extends EventEmitter {
 			if (!this.manifests[name]) {
 				// Always send the first status we receive for a manifest
 				this.manifests[name] = status;
+
 				this.send(name, status.phase, status.status, status.reason);
 			} else if (this.manifests[name].status !== "FAILURE") {
 				// If the status is failure for any cluster, we consider the deployment as a whole a failure, so keep failure status
