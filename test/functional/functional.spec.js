@@ -44,6 +44,18 @@ describe("Functional", function() {
 			});
 		});
 
+		it("should trigger a TimeoutError after exceeding AVAILABLE_TIMEOUT", function(done) {
+			process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
+			process.env.AVAILABLE_TIMEOUT = 1;
+
+			exec("./src/deployer", function(error, stdout, stderr) {
+				expect(stdout).not.to.be.empty;
+				expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/FAILURE");
+				expect(stdout).to.match(/.*TimeoutError*/);
+				done();
+			});
+		});
+
 		afterEach(function() {
 			var kubectl = new Kubectl({
 				kubeconfig: process.env.CONFIGS
