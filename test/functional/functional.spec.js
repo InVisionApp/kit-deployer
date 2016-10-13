@@ -14,6 +14,7 @@ describe("Functional", function() {
 		process.env.NAMESPACES_DIR = "/test/functional/clusters/namespaces";
 		process.env.MANIFESTS_DIR = "/test/functional/clusters/manifests";
 		process.env.AVAILABLE_ENABLED = "true";
+		process.env.AVAILABLE_ALL = "false";
 		process.env.AVAILABLE_TIMEOUT = "60";
 		process.env.AVAILABLE_REQUIRED = "true";
 		process.env.AVAILABLE_KEEP_ALIVE = "true";
@@ -22,6 +23,7 @@ describe("Functional", function() {
 
 	describe("when deploying to example cluster", function() {
 		it("should deploy without error", function(done) {
+			process.env.AVAILABLE_ALL = "true";
 			process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
 
 			exec("./src/deployer", function(error, stdout, stderr) {
@@ -33,7 +35,7 @@ describe("Functional", function() {
 				expect(stdout).to.contain("example-cluster - Create example namespace");
 				expect(stdout).to.contain("example-cluster - namespace \"example\" created");
 				expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
-				expect(stdout).to.contain("example-cluster - Getting list of deployment,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+				expect(stdout).to.contain("example-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
 				expect(stdout).to.contain("example-cluster - Found 0 resources");
 				expect(stdout).to.contain("example-cluster - Create auth-svc");
 				expect(stdout).to.contain("example-cluster - service \"auth-svc\" created");
@@ -41,6 +43,29 @@ describe("Functional", function() {
 				expect(stdout).to.contain("Finished successfully");
 				expect(stdout).to.contain("Deleted tmp directory:");
 				done();
+			});
+		});
+
+		describe("and when running same deploy again (no differences)", function() {
+			it("should deploy without error", function(done) {
+				process.env.AVAILABLE_ALL = "true";
+				process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
+
+				exec("./src/deployer", function(error, stdout, stderr) {
+					expect(error).to.be.null;
+					expect(stderr).to.be.empty;
+					expect(stdout).not.to.be.empty;
+					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain("example-cluster - Getting list of namespaces");
+					expect(stdout).to.contain("example-cluster - Create example namespace");
+					expect(stdout).to.contain("example-cluster - namespace \"example\" created");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain("example-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+					expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
+					expect(stdout).to.contain("Finished successfully");
+					expect(stdout).to.contain("Deleted tmp directory:");
+					done();
+				});
 			});
 		});
 
@@ -78,7 +103,7 @@ describe("Functional", function() {
 				expect(stdout).to.contain("multi-deployments-cluster - namespace \"multi-deployments\" created");
 				expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
 				expect(stdout).to.contain("Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status STARTED/IN_PROGRESS");
-				expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+				expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
 				expect(stdout).to.contain("multi-deployments-cluster - Found 0 resources");
 				expect(stdout).to.contain("multi-deployments-cluster - Create nginx1-deployment");
 				expect(stdout).to.contain("multi-deployments-cluster - Create nginx2-deployment");
@@ -112,7 +137,7 @@ describe("Functional", function() {
 				expect(stdout).not.to.be.empty;
 				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("no-namespaces-cluster - Getting list of namespaces");
-				expect(stdout).to.contain("no-namespaces-cluster - Getting list of deployment,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+				expect(stdout).to.contain("no-namespaces-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
 				expect(stdout).to.contain("no-namespaces-cluster - Found 0 resources");
 				expect(stdout).to.contain("Finished successfully");
 				done();
@@ -131,7 +156,7 @@ describe("Functional", function() {
 				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("single-job-cluster - Getting list of namespaces");
 				expect(stdout).to.contain("Sending payload to http://example.com/test/ls-job for ls-job with status STARTED/IN_PROGRESS");
-				expect(stdout).to.contain("single-job-cluster - Getting list of deployment,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+				expect(stdout).to.contain("single-job-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
 				expect(stdout).to.contain("single-job-cluster - Create single-job namespace");
 				expect(stdout).to.contain("single-job-cluster - namespace \"single-job\" created");
 				expect(stdout).to.contain("single-job-cluster - Found 0 resources");
@@ -156,6 +181,7 @@ describe("Functional", function() {
 		delete process.env.GITHUB_ENABLED;
 		delete process.env.CI_COMMIT_ID;
 		delete process.env.AVAILABLE_ENABLED;
+		delete process.env.AVAILABLE_ALL;
 		delete process.env.AVAILABLE_TIMEOUT;
 		delete process.env.AVAILABLE_REQUIRED;
 		delete process.env.AVAILABLE_KEEP_ALIVE;

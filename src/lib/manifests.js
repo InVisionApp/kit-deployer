@@ -44,6 +44,7 @@ class Manifests extends EventEmitter {
 			deleteResources: undefined,
 			available: {
 				enabled: false,
+				all: false,
 				healthCheck: true,
 				healthCheckGracePeriod: undefined,
 				keepAlive: false,
@@ -163,8 +164,8 @@ class Manifests extends EventEmitter {
 					var manifestFiles = this.load();
 					// there are no files to process, skip cluster
 					if (Array.isArray(manifestFiles) && manifestFiles.length === 0) {
-							this.emit("info", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
-							return Promise.resolve();
+						this.emit("info", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
+						return Promise.resolve();
 					}
 					_.each(manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
@@ -349,6 +350,55 @@ class Manifests extends EventEmitter {
 								// If it DOES have dependencies, then we want to wait for everything without dependencies to have been deployed first
 								promiseFuncsWithDependencies.push(promiseFunc);
 							}
+						} else {
+							// No differences, verify service is available and emit status on it if AVAILABLE_ALL enabled
+							if (!this.options.dryRun) {
+								const noDiffPromiseFunc = () => {
+									this.emit("status", {
+										cluster: this.options.cluster.metadata.name,
+										name: manifestName,
+										kind: manifest.kind,
+										phase: "STARTED",
+										status: "IN_PROGRESS",
+										manifest: manifest
+									});
+
+									if (this.options.available.enabled && this.options.available.all) {
+										var availablePromise = status
+											.available(manifest.kind, manifestName)
+											.then(() => {
+												this.emit("status", {
+													cluster: this.options.cluster.metadata.name,
+													name: manifestName,
+													kind: manifest.kind,
+													phase: "COMPLETED",
+													status: "SUCCESS",
+													manifest: manifest
+												});
+											})
+											.catch((err) => {
+												this.emit("error", err);
+												this.emit("status", {
+													cluster: this.options.cluster.metadata.name,
+													reason: (err.name || "other"),
+													name: manifestName,
+													kind: manifest.kind,
+													phase: "COMPLETED",
+													status: "FAILURE",
+													manifest: manifest
+												});
+											});
+										availablePromises.push(availablePromise);
+										// Wait for promise to resolve if we need to wait until available is successful
+										if (this.options.available.required) {
+											return availablePromise;
+										}
+									} else {
+										return Promise.resolve();
+									}
+								};
+								kubePromises.push(noDiffPromiseFunc());
+							}
 						}
 					});
 
@@ -413,6 +463,7 @@ class Manifests extends EventEmitter {
 				.catch((err) => {
 					this.emit("error", err);
 					this.emit("status", {
+						reason: (err.name || "other"),
 						name: this.options.cluster.metadata.name,
 						kind: "Cluster",
 						phase: "COMPLETED",
