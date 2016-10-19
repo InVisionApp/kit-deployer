@@ -5,6 +5,21 @@ KUBERNETES_API_PORT=8080
 function clean {
 	# Delete kubelet memory
 	docker-machine ssh `docker-machine active` sudo rm -rf /var/lib/kubelet &> /dev/null
+
+	cd "$this_dir/test/functional/kubernetes"
+
+	if [ ! -z "$(docker-compose ps -q)" ]; then
+		docker-compose stop
+		docker-compose rm -f -v
+	fi
+
+	k8s_containers=`docker ps -a -f "name=k8s_" -q`
+
+	if [ ! -z "$k8s_containers" ]; then
+		echo "Stopping and removing all other containers that were started by Kubernetes..."
+		docker stop $k8s_containers
+		docker rm -f -v $k8s_containers
+	fi
 }
 
 function active_machine {
@@ -47,21 +62,6 @@ echo "Running tests..."
 docker-compose -f test-functional.yml build && docker-compose -f test-functional.yml up
 docker-compose -f test-functional.yml stop
 docker-compose -f test-functional.yml rm -f -v
-
-cd "$this_dir/test/functional/kubernetes"
-
-if [ ! -z "$(docker-compose ps -q)" ]; then
-	docker-compose stop
-	docker-compose rm -f -v
-fi
-
-k8s_containers=`docker ps -a -f "name=k8s_" -q`
-
-if [ ! -z "$k8s_containers" ]; then
-	echo "Stopping and removing all other containers that were started by Kubernetes..."
-	docker stop $k8s_containers
-	docker rm -f -v $k8s_containers
-fi
 
 clean
 

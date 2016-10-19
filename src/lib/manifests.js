@@ -354,48 +354,50 @@ class Manifests extends EventEmitter {
 							// No differences, verify service is available and emit status on it if AVAILABLE_ALL enabled
 							if (!this.options.dryRun) {
 								const noDiffPromiseFunc = () => {
-									this.emit("status", {
-										cluster: this.options.cluster.metadata.name,
-										name: manifestName,
-										kind: manifest.kind,
-										phase: "STARTED",
-										status: "IN_PROGRESS",
-										manifest: manifest
-									});
+									if (this.options.available.all) {
+										this.emit("status", {
+											cluster: this.options.cluster.metadata.name,
+											name: manifestName,
+											kind: manifest.kind,
+											phase: "STARTED",
+											status: "IN_PROGRESS",
+											manifest: manifest
+										});
 
-									if (this.options.available.enabled && this.options.available.all) {
-										var availablePromise = status
-											.available(manifest.kind, manifestName)
-											.then(() => {
-												this.emit("status", {
-													cluster: this.options.cluster.metadata.name,
-													name: manifestName,
-													kind: manifest.kind,
-													phase: "COMPLETED",
-													status: "SUCCESS",
-													manifest: manifest
+										if (this.options.available.enabled) {
+											var availablePromise = status
+												.available(manifest.kind, manifestName)
+												.then(() => {
+													this.emit("status", {
+														cluster: this.options.cluster.metadata.name,
+														name: manifestName,
+														kind: manifest.kind,
+														phase: "COMPLETED",
+														status: "SUCCESS",
+														manifest: manifest
+													});
+												})
+												.catch((err) => {
+													this.emit("error", err);
+													this.emit("status", {
+														cluster: this.options.cluster.metadata.name,
+														reason: (err.name || "other"),
+														name: manifestName,
+														kind: manifest.kind,
+														phase: "COMPLETED",
+														status: "FAILURE",
+														manifest: manifest
+													});
 												});
-											})
-											.catch((err) => {
-												this.emit("error", err);
-												this.emit("status", {
-													cluster: this.options.cluster.metadata.name,
-													reason: (err.name || "other"),
-													name: manifestName,
-													kind: manifest.kind,
-													phase: "COMPLETED",
-													status: "FAILURE",
-													manifest: manifest
-												});
-											});
-										availablePromises.push(availablePromise);
-										// Wait for promise to resolve if we need to wait until available is successful
-										if (this.options.available.required) {
-											return availablePromise;
+											availablePromises.push(availablePromise);
+											// Wait for promise to resolve if we need to wait until available is successful
+											if (this.options.available.required) {
+												return availablePromise;
+											}
 										}
-									} else {
-										return Promise.resolve();
 									}
+									// Nothing to do, just resolve
+									return Promise.resolve();
 								};
 								kubePromises.push(noDiffPromiseFunc());
 							}
