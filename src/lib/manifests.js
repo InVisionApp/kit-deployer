@@ -41,7 +41,6 @@ class Manifests extends EventEmitter {
 			cluster: undefined,
 			dir: undefined,
 			selector: undefined,
-			deleteResources: undefined,
 			available: {
 				enabled: false,
 				all: false,
@@ -403,34 +402,6 @@ class Manifests extends EventEmitter {
 							}
 						}
 					});
-
-					// Delete remaining resources, if specified
-					if (this.options.deleteResources === true) {
-						_.each(remaining, (resource) => {
-							// TODO: we have encountered a lot of issues with deleting Job type resources, so we will skip trying to delete them
-							if (resource.kind !== "Job") {
-								this.emit("info", "Delete " + resource.metadata.name);
-								if (!this.options.dryRun) {
-									kubePromises.push(this.kubectl.deleteByName(resource.kind, resource.metadata.name)
-										.then((msg) => {
-											this.emit("info", msg);
-										})
-										.catch((err) => {
-											this.emit("error", "Error running kubectl.deleteByName('" + resource.kind + "', '" + resource.metadata.name + "')' " + err);
-										}));
-								}
-							}
-						});
-					} else {
-						this.emit("info", "Removal of resources disabled existing resources are not removed");
-						_.each(remaining, (resource) => {
-							// Old jobs are not removed, taking out this conditional will display
-							//   a list of old jobs that can be removed.
-							if (resource.kind !== "Job") {
-								this.emit("info", "Not removing " + resource.metadata.name);
-							}
-						});
-					}
 
 					return Promise
 						.all(kubePromises)

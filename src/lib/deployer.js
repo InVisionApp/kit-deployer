@@ -22,7 +22,6 @@ class Deployer extends EventEmitter {
 			isRollback: false,
 			diff: false,
 			force: false,
-			deleteResources: true,
 			available: {
 				enabled: false,
 				all: false,
@@ -125,7 +124,6 @@ class Deployer extends EventEmitter {
 							available: self.options.available,
 							diff: self.options.diff,
 							force: self.options.force,
-							deleteResources: self.options.deleteResources,
 							kubectl: kubectl
 						});
 						manifests.on("status", (status) => {

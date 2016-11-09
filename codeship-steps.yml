@@ -24,7 +24,7 @@
       type: push
       tag: master
       service: app
-      image_tag: "v1"
+      image_tag: "v2"
       registry: quay.io
       image_name: quay.io/invision/kit-deployer
       encrypted_dockercfg_path: codeship-dockercfg.encrypted
