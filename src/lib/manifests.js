@@ -17,6 +17,7 @@ const writeFileAsync = Promise.promisify(fs.writeFile);
 const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
+const backup = require("./backup");
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -333,6 +334,9 @@ class Manifests extends EventEmitter {
 																	return availablePromise;
 																}
 															}
+														}).then( () => {
+															this.emit("info", "Calling backup if enabled.");
+															return backup(this.options.cluster.metadata.name, manifest);
 														})
 														.catch((err) => {
 															this.emit("error", "Error running kubectl." + method.toLowerCase() + "('" + tmpApplyingConfigurationPath + "') " + err);
