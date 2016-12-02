@@ -335,8 +335,18 @@ class Manifests extends EventEmitter {
 																}
 															}
 														}).then( () => {
-															this.emit("info", "Calling backup if enabled.");
-															return backup(this.options.cluster.metadata.name, manifest);
+															this.emit("info", "Calling backup");
+															return backup(this.options.cluster.metadata.name, manifest)
+																.then( (data) => {
+																	if (!data) {
+																		this.emit("info", `No Backup of ${manifest.metadata.name}`);
+																	} else {
+																		this.emit("info", "backup result " + JSON.stringify(data));
+																	}
+																})
+																.catch( (err) => {
+																	this.emit("warning", `Warning: (${(err ? err.message : "undefined")}) Backing up ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
+																});
 														})
 														.catch((err) => {
 															this.emit("error", "Error running kubectl." + method.toLowerCase() + "('" + tmpApplyingConfigurationPath + "') " + err);

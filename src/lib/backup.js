@@ -34,7 +34,7 @@ const save = function( clusterName, manifest ) {
 		if (!clusterName || !manifest) { return reject("Cluster or Manifest not supplied") }
 
 		// If disabled skip processing
-		if (!enabled) { return resolve(); }
+		if (enabled === "false" || enabled === false) { return resolve(); }
 
 		// Create the s3 object if not already
 		if ( !s3 ) { s3 = new AWS.S3(); }
