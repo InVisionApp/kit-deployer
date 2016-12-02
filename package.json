@@ -37,7 +37,8 @@
     "request-promise": "3.0.0",
     "rimraf": "2.5.3",
     "traverse": "0.6.6",
-    "uuid": "2.0.2"
+    "uuid": "2.0.2",
+    "aws-sdk": "2.7.7"
   },
   "devDependencies": {
     "chai": "3.5.0",

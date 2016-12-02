@@ -135,6 +135,10 @@ Currently we only properly support the following types to be used as dependencie
 - `Secret`
 - `Service`
 
+### Manifest backup
+
+With `BACKUP_ENABLED` set to true each manifest will be backed up to the specified S3 bucket with the path `/AWS_BUCKET/cluster-name/manifest` _after_ the manifest has been deployed. By default files can be backed up as `yaml` or `json` format - `yaml` is the default.
+
 ## Expected environment variables
 
 The following environment variables are used by this service.
@@ -166,6 +170,11 @@ The following environment variables are used by this service.
 | `GITHUB_AUTH_TOKEN` | Your github token to the repo we are deploying (used to retrieve additional info on the commit) | yes | *empty* |
 | `GITHUB_USER` | The github user that the repo belongs to | yes | *empty* |
 | `GITHUB_REPO` | The github repo name | yes | *empty* |
+| `BACKUP_ENABLED` | Enable Backups to AWS S3 | no | false |
+| `SAVE_FORMAT` | Format to save backup manifest as (json | yaml) | no | yaml |
+| `AWS_BUCKET` | AWS s3 bucket name to save to | yes | *empty* |
+| `AWS_ACCESS_KEY_ID` | AWS User key to use | yes | *empty* |
+| `AWS_SECRET_ACCESS_KEY` | AWS User Secret to use | yes | *empty* |
 
 ## Contributing
 
