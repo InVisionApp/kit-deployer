@@ -71,28 +71,35 @@ class Manifests extends EventEmitter {
 	}
 
 	load() {
-		var manifests = [];
-		if (!this.options.dir) {
-			return manifests;
-		}
-		// validate directory, if it doesnt exist, skip processing.
-		//
-		var files = glob.sync(path.join(this.options.dir, this.options.cluster.metadata.name + "/**/*.yaml"));
-		_.each(files, (file) => {
-			// only add file if it matches selector
-			const content = yaml.safeLoad(fs.readFileSync(file, "utf8"));
-			let labels;
-			if (_.has(content, ["metadata", "labels"])) {
-				labels = content.metadata.labels;
+		return new Promise(function(resolve, reject) {
+			const manifests = [];
+			if (!this.options.dir) {
+				return manifests;
 			}
-			if (matchSelector(labels, this.options.selector)) {
-				manifests.push({
-					path: file,
-					content: content
+			// validate directory, if it doesnt exist, skip processing.
+			//
+			glob(path.join(this.options.dir, this.options.cluster.metadata.name + "/**/*.yaml"), {}, function(err, files) {
+				if (err) {
+					return reject(err);
+				}
+
+				_.each(files, (file) => {
+					// only add file if it matches selector
+					const content = yaml.safeLoad(fs.readFileSync(file, "utf8"));
+					let labels;
+					if (_.has(content, ["metadata", "labels"])) {
+						labels = content.metadata.labels;
+					}
+					if (matchSelector(labels, this.options.selector)) {
+						manifests.push({
+							path: file,
+							content: content
+						});
+					}
 				});
-			}
+				resolve(manifests);
+			});
 		});
-		return manifests;
 	}
 
 	/**
@@ -157,10 +164,12 @@ class Manifests extends EventEmitter {
 					return mkdirp(tmpDir);
 				})
 				.then(() => {
+					return this.load();
+				})
+				.then((manifestFiles) => {
 					var kubePromises = [];
 					var promiseFuncsWithDependencies = [];
 					var remaining = _.cloneDeep(existing);
-					var manifestFiles = this.load();
 					// there are no files to process, skip cluster
 					if (Array.isArray(manifestFiles) && manifestFiles.length === 0) {
 						this.emit("info", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
