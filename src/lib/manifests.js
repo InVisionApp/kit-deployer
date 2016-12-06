@@ -17,7 +17,7 @@ const writeFileAsync = Promise.promisify(fs.writeFile);
 const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
-const backup = require("./backup");
+const Backup = require("./backup");
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -61,6 +61,11 @@ class Manifests extends EventEmitter {
 			dependency: {
 				wait: 3, // 3 seconds
 				timeout: 10 * 60 // 10 minutes
+			},
+			backup: {
+				enabled: undefined,
+				bucket: "kit-manifest-backup",
+				saveFormat: "yaml"
 			},
 			kubectl: undefined
 		}, options);
@@ -146,6 +151,18 @@ class Manifests extends EventEmitter {
 			} else {
 				this.emit("info", "Getting list of " + this.supportedTypes.join(","));
 			}
+
+			// Backup
+			var backup = new Backup(this.options.backup.enabled, this.options.backup.bucket, this.options.backup.saveFormat);
+			backup.on("info", (msg) => {
+				this.emit("info", msg);
+			});
+			backup.on("debug", (msg) => {
+				this.emit("debug", msg);
+			});
+			backup.on("warn", (err) => {
+				this.emit("warn", err);
+			});
 
 			return this.kubectl
 				.list(this.supportedTypes.join(","), this.options.selector)
@@ -335,13 +352,12 @@ class Manifests extends EventEmitter {
 																}
 															}
 														}).then( () => {
-															this.emit("info", "Calling backup");
-															return backup(this.options.cluster.metadata.name, manifest)
+															return backup.save(this.options.cluster.metadata.name, manifest)
 																.then( (data) => {
 																	if (!data) {
-																		this.emit("info", `No Backup of ${manifest.metadata.name}`);
+																		this.emit("debug", `No Backup of ${manifest.metadata.name}`);
 																	} else {
-																		this.emit("info", "backup result " + JSON.stringify(data));
+																		this.emit("debug", "backup result " + JSON.stringify(data));
 																	}
 																})
 																.catch( (err) => {

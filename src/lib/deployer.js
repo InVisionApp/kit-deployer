@@ -42,6 +42,11 @@ class Deployer extends EventEmitter {
 				token: undefined,
 				user: undefined,
 				repo: undefined
+			},
+			backup: {
+				enabled: undefined,
+				bucket: undefined,
+				saveFormat: undefined
 			}
 		}, options);
 	}
@@ -124,6 +129,7 @@ class Deployer extends EventEmitter {
 							available: self.options.available,
 							diff: self.options.diff,
 							force: self.options.force,
+							backup: self.options.backup,
 							kubectl: kubectl
 						});
 						manifests.on("status", (status) => {

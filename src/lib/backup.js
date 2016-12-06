@@ -2,64 +2,80 @@
 
 const AWS = require("aws-sdk");
 const Promise = require("bluebird");
-const bucket = process.env.AWS_BUCKET;
-const enabled = (process.env.BACKUP_ENABLED || false);
-const saveFormat = ( process.env.SAVE_FORMAT === "json" ? "json" : "yaml" );
+const EventEmitter = require("events");
 const yaml = require("js-yaml");
 
-
-// validate required ENVs if enabled
-if ( enabled && ( !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !bucket ) ) {
-	throw new Error("Missing required ENV's, validate AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_BUCKET exist");
-}
-
-let s3;
-
 /**
- * Backs up the provided manifest to a s3 bucket.
- * Path is <BUCKET>/<clusterName>/<manifest-name>
- * Requires AWS Credentials as EV's:
- * AWS_ACCESS_KEY_ID
- * AWS_SECRET_ACCESS_KEY
- *   as well as the AWS_BUCKET
- *
- * @param  {[type]} clusterName [description]
- * @param  {[type]} manifest    [description]
- * @return {[type]}             [description]
+ * The AWS sdk requires these ENVs to be set:
+ * 		AWS_ACCESS_KEY_ID
+ * 		AWS_SECRET_ACCESS_KEY
  */
-const save = function( clusterName, manifest ) {
+class Backup extends EventEmitter {
 
-	return new Promise((resolve, reject) => {
-
-		if (!clusterName || !manifest) { return reject("Cluster or Manifest not supplied") }
-
-		// If disabled skip processing
-		if (enabled === "false" || enabled === false) { return resolve(); }
-
-		// Create the s3 object if not already
-		if ( !s3 ) { s3 = new AWS.S3(); }
-
-		const name = manifest.metadata.name;
-		let s3Request = {
-			Bucket: bucket,
-			Key: `${clusterName}/${manifest.metadata.name}.${saveFormat}`,
-			ServerSideEncryption: "AES256"
-		};
-
-		if (saveFormat === "yaml") {
-			// convert to YAML before save
-			 s3Request.Body = yaml.safeDump(manifest, {});
-		} else {
-			s3Request.Body = manifest;
+	constructor(enabled, bucket, saveFormat) {
+		super();
+		this.options = {
+			enabled: (enabled === true || enabled === "true"),
+			bucket: bucket,
+			saveFormat: ( saveFormat === "json" ? "json" : "yaml" )
 		}
-		// Save file to s3 bucket.
-		s3.putObject(s3Request, function(err, data) {
-			if (err) {
-				return reject(err);
+		if (this.options.enabled &&
+				(!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !this.options.bucket)) {
+				throw new Error("Missing required ENV's, validate AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_BUCKET exist");
+		}
+		if (this.options.enabled) {
+			this.s3 = new AWS.S3();
+		}
+		this.emit("info", `Backup is ${this.options.enabled} for bucket ${this.options.bucket}`);
+	}
+
+	/**
+	 * Backs up the provided manifest to a s3 bucket.
+	 * Path is <BUCKET>/<clusterName>/<manifest-name>
+	 * Requires AWS Credentials as EV's:
+	 * AWS_ACCESS_KEY_ID
+	 * AWS_SECRET_ACCESS_KEY
+	 *   as well as the AWS_BUCKET
+	 *
+	 * @param  {[type]} clusterName [description]
+	 * @param  {[type]} manifest    [description]
+	 * @return {[type]}             [description]
+	 */
+	save( clusterName, manifest ) {
+
+		return new Promise((resolve, reject) => {
+
+			if (!clusterName || !manifest) { return reject("Cluster or Manifest not supplied") }
+
+			// If NOT enabled skip processing
+			if (!this.options.enabled) { return resolve(); }
+
+			const name = manifest.metadata.name;
+			let s3Request = {
+				Bucket: this.options.bucket,
+				Key: `${clusterName}/${manifest.metadata.name}.${this.options.saveFormat}`,
+				ServerSideEncryption: "AES256"
+			};
+
+			if (this.options.saveFormat === "yaml") {
+				// convert to YAML before save
+				 s3Request.Body = yaml.safeDump(manifest, {});
+			} else {
+				s3Request.Body = manifest;
 			}
-			return resolve(data);
+			// Save file to s3 bucket.
+			const _self = this;
+			this.s3.putObject(s3Request, function(err, data) {
+				if (err) {
+					_self.emit("warn", `Issue saving backup: ${err.message}`);
+					return reject(err);
+				}
+				_self.emit("debug", `Saved file ${clusterName}/${manifest.metadata.name}.${_self.options.saveFormat}`)
+				return resolve(data);
+			});
 		});
-	});
+	}
+
 }
 
-module.exports = save;
+module.exports = Backup;

@@ -37,9 +37,12 @@ program
 	.option("--dependency-wait <int>", "The number of seconds to wait between status check attempts for a dependency", parseInt, parseInt(process.env.DEPENDENCY_WAIT))
 	.option("--dependency-timeout <int>", "The number of seconds to wait before timing out waiting for a dependency to be available", parseInt, parseInt(process.env.DEPENDENCY_TIMEOUT))
 	.option("--github-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.GITHUB_ENABLED))
+	.option("--github-repo <repo>", "", process.env.GITHUB_REPO)
 	.option("--github-token <token>", "", process.env.GITHUB_AUTH_TOKEN)
 	.option("--github-user <user>", "", process.env.GITHUB_USER)
-	.option("--github-repo <repo>", "", process.env.GITHUB_REPO)
+	.option("--backup-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.BACKUP_ENABLED))
+	.option("--save-foramt <format>", "", process.env.SAVE_FORMAT)
+	.option("--aws-bucket <bucket>", "", process.env.AWS_BUCKET)
 	.parse(process.argv)
 ;
 
@@ -69,6 +72,11 @@ const options = {
 	dependency: {
 		wait: program.dependencyWait,
 		timeout: program.dependencyTimeout
+	},
+	backup: {
+		enabled: program.backupEnabled,
+		bucket: program.awsBucket,
+		saveFormat: program.saveFormat
 	},
 	github: {
 		enabled: program.githubEnabled,
