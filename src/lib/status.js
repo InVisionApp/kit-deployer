@@ -6,6 +6,7 @@ const EventEmitter = require("events").EventEmitter;
 const KeepAlive = require("./keep-alive");
 const HealthCheck = require("./health-check");
 const TimeoutError = require("../util/timeout-error");
+const PauseError = require("../util/pause-error");
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -83,21 +84,33 @@ class Status extends EventEmitter {
 				this.emit("_error", err);
 			});
 			watcher.on("change", (res) => {
-				function stop(context) {
-					context.emit("info", resource + ":" + name + " is available");
+				function stop(context, err) {
 					watcher.stop();
 					healthCheck.stop();
 					if (keepAlive) {
 						keepAlive.stop();
 					}
 					clearTimeout(timeoutId);
-					resolve(res);
+
+					if (err) {
+						reject(err);
+					} else {
+						context.emit("info", resource + ":" + name + " is available");
+						resolve(res);
+					}
 				}
 
 				switch (resource) {
 					case "Deployment":
 						// Need to verify all pods are available within the deployment
 						var generation = null;
+
+						// If a deployment is paused, we should consider the deployment a failure instantly
+						if (_.has(res, "spec", "paused") && res.spec.paused) {
+							stop(this, new PauseError("Resource " + resource + ":" + name + " is paused"));
+							break;
+						}
+
 						if (_.has(res, "metadata", "generation") && res.metadata.generation !== undefined) {
 							generation = parseInt(res.metadata.generation);
 						}
@@ -119,12 +132,14 @@ class Status extends EventEmitter {
 						if (availableReplicas !== null && replicas !== null) {
 							this.emit("info", resource + ":" + name + " has " + availableReplicas + "/" + replicas + " replicas available");
 						}
-						if (generation !== null &&
+						if (
+							generation !== null &&
 							observedGeneration !== null &&
 							availableReplicas !== null &&
 							replicas !== null &&
 							observedGeneration >= generation &&
-							availableReplicas >= replicas) {
+							availableReplicas >= replicas
+						) {
 							stop(this);
 						}
 						break;
