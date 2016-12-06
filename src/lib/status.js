@@ -127,10 +127,10 @@ class Status extends EventEmitter {
 							replicas = parseInt(res.status.replicas);
 						}
 						if (generation !== null && observedGeneration !== null) {
-							this.emit("info", resource + ":" + name + " has " + observedGeneration + "/" + generation + " observed generation");
+							this.emit("debug", resource + ":" + name + " has " + observedGeneration + "/" + generation + " observed generation");
 						}
 						if (availableReplicas !== null && replicas !== null) {
-							this.emit("info", resource + ":" + name + " has " + availableReplicas + "/" + replicas + " replicas available");
+							this.emit("debug", resource + ":" + name + " has " + availableReplicas + "/" + replicas + " replicas available");
 						}
 						if (
 							generation !== null &&
@@ -150,7 +150,7 @@ class Status extends EventEmitter {
 							succeeded = parseInt(res.status.succeeded);
 						}
 						if (succeeded !== null) {
-							this.emit("info", resource + ":" + name + " has " + succeeded + "/1 succeeded");
+							this.emit("debug", resource + ":" + name + " has " + succeeded + "/1 succeeded");
 							if (succeeded) {
 								stop(this);
 							}
@@ -167,7 +167,7 @@ class Status extends EventEmitter {
 							currentNumberScheduled = parseInt(res.status.currentNumberScheduled);
 						}
 						if (desiredNumberScheduled !== null && currentNumberScheduled !== null) {
-							this.emit("info", resource + ":" + name + " has " + currentNumberScheduled + "/" + desiredNumberScheduled + " scheduled");
+							this.emit("debug", resource + ":" + name + " has " + currentNumberScheduled + "/" + desiredNumberScheduled + " scheduled");
 							if (desiredNumberScheduled >= currentNumberScheduled) {
 								stop(this);
 							}

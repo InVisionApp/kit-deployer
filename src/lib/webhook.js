@@ -8,6 +8,7 @@ const request = require("request-promise");
  * Use the change method to automatically send necessary webhooks
  * @param {object} options - Object of parameters (url, isRollback)
  * @fires Webhook#done
+ * @fires Webhook#debug
  * @fires Webhook#info
  * @fires Webhook#error
  */
@@ -71,7 +72,7 @@ class Webhook extends EventEmitter {
 		_.each(this.options.urls, (url) => {
 			const urlWithService = url + "/" + name;
 			const phaseStatusMessage = urlWithService + " for " + name + " with status " + phase + "/" + status;
-			this.emit("info", "Sending payload to " + phaseStatusMessage);
+			this.emit("debug", "Sending payload to " + phaseStatusMessage);
 			promises.push(request({
 				method: "POST",
 				uri: urlWithService,

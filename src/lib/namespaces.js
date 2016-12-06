@@ -44,12 +44,13 @@ class Namespaces extends EventEmitter {
 	/**
 	 * Deploys the namespaces to the cluster if they don't already exist.
 	 * @param {string} resource - A single resource type to watch
+	 * @fires Namespaces#debug
 	 * @fires Namespaces#info
 	 * @fires Namespaces#error
 	 */
 	deploy() {
 		return new Promise((resolve, reject) => {
-			this.emit("info", "Getting list of namespaces");
+			this.emit("debug", "Getting list of namespaces");
 			this.kubectl
 				.list("namespaces")
 				.then((list) => {

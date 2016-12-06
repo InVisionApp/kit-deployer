@@ -39,6 +39,7 @@ class Dependencies extends EventEmitter {
 	 * are all available
 	 * @param {string} manifest
 	 * @param {string} checkAvailable
+	 * @fires Dependencies#debug
 	 * @fires Dependencies#info
 	 */
 	ready(manifest, checkAvailable) {
@@ -48,7 +49,7 @@ class Dependencies extends EventEmitter {
 			// Find dependencies in manifest
 			var selector = this.find(manifest);
 			if (selector) {
-				this.emit("info", "Dependency detected for " + manifest.metadata.name + " <= " + selector);
+				this.emit("debug", "Dependency detected for " + manifest.metadata.name + " <= " + selector);
 				// Only check for dependency availablity if enabled
 				if (checkAvailable) {
 					promises.push(this

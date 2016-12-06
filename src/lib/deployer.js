@@ -20,6 +20,7 @@ class Deployer extends EventEmitter {
 			selector: undefined,
 			dryRun: true,
 			isRollback: false,
+			debug: false,
 			diff: false,
 			force: false,
 			available: {
@@ -70,6 +71,9 @@ class Deployer extends EventEmitter {
 					urls: self.options.available.webhooks,
 					isRollback: self.options.isRollback
 				});
+				webhook.on("debug", (msg) => {
+					self.emit("debug", msg);
+				});
 				webhook.on("info", (msg) => {
 					self.emit("info", msg);
 				});
@@ -82,6 +86,9 @@ class Deployer extends EventEmitter {
 				// Parse the cluster yaml file to JSON
 				var config = yaml.safeLoad(fs.readFileSync(configFile, "utf8"));
 
+				function clusterDebug(message) {
+					self.emit("debug", config.metadata.name + " - " + message);
+				}
 				function clusterLog(message) {
 					self.emit("info", config.metadata.name + " - " + message);
 				}
@@ -113,6 +120,7 @@ class Deployer extends EventEmitter {
 					dryRun: self.options.dryRun,
 					kubectl: kubectl
 				});
+				namespaces.on("debug", clusterDebug);
 				namespaces.on("info", clusterLog);
 				namespaces.on("error", clusterError);
 				promises.push(namespaces
@@ -143,8 +151,9 @@ class Deployer extends EventEmitter {
 								}
 							}
 						});
+						manifests.on("debug", clusterDebug);
 						manifests.on("info", clusterLog);
-						manifests.on("warning", clusterWarning);
+						manifests.on("warn", clusterWarning);
 						manifests.on("error", (msg) => {
 							clusterError(msg);
 							errors.push(msg);
@@ -167,7 +176,7 @@ class Deployer extends EventEmitter {
 				})
 				.finally(function() {
 					if (self.options.dryRun) {
-						self.emit("info", "This was a dry run and no changes were deployed");
+						self.emit("debug", "This was a dry run and no changes were deployed");
 					}
 					if (errors.length) {
 						self.emit("error", errors.length + " errors occurred");

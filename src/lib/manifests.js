@@ -116,6 +116,9 @@ class Manifests extends EventEmitter {
 			var dependencies = new Dependencies({
 				kubectl: this.kubectl
 			});
+			dependencies.on("debug", (msg) => {
+				this.emit("debug", msg);
+			});
 			dependencies.on("info", (msg) => {
 				this.emit("info", msg);
 			});
@@ -128,6 +131,9 @@ class Manifests extends EventEmitter {
 				keepAliveInterval: this.options.available.keepAliveInterval,
 				timeout: this.options.available.timeout,
 				kubectl: this.kubectl
+			});
+			status.on("debug", (msg) => {
+				this.emit("debug", msg);
 			});
 			status.on("info", (msg) => {
 				this.emit("info", msg);
@@ -147,9 +153,9 @@ class Manifests extends EventEmitter {
 			var existing = [];
 
 			if (this.options.selector) {
-				this.emit("info", "Getting list of " + this.supportedTypes.join(",") + " matching '" + this.options.selector + "'");
+				this.emit("debug", "Getting list of " + this.supportedTypes.join(",") + " matching '" + this.options.selector + "'");
 			} else {
-				this.emit("info", "Getting list of " + this.supportedTypes.join(","));
+				this.emit("debug", "Getting list of " + this.supportedTypes.join(","));
 			}
 
 			// Backup
@@ -171,7 +177,7 @@ class Manifests extends EventEmitter {
 					existing = results.items;
 				})
 				.then(() => {
-					this.emit("info", "Generating tmp directory: " + tmpDir);
+					this.emit("debug", "Generating tmp directory: " + tmpDir);
 					return mkdirp(tmpDir);
 				})
 				.then(() => {
@@ -181,7 +187,7 @@ class Manifests extends EventEmitter {
 					var manifestFiles = this.load();
 					// there are no files to process, skip cluster
 					if (Array.isArray(manifestFiles) && manifestFiles.length === 0) {
-						this.emit("info", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
+						this.emit("debug", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
 						return Promise.resolve();
 					}
 					_.each(manifestFiles, (manifestFile) => {
@@ -205,7 +211,7 @@ class Manifests extends EventEmitter {
 
 						// Only parse manifests that are supported
 						if (this.supportedTypes.indexOf(manifest.kind.toLowerCase()) < 0) {
-							this.emit("warning", "Skipping " + manifestName + " because " + manifest.kind + " is unsupported");
+							this.emit("warn", "Skipping " + manifestName + " because " + manifest.kind + " is unsupported");
 							return;
 						}
 
@@ -264,7 +270,7 @@ class Manifests extends EventEmitter {
 									skipCheck = github.getCommit(this.options.github.user, this.options.github.repo, this.options.sha)
 										.then((res) => {
 											if (committerDate && _.has(res, ["commit", "committer", "date"]) && committerDate.getTime() > new Date(res.commit.committer.date).getTime()) {
-												this.emit("warning", "Skipping " + manifestName + " because cluster has newer commit");
+												this.emit("warn", "Skipping " + manifestName + " because cluster has newer commit");
 												return true;
 											}
 											return false;
@@ -361,7 +367,7 @@ class Manifests extends EventEmitter {
 																	}
 																})
 																.catch( (err) => {
-																	this.emit("warning", `Warning: (${(err ? err.message : "undefined")}) Backing up ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
+																	this.emit("warn", `Warning: (${(err ? err.message : "undefined")}) Backing up ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
 																});
 														})
 														.catch((err) => {
@@ -477,7 +483,7 @@ class Manifests extends EventEmitter {
 				})
 				.finally(() => {
 					return rimraf(tmpDir).then(() => {
-						this.emit("info", "Deleted tmp directory: " + tmpDir);
+						this.emit("debug", "Deleted tmp directory: " + tmpDir);
 					});
 				});
 		});

@@ -8,7 +8,7 @@ var _ = require("lodash");
 var Promise = require("bluebird");
 
 describe("Dependencies.ready", function() {
-	var clock, kubectlListResolve, kubectlListReject, kubectlListSpy, dependencies, onInfo;
+	var clock, kubectlListResolve, kubectlListReject, kubectlListSpy, dependencies, onInfo, onDebug;
 	before(function() {
 		clock = sinon.useFakeTimers();
 	});
@@ -28,7 +28,9 @@ describe("Dependencies.ready", function() {
 		dependencies = new Dependencies({
 			kubectl: kubectl
 		});
+		onDebug = sinon.spy();
 		onInfo = sinon.spy();
+		dependencies.on("debug", onDebug);
 		dependencies.on("info", onInfo);
 	});
 
@@ -44,7 +46,7 @@ describe("Dependencies.ready", function() {
 				manifestDependencies = dependencies.find(context.manifest);
 			});
 			it("should log detected dependencies", function() {
-				expect(onInfo).to.have.been.calledWith("Dependency detected for " + context.manifest.metadata.name + " <= " + manifestDependencies);
+				expect(onDebug).to.have.been.calledWith("Dependency detected for " + context.manifest.metadata.name + " <= " + manifestDependencies);
 			});
 			it("should call kubectl with desired 'selector'", function() {
 				expect(kubectlListSpy).to.have.been.callCount(1);
