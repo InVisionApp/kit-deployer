@@ -45,15 +45,25 @@ class KubectlWatcher extends EventEmitter {
 }
 
 class KubectlEventWatcher extends EventEmitter {
-	constructor(kubectl) {
+	constructor(kubectl, since) {
 		super();
 		this.kubectl = kubectl;
 		this.interval = 3 * 1000; // 3 second polling
 		this._previousEvents = {};
+
+		if (since instanceof Date) {
+			this.since = since.getTime();
+		} else if (since === -1) {
+			this.since = since;
+		} else {
+			this.since = null;
+		}
 	}
 
 	start() {
-		this._startTime = new Date().getTime();
+		if (this.since === null) {
+			this.since = new Date().getTime();
+		}
 		this.query();
 	}
 
@@ -69,8 +79,8 @@ class KubectlEventWatcher extends EventEmitter {
 							if (_.has(event, ["metadata", "uid"])) {
 								if (this._previousEvents[event.metadata.uid]) {
 									// We already emitted this event, so do nothing
-								} else if (_.has(event, ["firstTimestamp"]) && new Date(event.firstTimestamp).getTime() < this._startTime) {
-									// Ignore events that first occurred before we started watching
+								} else if (_.has(event, ["firstTimestamp"]) && new Date(event.firstTimestamp).getTime() < this.since) {
+									// Ignore events that first occurred before since date
 								} else {
 									// New event, emit it
 									this._previousEvents[event.metadata.uid] = event;
@@ -241,13 +251,14 @@ class Kubectl {
 
 	/**
 	 * Watches events for given resource and emits events on new events.
-	 * @param {string} resource - A single resource type to watch events for
-	 * @param {string} name - The name of the resource to watch events for
+	 * @param {string} since - Will only emit events that first happened after this
+	 * datetime, by default is the date at which you call the start method. Set to
+	 * -1 to emit all events.
 	 * @fires KubectlWatcher#new
 	 * @fires KubectlWatcher#error
 	 */
-	events() {
-		return new KubectlEventWatcher(this);
+	events(since) {
+		return new KubectlEventWatcher(this, since);
 	}
 }
 

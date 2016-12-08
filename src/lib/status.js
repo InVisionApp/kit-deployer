@@ -39,12 +39,14 @@ class Status extends EventEmitter {
 	 * Returns a promise that resolves when the provided resource is available
 	 * @param {string} resource - A single resource type to watch
 	 * @param {string} name - The metadata name of the resource
+	 * @param {string} differences - Set to true if you want to check only the status of
+	 * changes you deployed. Set to false if you are checking if the current resource is available.
 	 * @fires Status#debug
 	 * @fires Status#error
 	 * @fires Status#info
 	 * @return {object} promise
 	 */
-	available(resource, name) {
+	available(resource, name, differences) {
 		return new Promise((resolve, reject) => {
 			let timeoutId, keepAlive;
 
@@ -61,7 +63,10 @@ class Status extends EventEmitter {
 			}
 
 			// Setup healthcheck
-			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod);
+			// If the resource has already been deployed and we're just re-checking it's status, we
+			// need to make sure the healthcheck observes all events for the resource
+			const since = (differences) ? null : -1;
+			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod, since);
 			healthCheck.on("error", (err) => {
 				this.emit("_error", err);
 			});
@@ -142,7 +147,7 @@ class Status extends EventEmitter {
 							this.emit("debug", resource + ":" + name + " has " + availableReplicas + "/" + replicas + " replicas available");
 						}
 						if (unavailableReplicas !== null && replicas !== null) {
-							this.emit("debug", resource + ":" + name + " has " + unavailableReplicas + "/" + replicas + " replicas unavailable");
+							this.emit("debug", resource + ":" + name + " has " + unavailableReplicas + " replicas unavailable");
 						}
 
 						if (

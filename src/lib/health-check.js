@@ -4,14 +4,23 @@ const _ = require("lodash");
 const EventEmitter = require("events").EventEmitter;
 const EventError = require("../util/event-error");
 
+const errorReasons = [
+	"NodeOutOfDisk",
+	"BackOff",
+	"ImagePullBackOff",
+	"FailedSync",
+	"MissingClusterDNS",
+	"NodeNotSchedulable"
+];
+
 /**
  * @fires HealthCheck#debug
  * @fires HealthCheck#error
  */
 class HealthCheck extends EventEmitter {
-	constructor(kubectl, gracePeriod) {
+	constructor(kubectl, gracePeriod, since) {
 		super();
-		this.events = kubectl.events();
+		this.events = kubectl.events(since);
 		this.errorTimeoutId = null;
 		this.gracePeriod = (typeof gracePeriod === "undefined") ? 10 * 1000 : gracePeriod * 1000; // 10 seconds
 	}
@@ -21,13 +30,16 @@ class HealthCheck extends EventEmitter {
 			if (!_.has(event, ["type"])) {
 				return;
 			}
+			if (!_.has(event, ["reason"]) && _.isString(event.reason)) {
+				return;
+			}
 
 			// Only concern ourselves with events that match name
 			if (!(_.has(event, ["involvedObject", "name"]) && event.involvedObject.name.startsWith(name))) {
 				return;
 			}
 
-			if (event.type != "Normal") {
+			if (event.type != "Normal" || event.reason.indexOf(errorReasons) > -1) {
 				// We only care about the first error we receive, ignore any errors afterwards
 				if (this.errorTimeoutId === null) {
 					// Emit error unless stop is called before grace period expires

@@ -328,7 +328,7 @@ class Manifests extends EventEmitter {
 															// Only check if resource is available if it's required
 															if (this.options.available.enabled) {
 																var availablePromise = status
-																	.available(manifest.kind, manifestName)
+																	.available(manifest.kind, manifestName, differences)
 																	.then(() => {
 																		this.emit("status", {
 																			cluster: this.options.cluster.metadata.name,
