@@ -39,6 +39,7 @@ class Status extends EventEmitter {
 	 * Returns a promise that resolves when the provided resource is available
 	 * @param {string} resource - A single resource type to watch
 	 * @param {string} name - The metadata name of the resource
+	 * @fires Status#debug
 	 * @fires Status#error
 	 * @fires Status#info
 	 * @return {object} promise
@@ -63,6 +64,9 @@ class Status extends EventEmitter {
 			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod);
 			healthCheck.on("error", (err) => {
 				this.emit("_error", err);
+			});
+			healthCheck.on("debug", (msg) => {
+				this.emit("debug", msg);
 			});
 
 			// Setup watcher
@@ -107,7 +111,7 @@ class Status extends EventEmitter {
 
 						// If a deployment is paused, we should consider the deployment a failure instantly
 						if (_.has(res, "spec", "paused") && res.spec.paused) {
-							stop(this, new PauseError("Resource " + resource + ":" + name + " is paused"));
+							stop(this, new PauseError(resource + ":" + name));
 							break;
 						}
 
@@ -118,6 +122,10 @@ class Status extends EventEmitter {
 						if (_.has(res, "status", "observedGeneration") && res.status.observedGeneration !== undefined) {
 							observedGeneration = parseInt(res.status.observedGeneration);
 						}
+						var unavailableReplicas = 0;
+						if (_.has(res, "status", "unavailableReplicas") && res.status.unavailableReplicas !== undefined) {
+							unavailableReplicas = parseInt(res.status.unavailableReplicas);
+						}
 						var availableReplicas = null;
 						if (_.has(res, "status", "availableReplicas") && res.status.availableReplicas !== undefined) {
 							availableReplicas = parseInt(res.status.availableReplicas);
@@ -126,17 +134,23 @@ class Status extends EventEmitter {
 						if (_.has(res, "status", "replicas") && res.status.replicas !== undefined) {
 							replicas = parseInt(res.status.replicas);
 						}
+
 						if (generation !== null && observedGeneration !== null) {
 							this.emit("debug", resource + ":" + name + " has " + observedGeneration + "/" + generation + " observed generation");
 						}
 						if (availableReplicas !== null && replicas !== null) {
 							this.emit("debug", resource + ":" + name + " has " + availableReplicas + "/" + replicas + " replicas available");
 						}
+						if (unavailableReplicas !== null && replicas !== null) {
+							this.emit("debug", resource + ":" + name + " has " + unavailableReplicas + "/" + replicas + " replicas unavailable");
+						}
+
 						if (
 							generation !== null &&
 							observedGeneration !== null &&
 							availableReplicas !== null &&
 							replicas !== null &&
+							unavailableReplicas == 0 &&
 							observedGeneration >= generation &&
 							availableReplicas >= replicas
 						) {
@@ -183,6 +197,7 @@ class Status extends EventEmitter {
 			});
 
 			// Start watching
+			this.emit("info", "Waiting for " + resource + ":" + name + " to be available...");
 			watcher.start();
 
 			// Start observing health of deployment

@@ -2,12 +2,17 @@
 
 const _ = require("lodash");
 const EventEmitter = require("events").EventEmitter;
+const EventError = require("../util/event-error");
 
+/**
+ * @fires HealthCheck#debug
+ * @fires HealthCheck#error
+ */
 class HealthCheck extends EventEmitter {
 	constructor(kubectl, gracePeriod) {
 		super();
 		this.events = kubectl.events();
-		this.errorEvents = {};
+		this.errorTimeoutId = null;
 		this.gracePeriod = (typeof gracePeriod === "undefined") ? 10 * 1000 : gracePeriod * 1000; // 10 seconds
 	}
 
@@ -23,22 +28,14 @@ class HealthCheck extends EventEmitter {
 			}
 
 			if (event.type != "Normal") {
-				// If the involved object doesn't show a normal event within gracePeriod, throw error
-				if (_.has(event, ["involvedObject", "uid"])) {
-					if (!this.errorEvents[event.involvedObject.uid]) {
-						this.errorEvents[event.involvedObject.uid] = [];
-					}
-					this.errorEvents[event.involvedObject.uid].push(setTimeout(() => {
-						this.emit("error", event);
-					}, this.gracePeriod));
-				}
-			} else {
-				// If the involved object has shown an error before, let's disregard it as a newer event
-				// shows Normal so assume it automatically recovered within the gracePeriod time
-				if (_.has(event, ["involvedObject", "uid"]) && this.errorEvents[event.involvedObject.uid]) {
-					_.each(this.errorEvents[event.involvedObject.uid], (timeoutId) => {
-						clearTimeout(timeoutId);
-					});
+				// We only care about the first error we receive, ignore any errors afterwards
+				if (this.errorTimeoutId === null) {
+					// Emit error unless stop is called before grace period expires
+					this.emit("debug", "Healthcheck detected error, waiting grace period " + this.gracePeriod + "ms before emitting");
+					this.errorTimeoutId = setTimeout(() => {
+						this.emit("debug", "Healthcheck grace period of " + this.gracePeriod + "ms expired");
+						this.emit("error", new EventError(event));
+					}, this.gracePeriod);
 				}
 			}
 		});
@@ -46,12 +43,12 @@ class HealthCheck extends EventEmitter {
 	}
 
 	stop() {
+		this.emit("debug", "Stopping healthcheck watcher");
 		this.events.stop();
-		_.each(this.errorEvents, (event) => {
-			_.each(event, (timeoutId) => {
-				clearTimeout(timeoutId);
-			});
-		});
+		if (this.errorTimeoutId !== null) {
+			this.emit("debug", "Clearing healthcheck timeout");
+			clearTimeout(this.errorTimeoutId);
+		}
 		this.removeAllListeners();
 	}
 }

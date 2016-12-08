@@ -69,8 +69,8 @@ class KubectlEventWatcher extends EventEmitter {
 							if (_.has(event, ["metadata", "uid"])) {
 								if (this._previousEvents[event.metadata.uid]) {
 									// We already emitted this event, so do nothing
-								} else if (_.has(event, ["metadata", "creationTimestamp"]) && new Date(event.metadata.creationTimestamp).getTime() < this._startTime) {
-									// Ignore events that occurred before we started watching
+								} else if (_.has(event, ["firstTimestamp"]) && new Date(event.firstTimestamp).getTime() < this._startTime) {
+									// Ignore events that first occurred before we started watching
 								} else {
 									// New event, emit it
 									this._previousEvents[event.metadata.uid] = event;

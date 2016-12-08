@@ -179,8 +179,8 @@ class Deployer extends EventEmitter {
 						self.emit("debug", "This was a dry run and no changes were deployed");
 					}
 					if (errors.length) {
-						self.emit("error", errors.length + " errors occurred");
-						return reject(errors);
+						self.emit("error", errors.length + " errors occurred, rejecting with first error");
+						return reject(errors[0]);
 					}
 					self.emit("info", "Finished successfully");
 					return resolve();
