@@ -30,7 +30,7 @@ class HealthCheck extends EventEmitter {
 			if (!_.has(event, ["type"])) {
 				return;
 			}
-			if (!_.has(event, ["reason"]) && _.isString(event.reason)) {
+			if (!_.has(event, ["reason"]) || !_.isString(event.reason)) {
 				return;
 			}
 

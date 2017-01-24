@@ -13,6 +13,8 @@ const supportedTypes = [
 	"service",
 	"secret",
 	"job",
+	"scheduledjob",
+	"cronjob",
 	"daemonset",
 	"persistentvolumeclaim"
 ];

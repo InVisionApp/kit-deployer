@@ -24,8 +24,21 @@ const supportedTypes = [
 	"service",
 	"secret",
 	"job",
+	"scheduledjob",
+	"cronjob",
 	"daemonset",
 	"persistentvolumeclaim"
+];
+const mustBeUnique = [
+	"Job",
+	"ScheduledJob",
+	"CronJob"
+];
+const mustBeRecreated = [
+	"DaemonSet",
+	"Job",
+	"ScheduledJob",
+	"CronJob"
 ];
 
 const commitKey = "kit-deployer/commit";
@@ -205,7 +218,7 @@ class Manifests extends EventEmitter {
 						// To avoid issues with deleting/creating jobs, we instead create a new job with a unique name that is based
 						// on the contents of the manifest
 						var manifestName = manifest.metadata.name;
-						if (manifest.kind === "Job") {
+						if (mustBeUnique.indexOf(manifest.kind) >= 0) {
 							manifestName = manifest.metadata.name + "-" + applyingConfigurationHash;
 						}
 
@@ -223,7 +236,7 @@ class Manifests extends EventEmitter {
 							// Generally, we should never have a situtation where we are "updating" a job as we instead
 							// create a new job if changes are detected, so this is here just to catch any odd case where
 							// we need to recreate the job
-							if (["DaemonSet", "Job"].indexOf(manifest.kind) >= 0) {
+							if (mustBeRecreated.indexOf(manifest.kind) >= 0) {
 								method = "Recreate";
 							} else {
 								method = "Apply";

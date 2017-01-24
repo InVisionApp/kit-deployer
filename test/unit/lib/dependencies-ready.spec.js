@@ -50,7 +50,7 @@ describe("Dependencies.ready", function() {
 			});
 			it("should call kubectl with desired 'selector'", function() {
 				expect(kubectlListSpy).to.have.been.callCount(1);
-				expect(kubectlListSpy).to.have.been.calledWith("deployments,services,secrets,jobs", manifestDependencies);
+				expect(kubectlListSpy).to.have.been.calledWith("deployment,service,secret,job,scheduledjob,cronjob", manifestDependencies);
 			});
 
 			describe("and kubectl request error", function() {

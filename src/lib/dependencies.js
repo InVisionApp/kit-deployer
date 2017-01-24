@@ -4,10 +4,12 @@ const _ = require("lodash");
 const Promise = require("bluebird");
 const EventEmitter = require("events");
 const supportedTypes = [
-	"deployments",
-	"services",
-	"secrets",
-	"jobs"
+	"deployment",
+	"service",
+	"secret",
+	"job",
+	"scheduledjob",
+	"cronjob"
 ];
 
 const dependenciesKey = "kit-deployer/dependency-selector";
@@ -107,7 +109,7 @@ class Dependencies extends EventEmitter {
 								if (resource.status.availableReplicas !== resource.status.replicas) {
 									throw new Error("Dependency " + resource.metadata.name + " not available yet");
 								}
-							} else if (resource.kind === "Job") {
+							} else if (["Job", "ScheduledJob", "CronJob"].indexOf(resource.kind) >= 0) {
 								// Need to verify job has completed successfully
 								if (!resource.status.succeeded) {
 									throw new Error("Dependency " + resource.metadata.name + " not available yet");
