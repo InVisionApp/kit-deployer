@@ -7,9 +7,7 @@ const supportedTypes = [
 	"deployment",
 	"service",
 	"secret",
-	"job",
-	"scheduledjob",
-	"cronjob"
+	"job"
 ];
 
 const dependenciesKey = "kit-deployer/dependency-selector";

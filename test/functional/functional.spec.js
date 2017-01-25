@@ -7,6 +7,7 @@ describe("Functional", function() {
 
 	beforeEach(function() {
 		process.env.SELECTOR = "app in (test)";
+		process.env.DEBUG = "true";
 		process.env.DRY_RUN = "false";
 		process.env.DIFF = "true";
 		process.env.GITHUB_ENABLED = "false";
@@ -27,15 +28,15 @@ describe("Functional", function() {
 				process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
 
 				exec("./src/deployer", function(error, stdout, stderr) {
-					expect(error).to.be.null;
+					expect(error).to.be.a("null", stdout);
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
-					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain("Generating tmp directory:", stdout);
 					expect(stdout).to.contain("example-cluster - Getting list of namespaces");
 					expect(stdout).to.contain("example-cluster - Create example namespace");
 					expect(stdout).to.contain("example-cluster - namespace \"example\" created");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
-					expect(stdout).to.contain("example-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+					expect(stdout).to.contain("example-cluster - Getting list of service matching 'app in (test)'");
 					expect(stdout).to.contain("example-cluster - Found 0 resources");
 					expect(stdout).to.contain("example-cluster - Create auth-svc");
 					expect(stdout).to.contain("example-cluster - service \"auth-svc\" created");
@@ -53,7 +54,7 @@ describe("Functional", function() {
 				process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
 
 				exec("./src/deployer", function(error, stdout, stderr) {
-					expect(error).to.be.null;
+					expect(error).to.be.a("null", stdout);
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
@@ -61,7 +62,7 @@ describe("Functional", function() {
 					expect(stdout).not.to.contain("example-cluster - Create example namespace");
 					expect(stdout).not.to.contain("example-cluster - namespace \"example\" created");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
-					expect(stdout).to.contain("example-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+					expect(stdout).to.contain("example-cluster - Getting list of service matching 'app in (test)'");
 					expect(stdout).not.to.contain("example-cluster - Create auth-svc");
 					expect(stdout).not.to.contain("example-cluster - service \"auth-svc\" created");
 					expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
@@ -111,7 +112,7 @@ describe("Functional", function() {
 				process.env.CONFIGS = "/test/functional/clusters/configs/multi-deployments-kubeconfig.yaml";
 
 				exec("./src/deployer", function(error, stdout, stderr) {
-					expect(error).to.be.null;
+					expect(error).to.be.a("null", stdout);
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
@@ -120,7 +121,7 @@ describe("Functional", function() {
 					expect(stdout).to.contain("multi-deployments-cluster - namespace \"multi-deployments\" created");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status STARTED/IN_PROGRESS");
-					expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+					expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment matching 'app in (test)'");
 					expect(stdout).to.contain("multi-deployments-cluster - Found 0 resources");
 					expect(stdout).to.contain("multi-deployments-cluster - Create nginx1-deployment");
 					expect(stdout).to.contain("multi-deployments-cluster - Create nginx2-deployment");
@@ -144,7 +145,7 @@ describe("Functional", function() {
 				process.env.CONFIGS = "/test/functional/clusters/configs/multi-deployments-kubeconfig.yaml";
 
 				exec("./src/deployer", function(error, stdout, stderr) {
-					expect(error).to.be.null;
+					expect(error).to.be.a("null", stdout);
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
@@ -153,7 +154,7 @@ describe("Functional", function() {
 					expect(stdout).not.to.contain("multi-deployments-cluster - namespace \"multi-deployments\" created");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status STARTED/IN_PROGRESS");
-					expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+					expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment matching 'app in (test)'");
 					expect(stdout).to.contain("multi-deployments-cluster - Found 2 resources");
 					expect(stdout).not.to.contain("multi-deployments-cluster - Create nginx1-deployment");
 					expect(stdout).not.to.contain("multi-deployments-cluster - Create nginx2-deployment");
@@ -180,18 +181,91 @@ describe("Functional", function() {
 		});
 	});
 
+	describe("when deploying mix deployment and service cluster", function() {
+		const clusterName = "mix-deployment-service-cluster";
+		describe("and mix-deployment-service cluster does not exist yet", function() {
+			it("should deploy without error", function(done) {
+				process.env.CONFIGS = "/test/functional/clusters/configs/mix-deployment-service-kubeconfig.yaml";
+
+				exec("./src/deployer", function(error, stdout, stderr) {
+					expect(error).to.be.a("null", stdout);
+					expect(stderr).to.be.empty;
+					expect(stdout).not.to.be.empty;
+					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
+					expect(stdout).to.contain(clusterName + " - Create mix-deployment-service namespace");
+					expect(stdout).to.contain(clusterName + " - namespace \"mix-deployment-service\" created");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
+					expect(stdout).to.contain(clusterName + " - Found 0 resources");
+					expect(stdout).to.contain(clusterName + " - Create nginx1-deployment");
+					expect(stdout).to.contain(clusterName + " - Create auth-svc");
+					expect(stdout).to.contain(clusterName + " - deployment \"nginx1-deployment\" created");
+					expect(stdout).to.contain(clusterName + " - service \"auth-svc\" created");
+					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment is available");
+					expect(stdout).to.contain(clusterName + " - Service:auth-svc is available");
+					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment has 1/1 replicas available");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
+					expect(stdout).to.contain("Finished successfully");
+					expect(stdout).to.contain("Deleted tmp directory:");
+					done();
+				});
+			});
+		});
+
+		describe("and mix-deployment-service cluster has already been deployed", function() {
+			it("should deploy nothing and send webhooks", function(done) {
+				process.env.CONFIGS = "/test/functional/clusters/configs/mix-deployment-service-kubeconfig.yaml";
+
+				exec("./src/deployer", function(error, stdout, stderr) {
+					expect(error).to.be.a("null", stdout);
+					expect(stderr).to.be.empty;
+					expect(stdout).not.to.be.empty;
+					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
+					expect(stdout).not.to.contain(clusterName + " - Create mix-deployment-service namespace");
+					expect(stdout).not.to.contain(clusterName + " - namespace \"mix-deployment-service\" created");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
+					expect(stdout).to.contain(clusterName + " - Found 2 resources");
+					expect(stdout).not.to.contain(clusterName + " - Create nginx1-deployment");
+					expect(stdout).not.to.contain(clusterName + " - Create auth-svc");
+					expect(stdout).not.to.contain(clusterName + " - deployment \"nginx1-deployment\" created");
+					expect(stdout).not.to.contain(clusterName + " - service \"auth-svc\" created");
+					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment is available");
+					expect(stdout).to.contain(clusterName + " - Service:auth-svc is available");
+					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment has 1/1 replicas available");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
+					expect(stdout).to.contain("Finished successfully");
+					expect(stdout).to.contain("Deleted tmp directory:");
+					done();
+				});
+			});
+		});
+
+		after(function() {
+			var kubectl = new Kubectl({
+				kubeconfig: process.env.CONFIGS
+			});
+			return kubectl.deleteByName("namespace", "mix-deployment-service");
+		});
+	});
+
 	describe("when no unique namespaces and deploying to cluster", function() {
 		it("should deploy without error", function(done) {
 			process.env.CONFIGS = "/test/functional/clusters/configs/no-namespaces-kubeconfig.yaml";
 
 			exec("./src/deployer", function(error, stdout, stderr) {
-				expect(error).to.be.null;
+				expect(error).to.be.a("null", stdout);
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
 				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("no-namespaces-cluster - Getting list of namespaces");
-				expect(stdout).to.contain("no-namespaces-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
-				expect(stdout).to.contain("no-namespaces-cluster - Found 0 resources");
+				expect(stdout).to.contain("no-namespaces-cluster - No supported manifests found");
 				expect(stdout).to.contain("Finished successfully");
 				done();
 			});
@@ -203,13 +277,13 @@ describe("Functional", function() {
 			process.env.CONFIGS = "/test/functional/clusters/configs/single-job-kubeconfig.yaml";
 
 			exec("./src/deployer", function(error, stdout, stderr) {
-				expect(error).to.be.null;
+				expect(error).to.be.a("null", stdout);
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
 				expect(stdout).to.contain("Generating tmp directory:");
 				expect(stdout).to.contain("single-job-cluster - Getting list of namespaces");
 				expect(stdout).to.contain("Sending payload to http://example.com/test/ls-job for ls-job with status STARTED/IN_PROGRESS");
-				expect(stdout).to.contain("single-job-cluster - Getting list of deployment,ingress,service,secret,job,daemonset,persistentvolumeclaim matching 'app in (test)'");
+				expect(stdout).to.contain("single-job-cluster - Getting list of job matching 'app in (test)'");
 				expect(stdout).to.contain("single-job-cluster - Create single-job namespace");
 				expect(stdout).to.contain("single-job-cluster - namespace \"single-job\" created");
 				expect(stdout).to.contain("single-job-cluster - Found 0 resources");
@@ -227,6 +301,7 @@ describe("Functional", function() {
 
 	afterEach(function() {
 		delete process.env.SELECTOR;
+		delete process.env.DEBUG;
 		delete process.env.DRY_RUN;
 		delete process.env.DIFF;
 		delete process.env.NAMESPACES_DIR;

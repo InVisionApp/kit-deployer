@@ -90,7 +90,7 @@ const options = {
 const deployer = new Deployer(options);
 
 // Set debugging level if enabled
-if (parseBoolean(program.debug)) {
+if (program.debug) {
 	logger.setLevel("DEBUG");
 } else {
 	logger.setLevel("INFO");

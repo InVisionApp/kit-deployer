@@ -14,6 +14,7 @@ const Dependencies = require("./dependencies");
 const Status = require("./status");
 const matchSelector = require("../util/match-selector");
 const writeFileAsync = Promise.promisify(fs.writeFile);
+const readFileAsync = Promise.promisify(fs.readFile);
 const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
@@ -90,28 +91,78 @@ class Manifests extends EventEmitter {
 	}
 
 	load() {
-		var manifests = [];
-		if (!this.options.dir) {
-			return manifests;
-		}
-		// validate directory, if it doesnt exist, skip processing.
-		//
-		var files = glob.sync(path.join(this.options.dir, this.options.cluster.metadata.name + "/**/*.yaml"));
-		_.each(files, (file) => {
-			// only add file if it matches selector
-			const content = yaml.safeLoad(fs.readFileSync(file, "utf8"));
-			let labels;
-			if (_.has(content, ["metadata", "labels"])) {
-				labels = content.metadata.labels;
+		return new Promise((resolve, reject) => {
+			this.manifestFiles = [];
+			if (!this.options.dir) {
+				return this.manifestFiles;
 			}
-			if (matchSelector(labels, this.options.selector)) {
-				manifests.push({
-					path: file,
-					content: content
+			// validate directory, if it doesnt exist, skip processing.
+			//
+			glob(path.join(this.options.dir, this.options.cluster.metadata.name + "/**/*.yaml"), (err, files) => {
+				if (err) {
+					return reject(err);
+				}
+				var readPromises = [];
+				_.each(files, (file) => {
+					// only add file if it matches selector
+					readPromises.push(readFileAsync(file, "utf8").then((rawContent) => {
+						const content = yaml.safeLoad(rawContent);
+						let labels;
+						if (_.has(content, ["metadata", "labels"])) {
+							labels = content.metadata.labels;
+						}
+						if (matchSelector(labels, this.options.selector)) {
+							this.manifestFiles.push({
+								path: file,
+								content: content
+							});
+						}
+					}));
 				});
+				return Promise
+					.all(readPromises)
+					.then(() => {
+						resolve();
+					})
+					.catch((allErr) => {
+						reject(allErr);
+					});
+			});
+		});
+	}
+
+	// We only want to query for kinds that we are deploying
+	list() {
+		var listTypes = [];
+		_.each(this.manifestFiles, (manifestFile) => {
+			var manifest = manifestFile.content;
+			var kind = manifest.kind.toLowerCase();
+			// Only parse manifests that are supported
+			if (this.supportedTypes.indexOf(kind) < 0) {
+				this.emit("warn", "Skipping " + manifest.metadata.name + " because " + kind + " is unsupported");
+				return;
+			}
+			if (listTypes.indexOf(kind) < 0) {
+				listTypes.push(kind);
 			}
 		});
-		return manifests;
+
+		if (listTypes.length) {
+			// Sort alpha to make the ordering predictable
+			listTypes.sort();
+
+			if (this.options.selector) {
+				this.emit("info", "Getting list of " + listTypes.join(",") + " matching '" + this.options.selector + "'");
+			} else {
+				this.emit("info", "Getting list of " + listTypes.join(","));
+			}
+			return this.kubectl.list(listTypes.join(","), this.options.selector);
+		} else {
+			this.emit("warn", "No supported manifests found");
+			return Promise.resolve({
+				items: []
+			});
+		}
 	}
 
 	/**
@@ -165,12 +216,6 @@ class Manifests extends EventEmitter {
 
 			var existing = [];
 
-			if (this.options.selector) {
-				this.emit("debug", "Getting list of " + this.supportedTypes.join(",") + " matching '" + this.options.selector + "'");
-			} else {
-				this.emit("debug", "Getting list of " + this.supportedTypes.join(","));
-			}
-
 			// Backup
 			var backup = new Backup(this.options.backup.enabled, this.options.backup.bucket, this.options.backup.saveFormat);
 			backup.on("info", (msg) => {
@@ -183,8 +228,11 @@ class Manifests extends EventEmitter {
 				this.emit("warn", err);
 			});
 
-			return this.kubectl
-				.list(this.supportedTypes.join(","), this.options.selector)
+			return this
+				.load()
+				.then(() => {
+					return this.list();
+				})
 				.then((results) => {
 					this.emit("info", "Found " + results.items.length + " resources");
 					existing = results.items;
@@ -197,13 +245,12 @@ class Manifests extends EventEmitter {
 					var kubePromises = [];
 					var promiseFuncsWithDependencies = [];
 					var remaining = _.cloneDeep(existing);
-					var manifestFiles = this.load();
 					// there are no files to process, skip cluster
-					if (Array.isArray(manifestFiles) && manifestFiles.length === 0) {
+					if (Array.isArray(this.manifestFiles) && this.manifestFiles.length === 0) {
 						this.emit("debug", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
 						return Promise.resolve();
 					}
-					_.each(manifestFiles, (manifestFile) => {
+					_.each(this.manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
 						var differences = {};
 						var method, lastAppliedConfiguration;
@@ -220,12 +267,6 @@ class Manifests extends EventEmitter {
 						var manifestName = manifest.metadata.name;
 						if (mustBeUnique.indexOf(manifest.kind) >= 0) {
 							manifestName = manifest.metadata.name + "-" + applyingConfigurationHash;
-						}
-
-						// Only parse manifests that are supported
-						if (this.supportedTypes.indexOf(manifest.kind.toLowerCase()) < 0) {
-							this.emit("warn", "Skipping " + manifestName + " because " + manifest.kind + " is unsupported");
-							return;
 						}
 
 						found = _.find(existing, {kind: manifest.kind, metadata: {name: manifestName}});
