@@ -171,10 +171,10 @@ class Deployer extends EventEmitter {
 						}));
 					});
 
-					Promise
-					.all(readPromises)
+				Promise
+		            .all(readPromises)
 					.then(() => {
-						return Promise.all(promises);
+					  return Promise.all(promises);
 					})
 					.then(() => {
 						// If a webhook is set and available is required, only resolve once the webhook has finished
@@ -201,7 +201,7 @@ class Deployer extends EventEmitter {
 					.done();
 				});
 			});
-		}
-	}
+    }
+ }
 
-	module.exports = Deployer;
+module.exports = Deployer;
