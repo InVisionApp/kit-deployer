@@ -95,14 +95,17 @@ class Deployer extends EventEmitter {
 						function clusterDebug(message) {
 							self.emit("debug", config.metadata.name + " - " + message);
 						}
+
 						function clusterLog(message) {
 							self.emit("info", config.metadata.name + " - " + message);
 						}
+
 						function clusterError(message) {
-							const msg =  config.metadata.name + " - " + message;
+							const msg = config.metadata.name + " - " + message;
 							self.emit("error", msg);
 							return msg;
 						}
+
 						function clusterWarning(message) {
 							self.emit("warn", config.metadata.name + " - " + message);
 						}
@@ -168,13 +171,13 @@ class Deployer extends EventEmitter {
 								});
 								return manifests.deploy();
 							}));
-						}));
-					});
+					}));
+				});
 
 				Promise
-		            .all(readPromises)
+					.all(readPromises)
 					.then(() => {
-					  return Promise.all(promises);
+						return Promise.all(promises);
 					})
 					.then(() => {
 						// If a webhook is set and available is required, only resolve once the webhook has finished
@@ -199,9 +202,9 @@ class Deployer extends EventEmitter {
 						return resolve();
 					})
 					.done();
-				});
 			});
-    }
- }
+		});
+	}
+}
 
 module.exports = Deployer;
