@@ -90,16 +90,18 @@ class Deployer extends EventEmitter {
 				_.each(configFiles, function(configFile) {
 					readPromises.push(readFileAsync(configFile, "utf8").then((rawContent) => {
 						// Parse the cluster yaml file to JSON
-						var config = yaml.safeLoad(rawContent);
+					        var config = yaml.safeLoad(rawContent);
 
-						function clusterDebug(message) {
+					        function clusterDebug(message) {
 							self.emit("debug", config.metadata.name + " - " + message);
 						}
 						function clusterLog(message) {
 							self.emit("info", config.metadata.name + " - " + message);
 						}
-						function clusterError(message) {
-							self.emit("error", config.metadata.name + " - " + message);
+					        function clusterError(message) {
+                                                        const msg =  config.metadata.name + " - " + message;
+					                self.emit("error", msg);
+                                                        return msg;
 						}
 						function clusterWarning(message) {
 							self.emit("warn", config.metadata.name + " - " + message);
@@ -161,8 +163,8 @@ class Deployer extends EventEmitter {
 								manifests.on("info", clusterLog);
 								manifests.on("warn", clusterWarning);
 								manifests.on("error", (msg) => {
-									clusterError(msg);
-									errors.push(msg);
+									const msgWithCluster = clusterError(msg);
+									errors.push(msgWithCluster);
 								});
 								return manifests.deploy();
 							}));
@@ -189,9 +191,9 @@ class Deployer extends EventEmitter {
 						if (self.options.dryRun) {
 							self.emit("debug", "This was a dry run and no changes were deployed");
 						}
-						if (errors.length) {
-							self.emit("error", errors.length + " errors occurred, rejecting with first error");
-							return reject(errors[0]);
+					        if (errors.length) {
+                                                        self.emit("error", errors.length + " errors occurred, rejecting with first error");
+						        return reject(errors.join(", "));
 						}
 						self.emit("info", "Finished successfully");
 						return resolve();
