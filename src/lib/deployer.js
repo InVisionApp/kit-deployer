@@ -92,16 +92,16 @@ class Deployer extends EventEmitter {
 						// Parse the cluster yaml file to JSON
 						var config = yaml.safeLoad(rawContent);
 
-					  function clusterDebug(message) {
+						function clusterDebug(message) {
 							self.emit("debug", config.metadata.name + " - " + message);
 						}
 						function clusterLog(message) {
 							self.emit("info", config.metadata.name + " - " + message);
 						}
-					  function clusterError(message) {
-              const msg =  config.metadata.name + " - " + message;
-					    self.emit("error", msg);
-            	return msg;
+						function clusterError(message) {
+							const msg =  config.metadata.name + " - " + message;
+							self.emit("error", msg);
+							return msg;
 						}
 						function clusterWarning(message) {
 							self.emit("warn", config.metadata.name + " - " + message);
@@ -168,10 +168,10 @@ class Deployer extends EventEmitter {
 								});
 								return manifests.deploy();
 							}));
-					}));
-				});
+						}));
+					});
 
-				Promise
+					Promise
 					.all(readPromises)
 					.then(() => {
 						return Promise.all(promises);
@@ -191,17 +191,17 @@ class Deployer extends EventEmitter {
 						if (self.options.dryRun) {
 							self.emit("debug", "This was a dry run and no changes were deployed");
 						}
-					  if (errors.length) {
-            	self.emit("error", errors.length + " errors occurred, rejecting with first error");
-						  return reject(errors.join(", "));
+						if (errors.length) {
+							self.emit("error", errors.length + " errors occurred, rejecting with first error");
+							return reject(errors.join(", "));
 						}
 						self.emit("info", "Finished successfully");
 						return resolve();
 					})
 					.done();
+				});
 			});
-		});
+		}
 	}
-}
 
-module.exports = Deployer;
+	module.exports = Deployer;
