@@ -53,12 +53,12 @@ class Namespaces extends EventEmitter {
 						reject(allErr);
 					});
 			});
+			return null;
 		});
 	}
 
 	/**
 	 * Deploys the namespaces to the cluster if they don't already exist.
-	 * @param {string} resource - A single resource type to watch
 	 * @fires Namespaces#debug
 	 * @fires Namespaces#info
 	 * @fires Namespaces#error
@@ -69,8 +69,17 @@ class Namespaces extends EventEmitter {
 				.load()
 				.then((namespaces) => {
 					this.namespaces = namespaces;
+					if (Array.isArray(this.namespaces) && this.namespaces.length === 0) {
+						this.emit("debug", "No namespace files to processs, skipping " + this.options.clusterName);
+						return true;
+					}
+					return false;
 				})
-				.then(() => {
+				.then((skip) => {
+					if (skip) {
+						resolve();
+						return;
+					}
 					this.emit("debug", "Getting list of namespaces");
 					this.kubectl
 						.list("namespaces")
@@ -90,7 +99,7 @@ class Namespaces extends EventEmitter {
 												this.emit("info", msg);
 											})
 											.catch((err) => {
-												this.emit("error", "Error running kubectl. create('" + namespace.path + "') " + err);
+												this.emit("error", "Error running kubectl.create('" + namespace.path + "') " + err);
 												errors.push(err);
 											}));
 									}
@@ -106,6 +115,7 @@ class Namespaces extends EventEmitter {
 										this.emit("error", errors.length + " errors occurred");
 										return reject(errors);
 									}
+									return null;
 								});
 						})
 						.catch(reject);
