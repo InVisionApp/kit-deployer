@@ -235,7 +235,7 @@ class Manifests extends EventEmitter {
 					// There are no files to process, skip cluster to prevent needless querying of resources on the cluster
 					if (Array.isArray(this.manifestFiles) && this.manifestFiles.length === 0) {
 						this.emit("debug", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
-						return Promise.resolve(true);
+						return true;
 					}
 					// There are files to process, so let's get the list of current resources on the cluster
 					return this
