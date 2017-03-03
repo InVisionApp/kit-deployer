@@ -128,6 +128,7 @@ class Manifests extends EventEmitter {
 						reject(allErr);
 					});
 			});
+			return null;
 		});
 	}
 
@@ -231,25 +232,35 @@ class Manifests extends EventEmitter {
 			return this
 				.load()
 				.then(() => {
-					return this.list();
+					// There are no files to process, skip cluster to prevent needless querying of resources on the cluster
+					if (Array.isArray(this.manifestFiles) && this.manifestFiles.length === 0) {
+						this.emit("debug", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
+						return Promise.resolve(true);
+					}
+					// There are files to process, so let's get the list of current resources on the cluster
+					return this
+						.list()
+						.then((results) => {
+							this.emit("info", "Found " + results.items.length + " resources");
+							existing = results.items;
+						})
+						.then(() => {
+							this.emit("debug", "Generating tmp directory: " + tmpDir);
+							return mkdirp(tmpDir);
+						})
+						.then(() => {
+							// We are not skipping this cluster
+							return false;
+						});
 				})
-				.then((results) => {
-					this.emit("info", "Found " + results.items.length + " resources");
-					existing = results.items;
-				})
-				.then(() => {
-					this.emit("debug", "Generating tmp directory: " + tmpDir);
-					return mkdirp(tmpDir);
-				})
-				.then(() => {
+				.then((skip) => {
+					if (skip) {
+						return Promise.resolve();
+					}
+
 					var kubePromises = [];
 					var promiseFuncsWithDependencies = [];
 					var remaining = _.cloneDeep(existing);
-					// there are no files to process, skip cluster
-					if (Array.isArray(this.manifestFiles) && this.manifestFiles.length === 0) {
-						this.emit("debug", "No cluster files to processs, skipping " + this.options.cluster.metadata.name);
-						return Promise.resolve();
-					}
 					_.each(this.manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
 						var differences = {};
@@ -318,10 +329,10 @@ class Manifests extends EventEmitter {
 								}
 
 								// Only check github if it's enabled
-								var skipCheck = Promise.resolve(false);
+								var githubSkipCheck = Promise.resolve(false);
 								if (this.options.github.enabled) {
 									var github = new Github(this.options.github.token);
-									skipCheck = github.getCommit(this.options.github.user, this.options.github.repo, this.options.sha)
+									githubSkipCheck = github.getCommit(this.options.github.user, this.options.github.repo, this.options.sha)
 										.then((res) => {
 											if (committerDate && _.has(res, ["commit", "committer", "date"]) && committerDate.getTime() > new Date(res.commit.committer.date).getTime()) {
 												this.emit("warn", "Skipping " + manifestName + " because cluster has newer commit");
@@ -331,10 +342,10 @@ class Manifests extends EventEmitter {
 										});
 								}
 
-								return skipCheck
-									.then((skip) => {
+								return githubSkipCheck
+									.then((githubSkip) => {
 										// Skip the update
-										if (skip) {
+										if (githubSkip) {
 											return Promise.resolve();
 										}
 
@@ -411,6 +422,7 @@ class Manifests extends EventEmitter {
 																	return availablePromise;
 																}
 															}
+															return null;
 														}).then( () => {
 															return backup.save(this.options.cluster.metadata.name, manifest)
 																.then( (data) => {
@@ -428,6 +440,7 @@ class Manifests extends EventEmitter {
 															this.emit("error", "Error running kubectl." + method.toLowerCase() + "('" + tmpApplyingConfigurationPath + "') " + err);
 														});
 												}
+												return null;
 											});
 									});
 							};
@@ -521,6 +534,7 @@ class Manifests extends EventEmitter {
 								});
 							});
 					}
+					return null;
 				})
 				.then(resolve)
 				.catch((err) => {
