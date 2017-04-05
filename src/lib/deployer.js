@@ -48,9 +48,14 @@ class Deployer extends EventEmitter {
 				repo: undefined
 			},
 			backup: {
-				enabled: undefined,
+				enabled: false,
 				bucket: undefined,
 				saveFormat: undefined
+			},
+			elroy: {
+				enabled: false,
+				url: undefined,
+				secret: undefined
 			}
 		}, options);
 	}
@@ -159,6 +164,7 @@ class Deployer extends EventEmitter {
 									diff: self.options.diff,
 									force: self.options.force,
 									backup: self.options.backup,
+									elroy: self.options.elroy,
 									kubectl: kubectl
 								});
 								manifests.on("status", (status) => {

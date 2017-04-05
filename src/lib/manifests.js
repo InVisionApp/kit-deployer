@@ -19,6 +19,7 @@ const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
 const Backup = require("./backup");
+const Elroy = require("./elroy");
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -77,9 +78,14 @@ class Manifests extends EventEmitter {
 				timeout: 10 * 60 // 10 minutes
 			},
 			backup: {
-				enabled: undefined,
+				enabled: false,
 				bucket: "kit-manifest-backup",
 				saveFormat: "yaml"
+			},
+			elroy: {
+				enabled: false,
+				url: undefined,
+				secret: undefined
 			},
 			kubectl: undefined
 		}, options);
@@ -228,6 +234,18 @@ class Manifests extends EventEmitter {
 				this.emit("debug", msg);
 			});
 			backup.on("warn", (err) => {
+				this.emit("warn", err);
+			});
+
+			// Elroy
+			var elroy = new Elroy(this.options.elroy);
+			elroy.on("info", (msg) => {
+				this.emit("info", msg);
+			});
+			elroy.on("debug", (msg) => {
+				this.emit("debug", msg);
+			});
+			elroy.on("warn", (err) => {
 				this.emit("warn", err);
 			});
 
@@ -425,7 +443,22 @@ class Manifests extends EventEmitter {
 																}
 															}
 															return null;
-														}).then( () => {
+														})
+														.then(() => {
+															// This handles saving manifests to the Elroy service
+															return elroy.save(this.options.cluster.metadata.name, manifest)
+																.then((data) => {
+																	if (!data) {
+																		this.emit("debug", `No Saving of ${manifest.metadata.name}`);
+																	} else {
+																		this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
+																	}
+																})
+																.catch((err) => {
+																	this.emit("warn", `Warning: (${(err ? err.message : "undefined")}) Saving to Elroy for ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
+																});
+														})
+														.then(() => {
 															return backup.save(this.options.cluster.metadata.name, manifest)
 																.then( (data) => {
 																	if (!data) {

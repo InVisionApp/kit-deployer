@@ -45,6 +45,9 @@ program
 	.option("--backup-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.BACKUP_ENABLED))
 	.option("--save-foramt <format>", "", process.env.SAVE_FORMAT)
 	.option("--aws-bucket <bucket>", "", process.env.AWS_BUCKET)
+	.option("--elroy-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.ELROY_ENABLED))
+	.option("--elroy-url <string>", "", "", process.env.ELROY_URL)
+	.option("--elroy-secret <string>", "", "", process.env.ELROY_SECRET)
 	.parse(process.argv)
 ;
 
@@ -81,6 +84,11 @@ const options = {
 		enabled: program.backupEnabled,
 		bucket: program.awsBucket,
 		saveFormat: program.saveFormat
+	},
+	elroy: {
+		enabled: program.elroyEnabled,
+		url: program.elroyUrl,
+		secret: program.elroySecret
 	},
 	github: {
 		enabled: program.githubEnabled,
