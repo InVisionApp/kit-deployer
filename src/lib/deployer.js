@@ -9,6 +9,7 @@ const Promise = require("bluebird");
 const EventEmitter = require("events");
 const Manifests = require("./manifests");
 const Namespaces = require("./namespaces");
+const Progress = require("./progress");
 const Webhook = require("./webhook");
 const readFileAsync = Promise.promisify(fs.readFile);
 
@@ -57,6 +58,11 @@ class Deployer extends EventEmitter {
 	deploy(configPattern, manifestsDir, namespacesDir) {
 		var self = this;
 		return new Promise(function(resolve, reject) {
+			const progress = new Progress();
+			progress.on("progress", (msg) => {
+				self.emit("progress", msg);
+			});
+
 			glob(configPattern, (globErr, configFiles) => {
 				if (globErr) {
 					return reject(globErr);
@@ -120,6 +126,9 @@ class Deployer extends EventEmitter {
 							return reject();
 						}
 
+						// Add each cluster so we know the total number of clusters that need to be processed
+						progress.add(config.metadata.name);
+
 						var kubectl = new Kubectl({
 							kubeconfig: configFile,
 							version: self.options.apiVersion
@@ -156,6 +165,8 @@ class Deployer extends EventEmitter {
 									self.emit("status", status);
 									if (webhook) {
 										try {
+											// Add the progress to the status before sending webhook
+											status.progress = progress.status();
 											webhook.change(status);
 										} catch (err) {
 											clusterError(err);
@@ -171,6 +182,14 @@ class Deployer extends EventEmitter {
 									errors.push(msgWithCluster);
 								});
 								return manifests.deploy();
+							})
+							.then((res) => {
+								progress.success(config.metadata.name);
+								return res;
+							})
+							.catch((err) => {
+								progress.fail(config.metadata.name);
+								throw err;
 							}));
 					}));
 				});

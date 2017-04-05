@@ -36,7 +36,7 @@ class Webhook extends EventEmitter {
 		});
 	}
 
-	send(name, phase, status, reason) {
+	send(name, phase, status, reason, progress) {
 		const payload = {
 			// TODO: dynamic name for payload?
 			name: "kubernetes-deploy",
@@ -49,6 +49,7 @@ class Webhook extends EventEmitter {
 				phase: phase,
 				status: status,
 				reason: reason,
+				progress: progress,
 				url: undefined,
 				scm: {
 					url: undefined,
@@ -128,7 +129,7 @@ class Webhook extends EventEmitter {
 				const promises = [];
 				_.each(this.manifests, (manifestStatus) => {
 					const name = this.getManifestName(manifestStatus);
-					promises.push(this.send(name, manifestStatus.phase, manifestStatus.status, manifestStatus.reason));
+					promises.push(this.send(name, manifestStatus.phase, manifestStatus.status, manifestStatus.reason, status.progress));
 				});
 				Promise
 					.all(promises)
@@ -145,7 +146,7 @@ class Webhook extends EventEmitter {
 				// Always send the first status we receive for a manifest
 				this.manifests[name] = status;
 
-				this.send(name, status.phase, status.status, status.reason);
+				this.send(name, status.phase, status.status, status.reason, status.progress);
 			} else if (this.manifests[name].status !== "FAILURE") {
 				// If the status is failure for any cluster, we consider the deployment as a whole a failure, so keep failure status
 				this.manifests[name] = status;
