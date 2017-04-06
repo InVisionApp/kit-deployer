@@ -192,6 +192,7 @@ class Manifests extends EventEmitter {
 
 			var status = new Status({
 				healthCheck: this.options.available.healthCheck,
+				healthCheckGracePeriod: this.options.available.healthCheckGracePeriod,
 				keepAlive: this.options.available.keepAlive,
 				keepAliveInterval: this.options.available.keepAliveInterval,
 				timeout: this.options.available.timeout,
