@@ -12,6 +12,9 @@ const errorReasons = [
 	"MissingClusterDNS",
 	"NodeNotSchedulable"
 ];
+const excludeReasons = [
+	"Unhealthy" // We ignore unhealthy events because often services can fail checks on startup/terminating and cause false positives
+];
 
 /**
  * @fires HealthCheck#debug
@@ -39,11 +42,16 @@ class HealthCheck extends EventEmitter {
 				return;
 			}
 
-			if (event.type != "Normal" || event.reason.indexOf(errorReasons) > -1) {
+			// Skip reasons that are excluded from checking
+			if (excludeReasons.indexOf(event.reason) >= 0) {
+				return;
+			}
+
+			if (event.type != "Normal" || errorReasons.indexOf(event.reason) >= 0) {
 				// We only care about the first error we receive, ignore any errors afterwards
-				if (this.errorTimeoutId === null) {
+				if (this.error.timeoutId === null) {
 					// Emit error unless stop is called before grace period expires
-					this.emit("debug", "Healthcheck detected error, waiting grace period " + this.gracePeriod + "ms before emitting");
+					this.emit("debug", "Healthcheck detected " + event.reason + " error for " + event.involvedObject.name + ", waiting grace period " + this.gracePeriod + "ms before emitting");
 					this.errorTimeoutId = setTimeout(() => {
 						this.emit("debug", "Healthcheck grace period of " + this.gracePeriod + "ms expired");
 						this.emit("error", new EventError(event));
