@@ -51,6 +51,10 @@ class HealthCheck extends EventEmitter {
 				if (this.error.involvedObjectName == event.involvedObject.name) {
 					this.emit("debug", "Clearing healthcheck timeout because " + event.involvedObject.name + " is being killed");
 					clearTimeout(this.error.timeoutId);
+					this.error = {
+						timeoutId: null,
+						involvedObject: null
+					};
 				}
 				return;
 			}
@@ -89,6 +93,10 @@ class HealthCheck extends EventEmitter {
 		if (this.error.timeoutId !== null) {
 			this.emit("debug", "Clearing healthcheck timeout");
 			clearTimeout(this.errorTimeoutId);
+			this.error = {
+				timeoutId: null,
+				involvedObject: null
+			};
 		}
 		this.removeAllListeners();
 	}
