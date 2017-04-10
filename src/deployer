@@ -30,6 +30,7 @@ program
 	.option("--available-all <boolean>", "When enabled it will send available webhooks for ALL manifests even if no differences were deployed", parseBoolean, parseBoolean(process.env.AVAILABLE_ALL))
 	.option("--available-health-check <boolean>", "Will monitor for issues during the deployment", parseBoolean, parseBoolean(process.env.AVAILABLE_HEALTH_CHECK))
 	.option("--available-health-check-grace-period <int>", "The amount of time in seconds that the health check will wait for a deployment to self-heal before triggering a failure", parseInt, parseInt(process.env.AVAILABLE_HEALTH_CHECK_GRACE_PERIOD))
+	.option("--available-health-check-threshold <int>", "The number times a particular error event can occur before triggering a failure", parseInt, parseInt(process.env.AVAILABLE_HEALTH_CHECK_THRESHOLD))
 	.option("--available-webhook <url>", "The URL you want to send the status payload of the deployment progress to. You can provide multiple endpoints by using a JSON array of URLs", process.env.AVAILABLE_WEBHOOK)
 	.option("--available-required <boolean>", "Will only finish once the manifest is considered available in the cluster", parseBoolean, parseBoolean(process.env.AVAILABLE_REQUIRED))
 	.option("--available-keep-alive <boolean>", "Will print the status of the available check every AVAILABLE_KEEP_ALIVE_INTERVAL seconds (useful for CI tools that require log output to prevent timeouts)", parseBoolean, parseBoolean(process.env.AVAILABLE_KEEP_ALIVE))
@@ -65,6 +66,7 @@ const options = {
 		all: program.availableAll,
 		healthCheck: program.availableHealthCheck,
 		healthCheckGracePeriod: program.availableHealthCheckGracePeriod,
+		healthCheckThreshold: program.availableHealthCheckThreshold,
 		webhooks: convertStringToArray(program.availableWebhook),
 		required: program.availableRequired,
 		keepAlive: program.availableKeepAlive,
