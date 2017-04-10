@@ -92,7 +92,10 @@ class HealthCheck extends EventEmitter {
 					this.error.involvedObjectName = event.involvedObject.name;
 					this.error.timeoutId = setTimeout(() => {
 						this.emit("debug", "Healthcheck grace period of " + this.gracePeriod + "ms expired");
-						this.emit("error", new EventError(event));
+						// Avoid emitting an uncaught error if listeners have already stopped listening
+						if (this.listenerCount("error")) {
+							this.emit("error", new EventError(event));
+						}
 					}, this.gracePeriod);
 				}
 			}
