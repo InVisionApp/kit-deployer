@@ -25,6 +25,7 @@ class Status extends EventEmitter {
 		this.options = _.merge({
 			healthCheck: true,
 			healthCheckGracePeriod: undefined,
+			healthCheckThreshold: undefined,
 			keepAlive: false,
 			keepAliveInterval: 30, // 30 seconds
 			timeout: 10 * 60, // 10 minutes
@@ -68,7 +69,7 @@ class Status extends EventEmitter {
 			// If the resource has already been deployed and we're just re-checking it's status, we
 			// need to make sure the healthcheck observes all events for the resource
 			const since = (differences) ? null : -1;
-			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod, since);
+			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod, since, this.options.healthCheckThreshold);
 			healthCheck.on("error", (err) => {
 				this.emit("_error", err);
 			});

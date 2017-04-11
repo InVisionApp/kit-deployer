@@ -8,12 +8,14 @@ const errorReasons = [
 	"NodeOutOfDisk",
 	"BackOff",
 	"ImagePullBackOff",
+	"Failed",
 	"FailedSync",
 	"MissingClusterDNS",
 	"NodeNotSchedulable"
 ];
 const excludeReasons = [
-	"Unhealthy" // We ignore unhealthy events because often services can fail checks on startup/terminating and cause false positives
+	// We ignore Unhealthy events because often services can fail checks on startup/terminating and cause false positives
+	"Unhealthy"
 ];
 
 /**
@@ -21,15 +23,17 @@ const excludeReasons = [
  * @fires HealthCheck#error
  */
 class HealthCheck extends EventEmitter {
-	constructor(kubectl, gracePeriod, since) {
+	constructor(kubectl, gracePeriod, since, threshold) {
 		super();
 		this.events = kubectl.events(since);
+		this.errors = {};
 		this.error = {
 			timeoutId: null,
 			involvedObjectName: null
 		};
 		this.beingKilled = [];
-		this.gracePeriod = (typeof gracePeriod === "undefined") ? 10 * 1000 : gracePeriod * 1000; // 10 seconds
+		this.gracePeriod = (typeof gracePeriod === "undefined") ? 10 * 1000 : gracePeriod * 1000; // Default is 10 seconds
+		this.threshold = (typeof threshold === "undefined") ? 0 : threshold; // Default is 0
 	}
 
 	start(name) {
@@ -72,14 +76,26 @@ class HealthCheck extends EventEmitter {
 			}
 
 			if (event.type != "Normal" || errorReasons.indexOf(event.reason) >= 0) {
-				// We only care about the first error we receive, ignore any errors afterwards
-				if (this.error.timeoutId === null) {
+				// Track number of errors of this specific reason we've had for this object to test against threshold
+				if (!this.errors[event.involvedObject.name]) {
+					this.errors[event.involvedObject.name] = {};
+				}
+				if (!this.errors[event.involvedObject.name][event.reason]) {
+					this.errors[event.involvedObject.name][event.reason] = 0;
+				}
+				this.errors[event.involvedObject.name][event.reason]++;
+
+				// We only care about the first error reason that has passed the threshold, ignore any errors afterwards
+				if (this.error.timeoutId === null && this.errors[event.involvedObject.name][event.reason] > this.threshold) {
 					// Emit error unless stop is called before grace period expires
 					this.emit("debug", "Healthcheck detected " + event.reason + " error for " + event.involvedObject.name + ", waiting grace period " + this.gracePeriod + "ms before emitting");
 					this.error.involvedObjectName = event.involvedObject.name;
 					this.error.timeoutId = setTimeout(() => {
 						this.emit("debug", "Healthcheck grace period of " + this.gracePeriod + "ms expired");
-						this.emit("error", new EventError(event));
+						// Avoid emitting an uncaught error if listeners have already stopped listening
+						if (this.listenerCount("error")) {
+							this.emit("error", new EventError(event));
+						}
 					}, this.gracePeriod);
 				}
 			}

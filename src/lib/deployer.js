@@ -30,6 +30,7 @@ class Deployer extends EventEmitter {
 				webhooks: [],
 				healthCheck: true,
 				healthCheckGracePeriod: undefined,
+				healthCheckThreshold: undefined,
 				keepAlive: false,
 				keepAliveInterval: 30,
 				required: false,

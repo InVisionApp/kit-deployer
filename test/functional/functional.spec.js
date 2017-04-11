@@ -263,9 +263,10 @@ describe("Functional", function() {
 				expect(error).to.be.a("null", stdout);
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
-				expect(stdout).to.contain("Generating tmp directory:");
-				expect(stdout).to.contain("no-namespaces-cluster - Getting list of namespaces");
-				expect(stdout).to.contain("no-namespaces-cluster - No supported manifests found");
+				expect(stdout).not.to.contain("Generating tmp directory:");
+				expect(stdout).to.contain("no-namespaces-cluster - No namespace files to processs, skipping no-namespaces-cluster");
+				expect(stdout).to.contain("no-namespaces-cluster - No cluster files to processs, skipping no-namespaces-cluster");
+				expect(stdout).to.contain("no-namespaces-cluster - Deleted tmp directory:");
 				expect(stdout).to.contain("Finished successfully");
 				done();
 			});
