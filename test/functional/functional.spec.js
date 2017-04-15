@@ -15,6 +15,9 @@ describe("Functional", function() {
 		process.env.NAMESPACES_DIR = "/test/functional/clusters/namespaces";
 		process.env.MANIFESTS_DIR = "/test/functional/clusters/manifests";
 		process.env.AVAILABLE_ENABLED = "true";
+		process.env.AVAILABLE_HEALTH_CHECK = "true";
+		process.env.AVAILABLE_HEALTH_CHECK_GRACE_PERIOD = "3";
+		process.env.AVAILABLE_HEALTH_CHECK_THRESHOLD = "1";
 		process.env.AVAILABLE_ALL = "true";
 		process.env.AVAILABLE_TIMEOUT = "60";
 		process.env.AVAILABLE_REQUIRED = "true";
@@ -103,6 +106,34 @@ describe("Functional", function() {
 				kubeconfig: process.env.CONFIGS
 			});
 			return kubectl.deleteByName("namespace", "example");
+		});
+	});
+
+	describe("when deploying to badimage cluster", function() {
+		describe("and deployment fails because of image pull errors", function() {
+			it("should trigger a health check failure", function(done) {
+				process.env.CONFIGS = "/test/functional/clusters/configs/badimage-kubeconfig.yaml";
+
+				exec("./src/deployer", function(error, stdout, stderr) {
+					expect(stdout).not.to.be.empty;
+					expect(stdout).to.match(/Healthcheck detected \w+ error occurred \d+ times for badimage-deployment/);
+					expect(stdout).to.match(/Healthcheck detected \w+ error exceeded threshold of \d+ for badimage-deployment/);
+					expect(stdout).to.match(/Healthcheck grace period of \d+ms expired/);
+					expect(stdout).to.contain("Stopping healthcheck watcher");
+					expect(stdout).to.contain("Clearing healthcheck timeout");
+					expect(stdout).to.contain("EventError: ");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/badimage-deployment for badimage-deployment with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/badimage-deployment for badimage-deployment with status COMPLETED/FAILURE");
+					done();
+				});
+			});
+		});
+
+		after(function() {
+			var kubectl = new Kubectl({
+				kubeconfig: process.env.CONFIGS
+			});
+			return kubectl.deleteByName("namespace", "badimage");
 		});
 	});
 

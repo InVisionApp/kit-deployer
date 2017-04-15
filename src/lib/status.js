@@ -70,6 +70,9 @@ class Status extends EventEmitter {
 			// need to make sure the healthcheck observes all events for the resource
 			const since = (differences) ? null : -1;
 			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod, since, this.options.healthCheckThreshold);
+			healthCheck.on("info", (err) => {
+				this.emit("info", err);
+			});
 			healthCheck.on("error", (err) => {
 				this.emit("_error", err);
 			});
