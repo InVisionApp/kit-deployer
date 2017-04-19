@@ -5,7 +5,10 @@
  */
 class EventError extends Error {
 	constructor(event) {
-		const message = event.message || "Unknown kubernetes event error";
+		let message = event.message || "Unknown kubernetes event error";
+		if (event.involvedObject && event.involvedObject.name) {
+			message = message + " for " + event.involvedObject.name;
+		}
 		super(message);
 		this.message = message;
 		this.name = "EventError";
