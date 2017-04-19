@@ -10,9 +10,11 @@ class Elroy extends EventEmitter {
 	constructor(options) {
 		super();
 		this.options = _.merge({
+			uuid: null,
 			url: undefined,
 			secret: undefined,
-			enabled: false
+			enabled: false,
+			isRollback: false
 		}, options);
 		this.request = request;
 		this.emit("info", `Saving using Elroy is ${this.options.enabled}`);
@@ -25,7 +27,7 @@ class Elroy extends EventEmitter {
 	 * @param  {string} manifest    The json manifest
 	 * @return {promise}            Promise that will resolve or reject
 	 */
-	save(uuid, clusterName, manifest, isRollback, error) {
+	save(clusterName, manifest, error) {
 		return new Promise((resolve, reject) => {
 
 			// Require cluster and manifest
@@ -47,10 +49,10 @@ class Elroy extends EventEmitter {
 					"X-Auth-Token": this.options.secret
 				},
 				body: {
-					uuid: uuid,
+					uuid: this.options.uuid,
 					deploymentEnvironment: clusterName,
 					service: manifest.metadata.name,
-					type: (isRollback) ? "promotion" : "rollback",
+					type: (this.options.isRollback) ? "rollback" : "promotion",
 					success: (error) ? false : true,
 					error: error || null,
 					manifest: manifest

@@ -239,7 +239,10 @@ class Manifests extends EventEmitter {
 			});
 
 			// Elroy
-			var elroy = new Elroy(this.options.elroy);
+			var elroy = new Elroy(_.merge(this.options.elroy, {
+				uuid: this.options.uuid,
+				isRollback: this.options.isRollback
+			}));
 			elroy.on("info", (msg) => {
 				this.emit("info", msg);
 			});

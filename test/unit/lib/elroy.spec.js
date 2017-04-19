@@ -7,38 +7,63 @@ const Elroy = require("../../../src/lib/elroy");
 
 describe("Elroy", () => {
 
-	const testManifest = {metadata: {name: "testManifesst"} };
-	let success, calledWith;
+	let uuid, clusterName, manifest, isRollback, error, success, calledWith;
 	const requestMock = function(opt) {
 		calledWith = opt;
 		return new Promise((resolve, reject) => {
 			if (success == true) {
-				resolve();
+				resolve({success: true});
 			} else {
 				reject(new Error("Example error"));
 			}
 		});
 	};
 
+	function reset() {
+		uuid = "f88e3aea-60e5-4832-a8b3-d158034224d3";
+		clusterName = "sample-cluster";
+		manifest = {
+			metadata: {
+				name: "service-name"
+			}
+		};
+		isRollback = false;
+		error = null;
+		success = false;
+		calledWith = undefined;
+	}
+
 	describe("Enabled and success", () => {
 		before( () => {
+			reset();
 		});
 		after( () => {
-			success = false;
-			calledWith = undefined;
+			reset();
 		});
 		it("should call request correctly", () => {
 			success = true;
 			const elroy = new Elroy({
+				uuid: uuid,
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
-				enabled: true
+				enabled: true,
+				isRollback: isRollback
 			});
 			elroy.request = requestMock;
 			return elroy
-				.save("sampleCluster", testManifest)
-				.then(() => {
+				.save(clusterName, manifest, error)
+				.then((data) => {
+					expect(data).to.exist;
 					expect(calledWith.uri).to.equal("https://elroy.example.com/api/v1/deployment-environment");
+					expect(calledWith.body).to.deep.equal({
+						uuid: uuid,
+						deploymentEnvironment: clusterName,
+						service: manifest.metadata.name,
+						type: "promotion",
+						success: true,
+						error: error,
+						manifest: manifest
+					});
 				});
 		});
 	});
@@ -46,13 +71,15 @@ describe("Elroy", () => {
 		it("should not save and resolve empty promise", () => {
 			success = true;
 			const elroy = new Elroy({
+				uuid: uuid,
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
-				enabled: true
+				enabled: false,
+				isRollback: isRollback
 			});
 			elroy.request = requestMock;
 			return elroy
-				.save("testCluster", testManifest)
+				.save(clusterName, manifest, error)
 				.then((data) => {
 					expect(data).to.not.exist;
 				});
@@ -62,13 +89,15 @@ describe("Elroy", () => {
 		it("should resolve with error", (done) => {
 			success = false;
 			const elroy = new Elroy({
+				uuid: uuid,
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
-				enabled: true
+				enabled: true,
+				isRollback: isRollback
 			});
 			elroy.request = requestMock;
 			elroy
-				.save("testCluster", testManifest)
+				.save(clusterName, manifest, error)
 				.then(() => {
 					done("Should not be successful when expecting error");
 				})
