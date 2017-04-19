@@ -430,7 +430,7 @@ class Manifests extends EventEmitter {
 																		});
 																	})
 																	.catch((err) => {
-																		availableErr = err;
+																		availableErr = (err) ? err : new Error("Unknown available error");
 																		this.emit("error", err);
 																		this.emit("status", {
 																			cluster: this.options.cluster.metadata.name,
