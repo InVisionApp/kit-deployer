@@ -1,0 +1,18 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: badimage-deployment
+  labels:
+    app: test
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: badimage-pod
+    spec:
+      containers:
+        - name: nginx1-con
+          image: oveits/docker-nginx-busybox:does-not-exist
+          ports:
+            - containerPort: 80

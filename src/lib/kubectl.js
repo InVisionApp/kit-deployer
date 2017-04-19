@@ -77,8 +77,8 @@ class KubectlEventWatcher extends EventEmitter {
 						_.each(result.items, (event) => {
 							// All events should have UIDs as described by kubernetes metadata spec (but just being safe)
 							if (_.has(event, ["metadata", "uid"])) {
-								if (this._previousEvents[event.metadata.uid]) {
-									// We already emitted this event, so do nothing
+								if (this._previousEvents[event.metadata.uid] && this._previousEvents[event.metadata.uid].count == event.count) {
+									// We already emitted this event and the count has not changed, so do nothing
 								} else if (_.has(event, ["firstTimestamp"]) && new Date(event.firstTimestamp).getTime() < this.since) {
 									// Ignore events that first occurred before since date
 								} else {
