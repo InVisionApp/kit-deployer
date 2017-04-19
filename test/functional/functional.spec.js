@@ -121,7 +121,7 @@ describe("Functional", function() {
 					expect(stdout).to.match(/Healthcheck grace period of \d+ms expired/);
 					expect(stdout).to.contain("Stopping healthcheck watcher");
 					expect(stdout).to.contain("Clearing healthcheck timeout");
-					expect(stdout).to.contain("EventError: ");
+					expect(stdout).to.match(/EventError: [\w\s"\/\-:(){}\\]+ for badimage-deployment-/);
 					expect(stdout).to.contain("Sending payload to http://example.com/test/badimage-deployment for badimage-deployment with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/badimage-deployment for badimage-deployment with status COMPLETED/FAILURE");
 					done();
