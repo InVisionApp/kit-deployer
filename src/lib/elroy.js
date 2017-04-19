@@ -25,7 +25,7 @@ class Elroy extends EventEmitter {
 	 * @param  {string} manifest    The json manifest
 	 * @return {promise}            Promise that will resolve or reject
 	 */
-	save(clusterName, manifest) {
+	save(uuid, clusterName, manifest, isRollback, error) {
 		return new Promise((resolve, reject) => {
 
 			// Require cluster and manifest
@@ -47,16 +47,22 @@ class Elroy extends EventEmitter {
 					"X-Auth-Token": this.options.secret
 				},
 				body: {
+					uuid: uuid,
+					deploymentEnvironment: clusterName,
+					service: manifest.metadata.name,
+					type: (isRollback) ? "promotion" : "rollback",
+					success: (error) ? false : true,
+					error: error || null,
 					manifest: manifest
 				},
 				json: true
 			})
 			.then((res) => {
-				this.emit("debug", `Saved manifest ${clusterName}/${manifest.metadata.name}.${this.options.saveFormat} to Elroy`);
+				this.emit("debug", `Saved manifest for ${clusterName}/${manifest.metadata.name} to Elroy`);
 				return resolve(res);
 			})
 			.catch((err) => {
-				this.emit("warn", `Issue saving manifest to Elroy: ${err.message}`);
+				this.emit("warn", `Issue saving manifest for ${clusterName}/${manifest.metadata.name} to Elroy: ${err.message}`);
 				return reject(err);
 			});
 			return null;

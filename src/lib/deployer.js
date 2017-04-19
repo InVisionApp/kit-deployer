@@ -18,6 +18,7 @@ class Deployer extends EventEmitter {
 		super();
 		this.options = _.merge({
 			apiVersion: "v1",
+			uuid: null,
 			sha: undefined,
 			selector: undefined,
 			dryRun: true,
@@ -84,6 +85,7 @@ class Deployer extends EventEmitter {
 
 				if (self.options.available.webhooks.length) {
 					webhook = new Webhook({
+						uuid: self.options.uuid,
 						urls: self.options.available.webhooks,
 						isRollback: self.options.isRollback
 					});
@@ -153,6 +155,8 @@ class Deployer extends EventEmitter {
 							.deploy()
 							.then(function() {
 								var manifests = new Manifests({
+									uuid: self.options.uuid,
+									isRollback: self.options.isRollback,
 									sha: self.options.sha,
 									cluster: config,
 									dir: manifestsDir,
