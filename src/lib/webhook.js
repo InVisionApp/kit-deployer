@@ -16,6 +16,7 @@ class Webhook extends EventEmitter {
 	constructor(options) {
 		super();
 		this.options = _.merge({
+			uuid: null,
 			urls: [],
 			isRollback: false
 		}, options);
@@ -39,6 +40,7 @@ class Webhook extends EventEmitter {
 	send(name, phase, status, reason, progress) {
 		const payload = {
 			// TODO: dynamic name for payload?
+			uuid: this.options.uuid,
 			name: "kubernetes-deploy",
 			url: undefined,
 			provider: "CodeShip/Kubernetes",

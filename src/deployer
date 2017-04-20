@@ -22,6 +22,7 @@ program
 	.option("-n, --namespaces-dir <dir>", "Set the directory where all the namespace files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to", process.env.NAMESPACES_DIR)
 	.option("-m, --manifests-dir <dir>", "Set the directory where all the manifest files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to", process.env.MANIFESTS_DIR)
 	.option("-d, --dry-run <boolean>", "Will only show the diff and will not push anything to the cluster", parseBoolean, parseBoolean(process.env.DRY_RUN))
+	.option("--uuid <string>", "A UUID to be used in webhooks and API requests", process.env.UUID)
 	.option("--debug <boolean>", "A boolean flag to enable debug mode", parseBoolean, parseBoolean(process.env.DEBUG))
 	.option("--is-rollback <boolean>", "A boolean flag that is passed in the available payload post", parseBoolean, parseBoolean(process.env.IS_ROLLBACK))
 	.option("--diff <boolean>", "Will show a diff", parseBoolean, parseBoolean(process.env.DIFF))
@@ -45,6 +46,9 @@ program
 	.option("--backup-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.BACKUP_ENABLED))
 	.option("--save-foramt <format>", "", process.env.SAVE_FORMAT)
 	.option("--aws-bucket <bucket>", "", process.env.AWS_BUCKET)
+	.option("--elroy-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.ELROY_ENABLED))
+	.option("--elroy-url <string>", "", "", process.env.ELROY_URL)
+	.option("--elroy-secret <string>", "", "", process.env.ELROY_SECRET)
 	.parse(process.argv)
 ;
 
@@ -54,6 +58,7 @@ if (program.dryRun === "true") {
 
 const options = {
 	apiVersion: program.apiVersion,
+	uuid: program.uuid,
 	sha: program.sha,
 	selector: program.selector,
 	dryRun: program.dryRun,
@@ -81,6 +86,11 @@ const options = {
 		enabled: program.backupEnabled,
 		bucket: program.awsBucket,
 		saveFormat: program.saveFormat
+	},
+	elroy: {
+		enabled: program.elroyEnabled,
+		url: program.elroyUrl,
+		secret: program.elroySecret
 	},
 	github: {
 		enabled: program.githubEnabled,

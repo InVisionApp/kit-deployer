@@ -19,6 +19,7 @@ const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
 const Backup = require("./backup");
+const Elroy = require("./elroy");
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -51,6 +52,8 @@ class Manifests extends EventEmitter {
 	constructor(options) {
 		super();
 		this.options = _.merge({
+			uuid: null,
+			isRollback: false,
 			sha: undefined,
 			waitForAvailable: false,
 			cluster: undefined,
@@ -77,9 +80,14 @@ class Manifests extends EventEmitter {
 				timeout: 10 * 60 // 10 minutes
 			},
 			backup: {
-				enabled: undefined,
+				enabled: false,
 				bucket: "kit-manifest-backup",
 				saveFormat: "yaml"
+			},
+			elroy: {
+				enabled: false,
+				url: undefined,
+				secret: undefined
 			},
 			kubectl: undefined
 		}, options);
@@ -168,7 +176,6 @@ class Manifests extends EventEmitter {
 
 	/**
 	 * Deploys the manifests to the cluster.
-	 * @param {string} resource - A single resource type to watch
 	 * @fires Manifests#info
 	 * @fires Manifests#warning
 	 * @fires Manifests#error
@@ -228,6 +235,21 @@ class Manifests extends EventEmitter {
 				this.emit("debug", msg);
 			});
 			backup.on("warn", (err) => {
+				this.emit("warn", err);
+			});
+
+			// Elroy
+			var elroy = new Elroy(_.merge(this.options.elroy, {
+				uuid: this.options.uuid,
+				isRollback: this.options.isRollback
+			}));
+			elroy.on("info", (msg) => {
+				this.emit("info", msg);
+			});
+			elroy.on("debug", (msg) => {
+				this.emit("debug", msg);
+			});
+			elroy.on("warn", (err) => {
 				this.emit("warn", err);
 			});
 
@@ -394,6 +416,7 @@ class Manifests extends EventEmitter {
 
 															// Only check if resource is available if it's required
 															if (this.options.available.enabled) {
+																var availableErr = null;
 																var availablePromise = status
 																	.available(manifest.kind, manifestName, differences)
 																	.then(() => {
@@ -407,6 +430,7 @@ class Manifests extends EventEmitter {
 																		});
 																	})
 																	.catch((err) => {
+																		availableErr = (err) ? err : new Error("Unknown available error");
 																		this.emit("error", err);
 																		this.emit("status", {
 																			cluster: this.options.cluster.metadata.name,
@@ -417,6 +441,20 @@ class Manifests extends EventEmitter {
 																			status: "FAILURE",
 																			manifest: manifest
 																		});
+																	})
+																	.finally(() => {
+																		// This handles saving manifests to the Elroy service
+																		return elroy.save(this.options.uuid, this.options.cluster.metadata.name, manifest, this.options.isRollback, availableErr)
+																			.then((data) => {
+																				if (!data) {
+																					this.emit("debug", `No Saving of ${manifest.metadata.name}`);
+																				} else {
+																					this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
+																				}
+																			})
+																			.catch((elroyErr) => {
+																				this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "undefined")}) Saving to Elroy for ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
+																			});
 																	});
 																availablePromises.push(availablePromise);
 																// Wait for promise to resolve if we need to wait until available is successful
@@ -425,7 +463,8 @@ class Manifests extends EventEmitter {
 																}
 															}
 															return null;
-														}).then( () => {
+														})
+														.then(() => {
 															return backup.save(this.options.cluster.metadata.name, manifest)
 																.then( (data) => {
 																	if (!data) {

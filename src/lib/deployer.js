@@ -18,6 +18,7 @@ class Deployer extends EventEmitter {
 		super();
 		this.options = _.merge({
 			apiVersion: "v1",
+			uuid: null,
 			sha: undefined,
 			selector: undefined,
 			dryRun: true,
@@ -48,9 +49,14 @@ class Deployer extends EventEmitter {
 				repo: undefined
 			},
 			backup: {
-				enabled: undefined,
+				enabled: false,
 				bucket: undefined,
 				saveFormat: undefined
+			},
+			elroy: {
+				enabled: false,
+				url: undefined,
+				secret: undefined
 			}
 		}, options);
 	}
@@ -79,6 +85,7 @@ class Deployer extends EventEmitter {
 
 				if (self.options.available.webhooks.length) {
 					webhook = new Webhook({
+						uuid: self.options.uuid,
 						urls: self.options.available.webhooks,
 						isRollback: self.options.isRollback
 					});
@@ -148,6 +155,8 @@ class Deployer extends EventEmitter {
 							.deploy()
 							.then(function() {
 								var manifests = new Manifests({
+									uuid: self.options.uuid,
+									isRollback: self.options.isRollback,
 									sha: self.options.sha,
 									cluster: config,
 									dir: manifestsDir,
@@ -159,6 +168,7 @@ class Deployer extends EventEmitter {
 									diff: self.options.diff,
 									force: self.options.force,
 									backup: self.options.backup,
+									elroy: self.options.elroy,
 									kubectl: kubectl
 								});
 								manifests.on("status", (status) => {

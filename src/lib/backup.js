@@ -45,13 +45,12 @@ class Backup extends EventEmitter {
 
 		return new Promise((resolve, reject) => {
 
-			if (!clusterName || !manifest) { return reject("Cluster or Manifest not supplied") }
+			if (!clusterName || !manifest) { return reject("Cluster or Manifest not supplied for S3 Backup"); }
 
 			// If NOT enabled skip processing
 			if (!this.options.enabled) { return resolve(); }
 
-			const name = manifest.metadata.name;
-			let s3Request = {
+			const s3Request = {
 				Bucket: this.options.bucket,
 				Key: `${clusterName}/${manifest.metadata.name}.${this.options.saveFormat}`,
 				ServerSideEncryption: "AES256"
@@ -59,7 +58,7 @@ class Backup extends EventEmitter {
 
 			if (this.options.saveFormat === "yaml") {
 				// convert to YAML before save
-				 s3Request.Body = yaml.safeDump(manifest, {});
+				s3Request.Body = yaml.safeDump(manifest, {});
 			} else {
 				s3Request.Body = manifest;
 			}
@@ -67,12 +66,13 @@ class Backup extends EventEmitter {
 			const _self = this;
 			this.s3.putObject(s3Request, function(err, data) {
 				if (err) {
-					_self.emit("warn", `Issue saving backup: ${err.message}`);
+					_self.emit("warn", `Issue saving backup to S3: ${err.message}`);
 					return reject(err);
 				}
-				_self.emit("debug", `Saved file ${clusterName}/${manifest.metadata.name}.${_self.options.saveFormat}`)
+				_self.emit("debug", `Saved file ${clusterName}/${manifest.metadata.name}.${_self.options.saveFormat} to S3`);
 				return resolve(data);
 			});
+			return null;
 		});
 	}
 

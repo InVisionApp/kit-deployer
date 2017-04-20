@@ -4,7 +4,6 @@ const sinon = require("sinon");
 const chai = require("chai");
 const AWS = require("aws-sdk");
 const expect = chai.expect;
-const Promise = require("bluebird");
 const Backup = require("../../../src/lib/backup");
 
 describe("Backup", () => {
@@ -29,8 +28,7 @@ describe("Backup", () => {
 				expect(backup.s3.putObject.callCount).to.equal(1);
 				done();
 			}).catch( (err) => {
-				console.log("error");
-				done(err)
+				done(err);
 			});
 		});
 	});

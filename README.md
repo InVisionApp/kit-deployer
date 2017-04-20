@@ -184,6 +184,7 @@ The following environment variables are used by this service.
 | `NAMESPACES_DIR` | Set the directory where all the namespace files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to | yes | `/namespaces` |
 | `MANIFESTS_DIR` | Set the directory where all the manifest files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to | yes | `/manifests` |
 | `DRY_RUN` | Will only show the diff and will not push anything to the cluster | yes | `true` |
+| `UUID` | A UUID to be used in webhooks and API requests | false | *empty* |
 | `DEBUG` | A boolean flag to enable debug mode | yes | `false` |
 | `IS_ROLLBACK` | A boolean flag that is passed in the available payload post | yes | `false` |
 | `DIFF` | Will show a diff | yes | `false` |
