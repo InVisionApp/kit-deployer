@@ -181,15 +181,16 @@ class Deployer extends EventEmitter {
 									const msgWithCluster = clusterError(msg);
 									errors.push(msgWithCluster);
 								});
-								return manifests.deploy();
-							})
-							.then((res) => {
-								progress.success(config.metadata.name);
-								return res;
-							})
-							.catch((err) => {
-								progress.fail(config.metadata.name);
-								throw err;
+								return manifests
+									.deploy()
+									.then((res) => {
+										progress.success(config.metadata.name);
+										return res;
+									})
+									.catch((err) => {
+										progress.fail(config.metadata.name);
+										throw err;
+									});
 							}));
 					}));
 				});
