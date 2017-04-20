@@ -20,8 +20,9 @@ class Progress extends EventEmitter {
 
 	// Update and emit the current progress
 	status() {
+		const absolutePercent = this._status.clusters.completed / this._status.clusters.total;
 		return {
-			percent: this._status.clusters.completed / this._status.clusters.total,
+			percent: Math.round(absolutePercent * 1000) / 1000,
 			clusters: this._status.clusters
 		};
 	}
