@@ -43,8 +43,8 @@ class Elroy extends EventEmitter {
 			// Save manifest to Elroy
 			this.request({
 				simple: true,
-				method: "POST",
-				uri: this.options.url + "/api/v1/deployment-environment",
+				method: "PUT",
+				uri: this.options.url + "/api/v1/deploy",
 				headers: {
 					"X-Auth-Token": this.options.secret
 				},

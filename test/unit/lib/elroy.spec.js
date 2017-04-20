@@ -54,7 +54,8 @@ describe("Elroy", () => {
 				.save(clusterName, manifest, error)
 				.then((data) => {
 					expect(data).to.exist;
-					expect(calledWith.uri).to.equal("https://elroy.example.com/api/v1/deployment-environment");
+					expect(calledWith.method).to.equal("PUT");
+					expect(calledWith.uri).to.equal("https://elroy.example.com/api/v1/deploy");
 					expect(calledWith.body).to.deep.equal({
 						uuid: uuid,
 						deploymentEnvironment: clusterName,
