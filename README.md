@@ -73,6 +73,9 @@ deployer.on("fatal", function(message) {
 deployer.on("status", function(status) {
 	console.log(status);
 });
+deployer.on("progress", function(progress) {
+	console.log(progress);
+});
 
 deployer
 	.deploy("/configs/**/kubeconfig", "/manifests", "/namespaces")
@@ -82,6 +85,35 @@ deployer
 ```
 
 Note this method requires node and was tested on version `5.5.0`.
+
+## Progress
+
+The progress event emits whenever a cluster was successfully deployed to or failed deploying. It will tell you how many clusters are left, how many had issues being deployed to and what these clusters were. This is what the object looks like. Information is purposely made redundant for easier logging where needed.
+
+```json
+{
+  "percent": 0.5,
+  "clusters": {
+    "total": 4,
+    "completed": 2,
+    "found": [
+      "cluster-1",
+      "cluster-2",
+      "cluster-3",
+      "cluster-4"
+    ],
+    "remaining": [
+      "cluster-2",
+      "cluster-3"
+    ],
+    "successful": [
+      "cluster-1",
+      "cluster-2"
+    ],
+    "failed": []
+  }
+}
+```
 
 ## Namespaces
 

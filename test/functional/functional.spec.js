@@ -34,7 +34,7 @@ describe("Functional", function() {
 					expect(error).to.be.a("null", stdout);
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
-					expect(stdout).to.contain("Generating tmp directory:", stdout);
+					expect(stdout).to.contain("Generating tmp directory:");
 					expect(stdout).to.contain("example-cluster - Getting list of namespaces");
 					expect(stdout).to.contain("example-cluster - Create example namespace");
 					expect(stdout).to.contain("example-cluster - namespace \"example\" created");
