@@ -13,8 +13,8 @@ const Status = {
 
 const Type = {
 	get Rollback() { return "rollback"; },
-	get Promotion() { return "promotion"; },
-}
+	get Promotion() { return "promotion"; }
+};
 
 class Elroy extends EventEmitter {
 
