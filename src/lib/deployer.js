@@ -19,6 +19,7 @@ class Deployer extends EventEmitter {
 		this.options = _.merge({
 			apiVersion: "v1",
 			uuid: null,
+			resource: null,
 			sha: undefined,
 			selector: undefined,
 			dryRun: true,
@@ -156,6 +157,7 @@ class Deployer extends EventEmitter {
 							.then(function() {
 								var manifests = new Manifests({
 									uuid: self.options.uuid,
+									resource: self.options.resource,
 									isRollback: self.options.isRollback,
 									sha: self.options.sha,
 									cluster: config,

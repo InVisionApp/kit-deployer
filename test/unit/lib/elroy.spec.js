@@ -3,11 +3,13 @@
 const chai = require("chai");
 const Promise = require("bluebird");
 const expect = chai.expect;
-const Elroy = require("../../../src/lib/elroy");
+const Elroy = require("../../../src/lib/elroy").Elroy;
+const Status = require("../../../src/lib/elroy").Status;
+const Type = require("../../../src/lib/elroy").Type;
 
 describe("Elroy", () => {
 
-	let uuid, clusterName, manifest, isRollback, error, success, calledWith;
+	let uuid, clusterName, resource, manifests, isRollback, error, success, calledWith;
 	const requestMock = function(opt) {
 		calledWith = opt;
 		return new Promise((resolve, reject) => {
@@ -22,11 +24,12 @@ describe("Elroy", () => {
 	function reset() {
 		uuid = "f88e3aea-60e5-4832-a8b3-d158034224d3";
 		clusterName = "sample-cluster";
-		manifest = {
+		resource = "resource-name";
+		manifests = [{
 			metadata: {
 				name: "service-name"
 			}
-		};
+		}];
 		isRollback = false;
 		error = null;
 		success = false;
@@ -51,7 +54,7 @@ describe("Elroy", () => {
 			});
 			elroy.request = requestMock;
 			return elroy
-				.save(clusterName, manifest, error)
+				.save(clusterName, resource, manifests, error)
 				.then((data) => {
 					expect(data).to.exist;
 					expect(calledWith.method).to.equal("PUT");
@@ -59,11 +62,11 @@ describe("Elroy", () => {
 					expect(calledWith.body).to.deep.equal({
 						uuid: uuid,
 						deploymentEnvironment: clusterName,
-						service: manifest.metadata.name,
-						type: "promotion",
-						success: true,
+						service: resource,
+						type: Type.Promotion,
+						status: Status.InProgress,
 						error: error,
-						manifest: manifest
+						manifests: manifests
 					});
 				});
 		});
@@ -80,7 +83,7 @@ describe("Elroy", () => {
 			});
 			elroy.request = requestMock;
 			return elroy
-				.save(clusterName, manifest, error)
+				.save(clusterName, resource, manifests, error)
 				.then((data) => {
 					expect(data).to.not.exist;
 				});
@@ -98,7 +101,7 @@ describe("Elroy", () => {
 			});
 			elroy.request = requestMock;
 			elroy
-				.save(clusterName, manifest, error)
+				.save(clusterName, resource, manifests, error)
 				.then(() => {
 					done("Should not be successful when expecting error");
 				})
