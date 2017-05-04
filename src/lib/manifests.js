@@ -19,7 +19,7 @@ const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
 const Backup = require("./backup");
-const Elroy = require("./elroy");
+const Elroy = require("./elroy").Elroy;
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -53,6 +53,7 @@ class Manifests extends EventEmitter {
 		super();
 		this.options = _.merge({
 			uuid: null,
+			resource: null,
 			isRollback: false,
 			sha: undefined,
 			waitForAvailable: false,
@@ -285,6 +286,7 @@ class Manifests extends EventEmitter {
 					var kubePromises = [];
 					var promiseFuncsWithDependencies = [];
 					var remaining = _.cloneDeep(existing);
+					var generatedManifests = [];
 					_.each(this.manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
 						var differences = {};
@@ -386,6 +388,7 @@ class Manifests extends EventEmitter {
 										manifest.metadata.annotations[commitKey] = JSON.stringify(this.options.sha);
 
 										var generatedApplyingConfiguration = JSON.stringify(manifest);
+										generatedManifests.push(manifest)
 
 										return writeFileAsync(tmpApplyingConfigurationPath, generatedApplyingConfiguration, "utf8")
 											.then(() => {
@@ -441,20 +444,6 @@ class Manifests extends EventEmitter {
 																			status: "FAILURE",
 																			manifest: manifest
 																		});
-																	})
-																	.finally(() => {
-																		// This handles saving manifests to the Elroy service
-																		return elroy.save(this.options.uuid, this.options.cluster.metadata.name, manifest, this.options.isRollback, availableErr)
-																			.then((data) => {
-																				if (!data) {
-																					this.emit("debug", `No Saving of ${manifest.metadata.name}`);
-																				} else {
-																					this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
-																				}
-																			})
-																			.catch((elroyErr) => {
-																				this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "undefined")}) Saving to Elroy for ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
-																			});
 																	});
 																availablePromises.push(availablePromise);
 																// Wait for promise to resolve if we need to wait until available is successful
@@ -546,6 +535,24 @@ class Manifests extends EventEmitter {
 							}
 						}
 					});
+
+					// TODO: add dry run check before saving to Elroy
+					// Only save to elroy if "resource" is provided
+					if (this.options.resource) {
+						// This handles saving generated manifests to the Elroy service
+						kubePromises.push(elroy
+							.save(this.options.cluster.metadata.name, this.options.resource, generatedManifests, null)
+							.then((data) => {
+								if (!data) {
+									this.emit("debug", `No Saving of ${this.options.resource}`);
+								} else {
+									this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
+								}
+							})
+							.catch((elroyErr) => {
+								this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "Unknown Error")}) Saving to Elroy for ${this.options.resource} to ${this.options.cluster.metadata.name}`);
+							}));
+					}
 
 					return Promise
 						.all(kubePromises)
