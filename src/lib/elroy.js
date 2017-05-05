@@ -122,7 +122,8 @@ class Elroy extends EventEmitter {
 			})
 			.catch((err) => {
 				this.emit("warn", `Error updating ${clusterName}/${resource} in Elroy: ${err.message}`);
-				this.emit("debug", `Error updating ${clusterName}/${resource} in Elroy to ${uri} with payload: ${body}`);
+				const bodyStr = JSON.stringify(body);
+				this.emit("debug", `Error updating ${clusterName}/${resource} in Elroy to ${uri} with payload: ${bodyStr}`);
 				return reject(err);
 			});
 			return null;
