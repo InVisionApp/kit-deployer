@@ -535,22 +535,14 @@ class Manifests extends EventEmitter {
 					});
 
 					// TODO: add dry run check before saving to Elroy
-					// Only save to elroy if "resource" is provided
-					if (this.options.resource) {
-						// This handles saving generated manifests to the Elroy service
-						kubePromises.push(elroy
-							.start(this.options.cluster.metadata.name, this.options.resource, generatedManifests)
-							.then((data) => {
-								if (!data) {
-									this.emit("debug", `No Saving of ${this.options.resource}`);
-								} else {
-									this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
-								}
-							})
-							.catch((elroyErr) => {
-								this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "Unknown Error")}) Saving to Elroy for ${this.options.resource} to ${this.options.cluster.metadata.name}`);
-							}));
-					}
+					// Handles saving generated manifests to the Elroy service
+					kubePromises.push(elroy
+						.start(this.options.cluster.metadata.name, this.options.resource, generatedManifests)
+						.catch((elroyErr) => {
+							// Ignore errors from elroy (we just log them)
+							this.emit("warn", `Elroy error: ${elroyErr}`);
+						})
+					);
 
 					return Promise
 						.all(kubePromises)
@@ -580,21 +572,13 @@ class Manifests extends EventEmitter {
 								});
 							})
 							.then(() => {
-								// This updating Elroy that the resource has been deployed successfully
-								if (this.options.resource) {
-									return elroy.done(this.options.cluster.metadata.name, this.options.resource)
-										.then((data) => {
-											if (!data) {
-												this.emit("debug", `No Saving of ${this.options.resource}`);
-											} else {
-												this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
-											}
-										})
-										.catch((elroyErr) => {
-											this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "undefined")}) Saving to Elroy for ${this.options.resource} to ${this.options.cluster.metadata.name}`);
-										});
-								}
-								return null;
+								// Update Elroy that the resource has been deployed successfully
+								return elroy
+									.done(this.options.cluster.metadata.name, this.options.resource)
+									.catch((elroyErr) => {
+										// Ignore errors from elroy (we just log them)
+										this.emit("warn", `Elroy error: ${elroyErr}`);
+									});
 							});
 					}
 					return null;
@@ -612,15 +596,9 @@ class Manifests extends EventEmitter {
 					});
 					elroy
 						.fail(this.options.cluster.metadata.name, this.options.resource, err)
-						.then((data) => {
-							if (!data) {
-								this.emit("debug", `No Saving of ${this.options.resource}`);
-							} else {
-								this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
-							}
-						})
 						.catch((elroyErr) => {
-							this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "undefined")}) Saving to Elroy for ${this.options.resource} to ${this.options.cluster.metadata.name}`);
+							// Ignore errors from elroy (we just log them)
+							this.emit("warn", `Elroy error: ${elroyErr}`);
 						});
 					reject(err);
 				})

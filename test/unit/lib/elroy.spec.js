@@ -1,4 +1,4 @@
-"use strict"
+"use strict";
 
 const chai = require("chai");
 const Promise = require("bluebird");

@@ -68,9 +68,19 @@ class Elroy extends EventEmitter {
 
 	send(status, clusterName, resource, manifests, error) {
 		return new Promise((resolve, reject) => {
-			// Require cluster and manifests
+			// Require status
+			if (!status) {
+				return reject("Status not supplied for Elroy");
+			}
+
+			// Require cluster
 			if (!clusterName) {
-				return reject("Cluster not supplied for Elroy save");
+				return reject("Cluster not supplied for Elroy");
+			}
+
+			// Require resource
+			if (!resource) {
+				return reject("Resource not supplied for Elroy");
 			}
 
 			// If NOT enabled skip processing
@@ -95,10 +105,11 @@ class Elroy extends EventEmitter {
 			}
 
 			// Make request to Elroy
+			const uri = this.options.url + "/api/v1/deploy";
 			this.request({
 				simple: true,
 				method: "PUT",
-				uri: this.options.url + "/api/v1/deploy",
+				uri: uri,
 				headers: {
 					"X-Auth-Token": this.options.secret
 				},
@@ -106,11 +117,12 @@ class Elroy extends EventEmitter {
 				json: true
 			})
 			.then((res) => {
-				this.emit("debug", `Saved manifest for ${clusterName}/${resource} to Elroy`);
+				this.emit("info", `Successfully updated ${clusterName}/${resource} in Elroy`);
 				return resolve(res);
 			})
 			.catch((err) => {
-				this.emit("warn", `Issue saving manifest for ${clusterName}/${resource} to Elroy: ${err.message}`);
+				this.emit("warn", `Error updating ${clusterName}/${resource} in Elroy: ${err.message}`);
+				this.emit("debug", `Error updating ${clusterName}/${resource} in Elroy to ${uri} with payload: ${body}`);
 				return reject(err);
 			});
 			return null;
