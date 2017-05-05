@@ -32,20 +32,45 @@ class Elroy extends EventEmitter {
 	}
 
 	/**
-	 * Save manifest to Elroy
+	 * Save manifest to Elroy when starting a deploy
 	 *
 	 * @param  {string} clusterName The cluster name
 	 * @param  {string} resource    The resource name for the collection of manifests
 	 * @param  {array}  manifests   An array of json manifests being deployed to the cluster
-	 * @param  {array}  error       If there was some error that should be passed to elroy
 	 * @return {promise}            Promise that will resolve or reject
 	 */
-	save(clusterName, resource, manifests, error) {
-		return new Promise((resolve, reject) => {
+	start(clusterName, resource, manifests) {
+		return this.send(Status.InProgress, clusterName, resource, manifests, null);
+	}
 
+	/**
+	 * Send a failure message to elroy
+	 *
+	 * @param  {string} clusterName The cluster name
+	 * @param  {string} resource    The resource name for the collection of manifests
+	 * @param  {error}  error       The error message
+	 * @return {promise}            Promise that will resolve or reject
+	 */
+	fail(clusterName, resource, error) {
+		return this.send(Status.Failure, clusterName, resource, null, error);
+	}
+
+	/**
+	 * Send a done message to elroy
+	 *
+	 * @param  {string} clusterName The cluster name
+	 * @param  {string} resource    The resource name for the collection of manifests
+	 * @return {promise}            Promise that will resolve or reject
+	 */
+	done(clusterName, resource) {
+		return this.send(Status.Success, clusterName, resource, null, null);
+	}
+
+	send(status, clusterName, resource, manifests, error) {
+		return new Promise((resolve, reject) => {
 			// Require cluster and manifests
-			if (!clusterName || !manifests) {
-				return reject("Cluster or Manifests not supplied for Elroy save");
+			if (!clusterName) {
+				return reject("Cluster not supplied for Elroy save");
 			}
 
 			// If NOT enabled skip processing
@@ -53,7 +78,23 @@ class Elroy extends EventEmitter {
 				return resolve();
 			}
 
-			// Save manifest to Elroy
+			const body = {
+				uuid: this.options.uuid,
+				deploymentEnvironment: clusterName,
+				service: resource,
+				type: (this.options.isRollback) ? Type.Rollback : Type.Promotion,
+				status: status
+			};
+
+			if (manifests) {
+				body.manifests = manifests;
+			}
+
+			if (error) {
+				body.error = error;
+			}
+
+			// Make request to Elroy
 			this.request({
 				simple: true,
 				method: "PUT",
@@ -61,15 +102,7 @@ class Elroy extends EventEmitter {
 				headers: {
 					"X-Auth-Token": this.options.secret
 				},
-				body: {
-					uuid: this.options.uuid,
-					deploymentEnvironment: clusterName,
-					service: resource,
-					type: (this.options.isRollback) ? Type.Rollback : Type.Promotion,
-					status: (error) ? Status.Failure : Status.InProgress,
-					error: error || null,
-					manifests: manifests
-				},
+				body: body,
 				json: true
 			})
 			.then((res) => {

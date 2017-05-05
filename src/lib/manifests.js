@@ -419,7 +419,6 @@ class Manifests extends EventEmitter {
 
 															// Only check if resource is available if it's required
 															if (this.options.available.enabled) {
-																var availableErr = null;
 																var availablePromise = status
 																	.available(manifest.kind, manifestName, differences)
 																	.then(() => {
@@ -433,7 +432,6 @@ class Manifests extends EventEmitter {
 																		});
 																	})
 																	.catch((err) => {
-																		availableErr = (err) ? err : new Error("Unknown available error");
 																		this.emit("error", err);
 																		this.emit("status", {
 																			cluster: this.options.cluster.metadata.name,
@@ -541,7 +539,7 @@ class Manifests extends EventEmitter {
 					if (this.options.resource) {
 						// This handles saving generated manifests to the Elroy service
 						kubePromises.push(elroy
-							.save(this.options.cluster.metadata.name, this.options.resource, generatedManifests, null)
+							.start(this.options.cluster.metadata.name, this.options.resource, generatedManifests)
 							.then((data) => {
 								if (!data) {
 									this.emit("debug", `No Saving of ${this.options.resource}`);
@@ -580,6 +578,23 @@ class Manifests extends EventEmitter {
 									status: "SUCCESS",
 									manifest: this.options.cluster
 								});
+							})
+							.then(() => {
+								// This updating Elroy that the resource has been deployed successfully
+								if (this.options.resource) {
+									return elroy.done(this.options.cluster.metadata.name, this.options.resource)
+										.then((data) => {
+											if (!data) {
+												this.emit("debug", `No Saving of ${this.options.resource}`);
+											} else {
+												this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
+											}
+										})
+										.catch((elroyErr) => {
+											this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "undefined")}) Saving to Elroy for ${this.options.resource} to ${this.options.cluster.metadata.name}`);
+										});
+								}
+								return null;
 							});
 					}
 					return null;
@@ -595,6 +610,18 @@ class Manifests extends EventEmitter {
 						status: "FAILURE",
 						manifest: this.options.cluster
 					});
+					elroy
+						.fail(this.options.cluster.metadata.name, this.options.resource, err)
+						.then((data) => {
+							if (!data) {
+								this.emit("debug", `No Saving of ${this.options.resource}`);
+							} else {
+								this.emit("debug", "Elroy saving result: " + JSON.stringify(data));
+							}
+						})
+						.catch((elroyErr) => {
+							this.emit("warn", `Warning: (${(elroyErr ? elroyErr.message : "undefined")}) Saving to Elroy for ${this.options.resource} to ${this.options.cluster.metadata.name}`);
+						});
 					reject(err);
 				})
 				.finally(() => {

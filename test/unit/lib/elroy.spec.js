@@ -54,7 +54,7 @@ describe("Elroy", () => {
 			});
 			elroy.request = requestMock;
 			return elroy
-				.save(clusterName, resource, manifests, error)
+				.start(clusterName, resource, manifests)
 				.then((data) => {
 					expect(data).to.exist;
 					expect(calledWith.method).to.equal("PUT");
@@ -65,7 +65,6 @@ describe("Elroy", () => {
 						service: resource,
 						type: Type.Promotion,
 						status: Status.InProgress,
-						error: error,
 						manifests: manifests
 					});
 				});
@@ -83,7 +82,7 @@ describe("Elroy", () => {
 			});
 			elroy.request = requestMock;
 			return elroy
-				.save(clusterName, resource, manifests, error)
+				.start(clusterName, resource, manifests)
 				.then((data) => {
 					expect(data).to.not.exist;
 				});
@@ -101,12 +100,68 @@ describe("Elroy", () => {
 			});
 			elroy.request = requestMock;
 			elroy
-				.save(clusterName, resource, manifests, error)
+				.start(clusterName, resource)
 				.then(() => {
 					done("Should not be successful when expecting error");
 				})
 				.catch((err) => {
 					done();
+				});
+		});
+	});
+	describe("Enabled and fail", () => {
+		it("should resolve", () => {
+			success = true;
+			error = new Error("deploying error");
+			const elroy = new Elroy({
+				uuid: uuid,
+				url: "https://elroy.example.com",
+				secret: "xxxxxx",
+				enabled: true,
+				isRollback: isRollback
+			});
+			elroy.request = requestMock;
+			return elroy
+				.fail(clusterName, resource, error)
+				.then((data) => {
+					expect(data).to.exist;
+					expect(calledWith.method).to.equal("PUT");
+					expect(calledWith.uri).to.equal("https://elroy.example.com/api/v1/deploy");
+					expect(calledWith.body).to.deep.equal({
+						uuid: uuid,
+						deploymentEnvironment: clusterName,
+						service: resource,
+						type: Type.Promotion,
+						status: Status.Failure,
+						error: error
+					});
+				});
+		});
+	});
+	describe("Enabled and done", () => {
+		it("should resolve", () => {
+			success = true;
+			const elroy = new Elroy({
+				uuid: uuid,
+				url: "https://elroy.example.com",
+				secret: "xxxxxx",
+				enabled: true,
+				isRollback: isRollback
+			});
+			elroy.request = requestMock;
+			return elroy
+				.done(clusterName, resource)
+				.then((data) => {
+					expect(data).to.exist;
+					expect(calledWith.method).to.equal("PUT");
+					expect(calledWith.uri).to.equal("https://elroy.example.com/api/v1/deploy");
+					expect(calledWith.body).to.deep.equal({
+						uuid: uuid,
+						deploymentEnvironment: clusterName,
+						service: resource,
+						type: Type.Promotion,
+						status: Status.Success
+					});
 				});
 		});
 	});
