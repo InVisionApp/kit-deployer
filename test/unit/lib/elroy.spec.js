@@ -50,11 +50,13 @@ describe("Elroy", () => {
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
 				enabled: true,
-				isRollback: isRollback
+				isRollback: isRollback,
+				clusterName: clusterName,
+				resource: resource
 			});
 			elroy.request = requestMock;
 			return elroy
-				.start(clusterName, resource, manifests)
+				.start(manifests)
 				.then((data) => {
 					expect(data).to.exist;
 					expect(calledWith.method).to.equal("PUT");
@@ -78,11 +80,13 @@ describe("Elroy", () => {
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
 				enabled: false,
-				isRollback: isRollback
+				isRollback: isRollback,
+				clusterName: clusterName,
+				resource: resource
 			});
 			elroy.request = requestMock;
 			return elroy
-				.start(clusterName, resource, manifests)
+				.start(manifests)
 				.then((data) => {
 					expect(data).to.not.exist;
 				});
@@ -96,11 +100,13 @@ describe("Elroy", () => {
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
 				enabled: true,
-				isRollback: isRollback
+				isRollback: isRollback,
+				clusterName: clusterName,
+				resource: resource
 			});
 			elroy.request = requestMock;
 			elroy
-				.start(clusterName, resource)
+				.start(manifests)
 				.then(() => {
 					done("Should not be successful when expecting error");
 				})
@@ -118,11 +124,14 @@ describe("Elroy", () => {
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
 				enabled: true,
-				isRollback: isRollback
+				isRollback: isRollback,
+				clusterName: clusterName,
+				resource: resource
 			});
 			elroy.request = requestMock;
+			elroy._started = true;
 			return elroy
-				.fail(clusterName, resource, error)
+				.fail(error)
 				.then((data) => {
 					expect(data).to.exist;
 					expect(calledWith.method).to.equal("PUT");
@@ -146,11 +155,14 @@ describe("Elroy", () => {
 				url: "https://elroy.example.com",
 				secret: "xxxxxx",
 				enabled: true,
-				isRollback: isRollback
+				isRollback: isRollback,
+				clusterName: clusterName,
+				resource: resource
 			});
 			elroy.request = requestMock;
+			elroy._started = true;
 			return elroy
-				.done(clusterName, resource)
+				.done()
 				.then((data) => {
 					expect(data).to.exist;
 					expect(calledWith.method).to.equal("PUT");
