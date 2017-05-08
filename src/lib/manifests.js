@@ -282,10 +282,10 @@ class Manifests extends EventEmitter {
 						return Promise.resolve();
 					}
 
-					const kubePromises = [];
-					const promiseFuncsWithDependencies = [];
-					const remaining = _.cloneDeep(existing);
-					const generatedManifests = [];
+					var kubePromises = [];
+					var promiseFuncsWithDependencies = [];
+					var remaining = _.cloneDeep(existing);
+					var generatedManifests = [];
 					_.each(this.manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
 
