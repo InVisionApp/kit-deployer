@@ -4,6 +4,7 @@ const _ = require("lodash");
 const Promise = require("bluebird");
 const EventEmitter = require("events");
 const request = require("request-promise");
+const yaml = require("js-yaml");
 
 const Status = {
 	get Success() { return "success"; },
@@ -104,7 +105,14 @@ class Elroy extends EventEmitter {
 			};
 
 			if (manifests) {
-				body.manifests = manifests;
+				// Convert json manifests to yaml before sending
+				var yamlManifests = [];
+				_.each(manifests, (jsonManifest) => {
+					yamlManifests.push(yaml.safeDump(jsonManifest, {
+						sortKeys: true
+					}));
+				});
+				body.manifests = yamlManifests;
 			}
 
 			if (error) {
