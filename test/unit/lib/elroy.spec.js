@@ -10,6 +10,9 @@ const Type = require("../../../src/lib/elroy").Type;
 describe("Elroy", () => {
 
 	let uuid, clusterName, resource, manifests, isRollback, error, success, calledWith;
+	const yamlManifests = [`metadata:
+  name: service-name
+`];
 	const requestMock = function(opt) {
 		calledWith = opt;
 		return new Promise((resolve, reject) => {
@@ -67,7 +70,7 @@ describe("Elroy", () => {
 						service: resource,
 						type: Type.Promotion,
 						status: Status.InProgress,
-						manifests: manifests
+						manifests: yamlManifests
 					});
 				});
 		});
