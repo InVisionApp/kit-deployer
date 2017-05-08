@@ -18,6 +18,8 @@ const readFileAsync = Promise.promisify(fs.readFile);
 const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
+const Annotator = require("./annotator").Annotator;
+const Annotations = require("./annotator").Annotations;
 const Backup = require("./backup");
 const Elroy = require("./elroy").Elroy;
 const supportedTypes = [
@@ -31,22 +33,12 @@ const supportedTypes = [
 	"daemonset",
 	"persistentvolumeclaim"
 ];
-const mustBeUnique = [
-	"Job",
-	"ScheduledJob",
-	"CronJob"
-];
 const mustBeRecreated = [
 	"DaemonSet",
 	"Job",
 	"ScheduledJob",
 	"CronJob"
 ];
-
-const commitKey = "kit-deployer/commit";
-const lastAppliedConfigurationKey = "kit-deployer/last-applied-configuration";
-const lastAppliedConfigurationHashKey = "kit-deployer/last-applied-configuration-sha1";
-const originalNameKey = "kit-deployer/original-name";
 
 class Manifests extends EventEmitter {
 	constructor(options) {
@@ -228,7 +220,7 @@ class Manifests extends EventEmitter {
 			var existing = [];
 
 			// Backup
-			var backup = new Backup(this.options.backup.enabled, this.options.backup.bucket, this.options.backup.saveFormat);
+			const backup = new Backup(this.options.backup.enabled, this.options.backup.bucket, this.options.backup.saveFormat);
 			backup.on("info", (msg) => {
 				this.emit("info", msg);
 			});
@@ -240,7 +232,7 @@ class Manifests extends EventEmitter {
 			});
 
 			// Elroy
-			var elroy = new Elroy(_.merge(this.options.elroy, {
+			const elroy = new Elroy(_.merge(this.options.elroy, {
 				uuid: this.options.uuid,
 				isRollback: this.options.isRollback
 			}));
@@ -252,6 +244,11 @@ class Manifests extends EventEmitter {
 			});
 			elroy.on("warn", (err) => {
 				this.emit("warn", err);
+			});
+
+			// Annotator
+			const annotator = new Annotator({
+				sha: this.options.sha
 			});
 
 			return this
@@ -283,28 +280,22 @@ class Manifests extends EventEmitter {
 						return Promise.resolve();
 					}
 
-					var kubePromises = [];
-					var promiseFuncsWithDependencies = [];
-					var remaining = _.cloneDeep(existing);
-					var generatedManifests = [];
+					const kubePromises = [];
+					const promiseFuncsWithDependencies = [];
+					const remaining = _.cloneDeep(existing);
+					const generatedManifests = [];
 					_.each(this.manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
+
+						// Annotator will add required annotations and rename the manifest if needed
+						manifest = annotator.annotate(manifest);
+						generatedManifests.push(manifest);
+						const manifestName = manifest.metadata.name;
+
 						var differences = {};
 						var method, lastAppliedConfiguration;
 
 						var found = false;
-
-						// Save configuration we're applying as metadata annotation so we can diff against
-						// on future configuration changes
-						var applyingConfiguration = JSON.stringify(manifest);
-						var applyingConfigurationHash = crypto.createHash("sha1").update(applyingConfiguration, "utf8").digest("hex");
-
-						// To avoid issues with deleting/creating jobs, we instead create a new job with a unique name that is based
-						// on the contents of the manifest
-						var manifestName = manifest.metadata.name;
-						if (mustBeUnique.indexOf(manifest.kind) >= 0) {
-							manifestName = manifest.metadata.name + "-" + applyingConfigurationHash;
-						}
 
 						found = _.find(existing, {kind: manifest.kind, metadata: {name: manifestName}});
 						remaining = _.reject(remaining, {kind: manifest.kind, metadata: {name: manifestName}});
@@ -321,8 +312,8 @@ class Manifests extends EventEmitter {
 							}
 
 							// Get the last applied configuration if one exists
-							if (_.has(found, ["metadata", "annotations", lastAppliedConfigurationKey])) {
-								var lastAppliedConfigurationString = found.metadata.annotations[lastAppliedConfigurationKey];
+							if (_.has(found, ["metadata", "annotations", Annotations.LastAppliedConfiguration])) {
+								var lastAppliedConfigurationString = found.metadata.annotations[Annotations.LastAppliedConfiguration];
 								lastAppliedConfiguration = JSON.parse(lastAppliedConfigurationString);
 							}
 							differences = manifestDiff(lastAppliedConfiguration, manifest);
@@ -347,8 +338,8 @@ class Manifests extends EventEmitter {
 
 								// Skip deploying this manifest if it's newer than what we currently have to deploy
 								var committerDate = null;
-								if (_.has(found, ["metadata", "annotations", commitKey])) {
-									var commitAnnotation = JSON.parse(found.metadata.annotations[commitKey]);
+								if (_.has(found, ["metadata", "annotations", Annotations.Commit])) {
+									var commitAnnotation = JSON.parse(found.metadata.annotations[Annotations.Commit]);
 									if (_.has(commitAnnotation, ["commit", "committer", "date"])) {
 										committerDate = new Date(commitAnnotation.commit.committer.date);
 									}
@@ -375,20 +366,8 @@ class Manifests extends EventEmitter {
 											return Promise.resolve();
 										}
 
-										// Update manifest name before deploying (necessary for manifests we need to give a unique name to like Jobs)
-										manifest.metadata.annotations[originalNameKey] = manifest.metadata.name;
-										manifest.metadata.name = manifestName;
-
-										// Add our custom annotations before deploying
-										var tmpApplyingConfigurationPath = path.join(tmpDir, this.options.cluster.metadata.name + "-" + path.basename(manifestFile.path) + ".json");
-										manifest.metadata.annotations[lastAppliedConfigurationKey] = applyingConfiguration;
-										manifest.metadata.annotations[lastAppliedConfigurationHashKey] = applyingConfigurationHash;
-
-										// Add commit annotation to manifest we are creating/updating
-										manifest.metadata.annotations[commitKey] = JSON.stringify(this.options.sha);
-
-										var generatedApplyingConfiguration = JSON.stringify(manifest);
-										generatedManifests.push(manifest)
+										const tmpApplyingConfigurationPath = path.join(tmpDir, this.options.cluster.metadata.name + "-" + path.basename(manifestFile.path) + ".json");
+										const generatedApplyingConfiguration = JSON.stringify(manifest);
 
 										return writeFileAsync(tmpApplyingConfigurationPath, generatedApplyingConfiguration, "utf8")
 											.then(() => {
