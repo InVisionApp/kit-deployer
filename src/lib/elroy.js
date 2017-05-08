@@ -25,7 +25,9 @@ class Elroy extends EventEmitter {
 			url: undefined,
 			secret: undefined,
 			enabled: false,
-			isRollback: false
+			isRollback: false,
+			clusterName: undefined,
+			resource: undefined
 		}, options);
 		this.request = request;
 		this.emit("info", `Saving using Elroy is ${this.options.enabled}`);
@@ -34,52 +36,57 @@ class Elroy extends EventEmitter {
 	/**
 	 * Save manifest to Elroy when starting a deploy
 	 *
-	 * @param  {string} clusterName The cluster name
-	 * @param  {string} resource    The resource name for the collection of manifests
 	 * @param  {array}  manifests   An array of json manifests being deployed to the cluster
 	 * @return {promise}            Promise that will resolve or reject
 	 */
-	start(clusterName, resource, manifests) {
-		return this.send(Status.InProgress, clusterName, resource, manifests, null);
+	start(manifests) {
+		// Skip starting if there are no manifests being deployed
+		if (!manifests) {
+			this.emit("debug", `No manifests to deploy for ${this.options.clusterName}/${this.options.resource}`);
+			return Promise.resolve();
+		}
+		this._started = true;
+		return this.send(Status.InProgress, manifests, null);
 	}
 
 	/**
 	 * Send a failure message to elroy
 	 *
-	 * @param  {string} clusterName The cluster name
-	 * @param  {string} resource    The resource name for the collection of manifests
 	 * @param  {error}  error       The error message
 	 * @return {promise}            Promise that will resolve or reject
 	 */
-	fail(clusterName, resource, error) {
-		return this.send(Status.Failure, clusterName, resource, null, error);
+	fail(error) {
+		return this.send(Status.Failure, null, error);
 	}
 
 	/**
 	 * Send a done message to elroy
 	 *
-	 * @param  {string} clusterName The cluster name
-	 * @param  {string} resource    The resource name for the collection of manifests
 	 * @return {promise}            Promise that will resolve or reject
 	 */
-	done(clusterName, resource) {
-		return this.send(Status.Success, clusterName, resource, null, null);
+	done() {
+		return this.send(Status.Success, null, null);
 	}
 
-	send(status, clusterName, resource, manifests, error) {
+	send(status, manifests, error) {
 		return new Promise((resolve, reject) => {
 			// Require status
 			if (!status) {
 				return reject("Status not supplied for Elroy");
 			}
 
+			// Skip sending if it has not been started yet
+			if (!this._started) {
+				return resolve();
+			}
+
 			// Require cluster
-			if (!clusterName) {
+			if (!this.options.clusterName) {
 				return reject("Cluster not supplied for Elroy");
 			}
 
 			// Require resource
-			if (!resource) {
+			if (!this.options.resource) {
 				return reject("Resource not supplied for Elroy");
 			}
 
@@ -90,8 +97,8 @@ class Elroy extends EventEmitter {
 
 			const body = {
 				uuid: this.options.uuid,
-				deploymentEnvironment: clusterName,
-				service: resource,
+				deploymentEnvironment: this.options.clusterName,
+				service: this.options.resource,
 				type: (this.options.isRollback) ? Type.Rollback : Type.Promotion,
 				status: status
 			};
@@ -117,13 +124,13 @@ class Elroy extends EventEmitter {
 				json: true
 			})
 			.then((res) => {
-				this.emit("info", `Successfully updated ${clusterName}/${resource} in Elroy`);
+				this.emit("info", `Successfully updated ${this.options.clusterName}/${this.options.resource} in Elroy`);
 				return resolve(res);
 			})
 			.catch((err) => {
-				this.emit("warn", `Error updating ${clusterName}/${resource} in Elroy: ${err.message}`);
+				this.emit("warn", `Error updating ${this.options.clusterName}/${this.options.resource} in Elroy: ${err.message}`);
 				const bodyStr = JSON.stringify(body);
-				this.emit("debug", `Error updating ${clusterName}/${resource} in Elroy to ${uri} with payload: ${bodyStr}`);
+				this.emit("debug", `Error updating ${this.options.clusterName}/${this.options.resource} in Elroy to ${uri} with payload: ${bodyStr}`);
 				return reject(err);
 			});
 			return null;

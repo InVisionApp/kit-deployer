@@ -234,7 +234,9 @@ class Manifests extends EventEmitter {
 			// Elroy
 			const elroy = new Elroy(_.merge(this.options.elroy, {
 				uuid: this.options.uuid,
-				isRollback: this.options.isRollback
+				isRollback: this.options.isRollback,
+				clusterName: this.options.cluster.metadata.name,
+				resource: this.options.resource
 			}));
 			elroy.on("info", (msg) => {
 				this.emit("info", msg);
@@ -280,10 +282,10 @@ class Manifests extends EventEmitter {
 						return Promise.resolve();
 					}
 
-					const kubePromises = [];
-					const promiseFuncsWithDependencies = [];
-					const remaining = _.cloneDeep(existing);
-					const generatedManifests = [];
+					var kubePromises = [];
+					var promiseFuncsWithDependencies = [];
+					var remaining = _.cloneDeep(existing);
+					var generatedManifests = [];
 					_.each(this.manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
 
@@ -516,7 +518,7 @@ class Manifests extends EventEmitter {
 					// TODO: add dry run check before saving to Elroy
 					// Handles saving generated manifests to the Elroy service
 					kubePromises.push(elroy
-						.start(this.options.cluster.metadata.name, this.options.resource, generatedManifests)
+						.start(generatedManifests)
 						.catch((elroyErr) => {
 							// Ignore errors from elroy (we just log them)
 							this.emit("warn", `Elroy error: ${elroyErr}`);
@@ -553,7 +555,7 @@ class Manifests extends EventEmitter {
 							.then(() => {
 								// Update Elroy that the resource has been deployed successfully
 								return elroy
-									.done(this.options.cluster.metadata.name, this.options.resource)
+									.done()
 									.catch((elroyErr) => {
 										// Ignore errors from elroy (we just log them)
 										this.emit("warn", `Elroy error: ${elroyErr}`);
@@ -574,7 +576,7 @@ class Manifests extends EventEmitter {
 						manifest: this.options.cluster
 					});
 					elroy
-						.fail(this.options.cluster.metadata.name, this.options.resource, err)
+						.fail(err)
 						.catch((elroyErr) => {
 							// Ignore errors from elroy (we just log them)
 							this.emit("warn", `Elroy error: ${elroyErr}`);
