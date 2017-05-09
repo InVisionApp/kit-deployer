@@ -10,6 +10,30 @@ const scenarios = {
 		latest: {},
 		expected: undefined
 	},
+	"previous object with same properties and latest with special annotations": {
+		previous: {
+			enabled: true,
+			metadata: {
+				annotations: {
+					"keep-me": "okay"
+				}
+			}
+		},
+		latest: {
+			enabled: true,
+			metadata: {
+				name: "should-ignore-name",
+				annotations: {
+					"keep-me": "okay",
+					"kit-deployer/commit": "123abc",
+					"kit-deployer/original-name": "some-og-name",
+					"kit-deployer/last-applied-configuration": "last-applied-here",
+					"kit-deployer/last-applied-configuration-sha1": "sha1-here"
+				}
+			}
+		},
+		expected: undefined
+	},
 	"previous with empty object and latest with new property": {
 		previous: {},
 		latest: {
