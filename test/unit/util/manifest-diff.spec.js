@@ -14,6 +14,7 @@ const scenarios = {
 		previous: {
 			enabled: true,
 			metadata: {
+				name: "the-original-name",
 				annotations: {
 					"keep-me": "okay"
 				}
@@ -22,11 +23,32 @@ const scenarios = {
 		latest: {
 			enabled: true,
 			metadata: {
-				name: "should-ignore-name",
+				name: "name-dynamically-modified",
 				annotations: {
 					"keep-me": "okay",
 					"kit-deployer/commit": "123abc",
-					"kit-deployer/original-name": "some-og-name",
+					"kit-deployer/original-name": "the-original-name",
+					"kit-deployer/last-applied-configuration": "last-applied-here",
+					"kit-deployer/last-applied-configuration-sha1": "sha1-here"
+				}
+			}
+		},
+		expected: undefined
+	},
+	"previous object with same properties but no annotations and latest with special annotations": {
+		previous: {
+			enabled: true,
+			metadata: {
+				name: "the-original-name"
+			}
+		},
+		latest: {
+			enabled: true,
+			metadata: {
+				name: "name-dynamically-modified",
+				annotations: {
+					"kit-deployer/commit": "123abc",
+					"kit-deployer/original-name": "the-original-name",
 					"kit-deployer/last-applied-configuration": "last-applied-here",
 					"kit-deployer/last-applied-configuration-sha1": "sha1-here"
 				}
