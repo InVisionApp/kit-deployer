@@ -37,16 +37,19 @@ function manifestDiff(previous, latest) {
 	const latestClone = _.cloneDeep(latest);
 
 	// Remove special annotations from latest that are used for diff logic
-	if (_.has(latest, ["metadata"])) {
-		// We remove the name because depending on the type of resource we automatically rename the manifest and this
-		// should not be part of the diff
-		delete latestClone.metadata.name;
-		if (_.has(latest, ["metadata", "annotations"])) {
-			// All these annotations are dynamically generated and thus should not be diffed
-			delete latestClone.metadata.annotations[Annotations.OriginalName];
-			delete latestClone.metadata.annotations[Annotations.LastAppliedConfiguration];
-			delete latestClone.metadata.annotations[Annotations.LastAppliedConfigurationHash];
-			delete latestClone.metadata.annotations[Annotations.Commit];
+	if (_.has(latest, ["metadata", "annotations"])) {
+		// We want to use the original name before performing the diff (if one is found)
+		if (latestClone.metadata.annotations[Annotations.OriginalName]) {
+			latestClone.metadata.name = latestClone.metadata.annotations[Annotations.OriginalName];
+		}
+		// All these annotations are dynamically generated and thus should not be diffed
+		delete latestClone.metadata.annotations[Annotations.OriginalName];
+		delete latestClone.metadata.annotations[Annotations.LastAppliedConfiguration];
+		delete latestClone.metadata.annotations[Annotations.LastAppliedConfigurationHash];
+		delete latestClone.metadata.annotations[Annotations.Commit];
+		// If there are no other annotations remove the annotation block to prevent a false diff
+		if (Object.keys(latestClone.metadata.annotations).length == 0) {
+			delete latestClone.metadata.annotations;
 		}
 	}
 
