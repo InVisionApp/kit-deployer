@@ -10,6 +10,10 @@ const mustBeUnique = [
 ];
 
 const Annotations = {
+	get UUID() {
+		// I'm sorry for the inconsistency...
+		return "deployment.invision/uuid";
+	},
 	get Commit() {
 		return "kit-deployer/commit";
 	},
@@ -27,6 +31,7 @@ const Annotations = {
 class Annotator {
 	constructor(options) {
 		this.options = _.merge({
+			uuid: undefined,
 			sha: undefined
 		}, options);
 	}
@@ -56,6 +61,11 @@ class Annotator {
 		}
 		if (!manifest.metadata.annotations) {
 			manifest.metadata.annotations = {};
+		}
+
+		// Add UUID as annotation
+		if (this.options.uuid) {
+			manifest.metadata.annotations[Annotations.UUID] = this.options.uuid;
 		}
 
 		// Update manifest name before deploying (necessary for manifests we need to give a unique name to like Jobs)
