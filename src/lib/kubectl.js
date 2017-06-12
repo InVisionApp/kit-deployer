@@ -111,7 +111,15 @@ class Kubectl {
 		this.endpoint = conf.endpoint || "";
 	}
 
+	/**
+	 * Spawn is used internally by methods like get and create and it emits a message
+	 * for whenever its called so you can track the number of processes spawned if needed.
+	 * @param {array} args - Array list of the command args
+	 * @param {func} done - Function to call when done
+	 * @fires KubectlWatcher#spawn which tells when spawn is called and with what args
+	 */
 	spawn(args, done) {
+		this.emit("spawn", args);
 		var ops = new Array();
 
 		// Prefer configuration file over endpoint if both are defined

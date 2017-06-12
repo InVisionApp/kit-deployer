@@ -141,6 +141,9 @@ class Deployer extends EventEmitter {
 							kubeconfig: configFile,
 							version: self.options.apiVersion
 						});
+						kubectl.on("spawn", (args) => {
+							self.emit("spawn", args);
+						});
 
 						// Create namespaces before deploying any manifests
 						var namespaces = new Namespaces({
