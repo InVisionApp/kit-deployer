@@ -36,6 +36,9 @@ class HealthCheck extends EventEmitter {
 	}
 
 	start(name) {
+		this.events.on("error", (err) => {
+			this.emit("error", err);
+		});
 		this.events.on("new", (event) => {
 			if (!_.has(event, ["type"])) {
 				return;
