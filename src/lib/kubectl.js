@@ -103,8 +103,9 @@ class KubectlEventWatcher extends EventEmitter {
 	}
 }
 
-class Kubectl {
+class Kubectl extends EventEmitter {
 	constructor(conf) {
+		super();
 		this.binary = conf.binary || "kubectl";
 
 		this.kubeconfig = conf.kubeconfig || "";
