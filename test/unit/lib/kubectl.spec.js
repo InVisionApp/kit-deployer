@@ -39,6 +39,11 @@ describe("Kubectl", () => {
 					expect(args.name).to.equal("resource-name");
 					done();
 				});
+				// The ones that aren't supported will fallback to using spawn (kubectl binary)
+				kubectl.on("spawn", (args) => {
+					expect(args[0]).to.equal("get");
+					done();
+				});
 				kubectl.get(resource, "resource-name").catch(() => {});
 			});
 			it("should only error on address " + resource, (done) => {

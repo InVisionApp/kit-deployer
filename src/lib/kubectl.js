@@ -207,11 +207,7 @@ class Kubectl extends EventEmitter {
 
 	get(resource, name) {
 		return new Promise((resolve, reject) => {
-			this.emit("request", {
-				method: "get",
-				resource: resource,
-				name: name
-			});
+			const method = "get";
 			// Avoid passing "undefined" to kubeapi get methods
 			if (!name) {
 				name = "";
@@ -223,9 +219,14 @@ class Kubectl extends EventEmitter {
 					}
 					return resolve(data);
 				});
-			} catch(err) {
+				this.emit("request", {
+					method: method,
+					resource: resource,
+					name: name
+				});
+			} catch(coreErr) {
 				// It is not a core resource type, so try using the extensions api
-				if (err instanceof TypeError) {
+				if (coreErr instanceof TypeError) {
 					try {
 						this.kubeapi.ext.namespaces[resource](name).get(function(extErr, extData) {
 							if (extErr) {
@@ -233,19 +234,31 @@ class Kubectl extends EventEmitter {
 							}
 							return resolve(extData);
 						});
-					} catch(extErr) {
-						// If that fails, then fallback to spawning a kubectl process
-						const cmd = ["get", "--output=json", resource];
-						if (name) {
-							cmd.push(name);
-						}
-						this.spawn(cmd, (spawnErr, spawnData) => {
-							if (spawnErr) {
-								return reject(new Error(spawnErr));
-							}
-							return resolve(JSON.parse(spawnData));
+						this.emit("request", {
+							method: method,
+							resource: resource,
+							name: name
 						});
+					} catch(extErr) {
+						// It is not a core resource type, so try using the extensions api
+						if (extErr instanceof TypeError) {
+							// If that fails, then fallback to spawning a kubectl process
+							const cmd = ["get", "--output=json", resource];
+							if (name) {
+								cmd.push(name);
+							}
+							this.spawn(cmd, (spawnErr, spawnData) => {
+								if (spawnErr) {
+									return reject(new Error(spawnErr));
+								}
+								return resolve(JSON.parse(spawnData));
+							});
+						} else {
+							reject(extErr);
+						}
 					}
+				} else {
+					reject(coreErr);
 				}
 			}
 		});
