@@ -1,10 +1,14 @@
 "use strict";
 
 const spawn = require("child_process").spawn;
+const fs = require("fs");
+const path = require("path");
 const Promise = require("bluebird");
 const EventEmitter = require("events").EventEmitter;
 const diff = require("deep-diff");
+const KubeClient = require("kubernetes-client");
 const _ = require("lodash");
+const yaml = require("js-yaml");
 
 class KubectlWatcher extends EventEmitter {
 	constructor(kubectl, resource, name) {
@@ -103,12 +107,56 @@ class KubectlEventWatcher extends EventEmitter {
 	}
 }
 
+class Kubeapi {
+	constructor(cwd, kubeconfig) {
+		// NOTE: we could not simply use KubeClient.config.fromKubeconfig(kubeconfig) because
+		// it does not correctly resolve the relative cert paths
+		if (!cwd || !kubeconfig) {
+			throw new Error("cwd and kubeconfig are required for Kubeapi");
+		}
+		const currentContext = _.find(kubeconfig.contexts, {name: kubeconfig["current-context"]});
+		if (!currentContext) {
+			throw new Error("Unable to configure kubeapi with current context");
+		}
+		const currentCluster = _.find(kubeconfig.clusters, {name: currentContext.context.cluster});
+		if (!currentCluster) {
+			throw new Error("Unable to configure kubeapi with current cluster");
+		}
+		const currentUser = _.find(kubeconfig.users, {name: currentContext.context.user});
+		if (!currentUser) {
+			throw new Error("Unable to configure kubeapi with current user");
+		}
+
+		var options = {
+			url: currentCluster.cluster.server,
+			namespace: currentContext.context.namespace
+		};
+		if (currentUser.user.token) {
+			options.auth = {
+				bearer: currentUser.user.token
+			};
+			this.core = new KubeClient.Core(options);
+			this.ext = new KubeClient.Extensions(options);
+			this.api = new KubeClient.Api(options);
+		} else {
+			options.ca = fs.readFileSync(path.join(cwd, currentCluster.cluster["certificate-authority"]));
+			options.cert = fs.readFileSync(path.join(cwd, currentUser.user["client-certificate"]));
+			options.key = fs.readFileSync(path.join(cwd, currentUser.user["client-key"]));
+			this.core = new KubeClient.Core(options);
+			this.ext = new KubeClient.Extensions(options);
+			this.api = new KubeClient.Api(options);
+		}
+	}
+}
+
 class Kubectl extends EventEmitter {
 	constructor(conf) {
 		super();
+		this.kubeapi = new Kubeapi(conf.cwd, conf.kubeconfig);
+
 		this.binary = conf.binary || "kubectl";
 
-		this.kubeconfig = conf.kubeconfig || "";
+		this.kubeconfigFile = conf.kubeconfigFile || "";
 		this.endpoint = conf.endpoint || "";
 	}
 
@@ -124,9 +172,9 @@ class Kubectl extends EventEmitter {
 		var ops = new Array();
 
 		// Prefer configuration file over endpoint if both are defined
-		if (this.kubeconfig) {
+		if (this.kubeconfigFile) {
 			ops.push("--kubeconfig");
-			ops.push(this.kubeconfig);
+			ops.push(this.kubeconfigFile);
 		} else {
 			ops.push("-s");
 			ops.push(this.endpoint);
@@ -159,16 +207,47 @@ class Kubectl extends EventEmitter {
 
 	get(resource, name) {
 		return new Promise((resolve, reject) => {
-			const cmd = ["get", "--output=json", resource];
-			if (name) {
-				cmd.push(name);
-			}
-			this.spawn(cmd, (err, data) => {
-				if (err) {
-					return reject(err);
-				}
-				resolve(JSON.parse(data));
+			this.emit("request", {
+				method: "get",
+				resource: resource,
+				name: name
 			});
+			// Avoid passing "undefined" to kubeapi get methods
+			if (!name) {
+				name = "";
+			}
+			try {
+				this.kubeapi.core.namespaces[resource](name).get(function(err, data) {
+					if (err) {
+						return reject(err);
+					}
+					return resolve(data);
+				});
+			} catch(err) {
+				// It is not a core resource type, so try using the extensions api
+				if (err instanceof TypeError) {
+					try {
+						this.kubeapi.ext.namespaces[resource](name).get(function(extErr, extData) {
+							if (extErr) {
+								return reject(extErr);
+							}
+							return resolve(extData);
+						});
+					} catch(extErr) {
+						// If that fails, then fallback to spawning a kubectl process
+						const cmd = ["get", "--output=json", resource];
+						if (name) {
+							cmd.push(name);
+						}
+						this.spawn(cmd, (spawnErr, spawnData) => {
+							if (spawnErr) {
+								return reject(new Error(spawnErr));
+							}
+							return resolve(JSON.parse(spawnData));
+						});
+					}
+				}
+			}
 		});
 	}
 
@@ -183,7 +262,7 @@ class Kubectl extends EventEmitter {
 				if (err) {
 					return reject(err);
 				}
-				resolve(JSON.parse(data));
+				return resolve(JSON.parse(data));
 			});
 		});
 	}
@@ -194,7 +273,7 @@ class Kubectl extends EventEmitter {
 				if (err) {
 					return reject(err);
 				}
-				resolve(data);
+				return resolve(data);
 			});
 		});
 	}
@@ -208,7 +287,7 @@ class Kubectl extends EventEmitter {
 						if (err) {
 							return reject(err);
 						}
-						resolve(data);
+						return resolve(data);
 					});
 				});
 			});
@@ -220,7 +299,7 @@ class Kubectl extends EventEmitter {
 				if (err) {
 					return reject(err);
 				}
-				resolve(data);
+				return resolve(data);
 			});
 		});
 	}
@@ -231,7 +310,7 @@ class Kubectl extends EventEmitter {
 				if (err) {
 					return reject(err);
 				}
-				resolve(data);
+				return resolve(data);
 			});
 		});
 	}
@@ -242,9 +321,18 @@ class Kubectl extends EventEmitter {
 				if (err) {
 					return reject(err);
 				}
-				resolve(data);
+				return resolve(data);
 			});
 		});
+	}
+
+	load(filepath) {
+		if (filepath.endsWith(".yaml")) {
+			return yaml.safeLoad(fs.readFileSync(filepath));
+		} else if (filepath.endsWith(".json")) {
+			return JSON.parse(fs.readFileSync(filepath));
+		}
+		return false;
 	}
 
 	/**

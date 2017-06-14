@@ -2,6 +2,7 @@
 
 const _ = require("lodash");
 const fs = require("fs");
+const path = require("path");
 const glob = require("glob");
 const yaml = require("js-yaml");
 const Kubectl = require("./kubectl");
@@ -138,11 +139,15 @@ class Deployer extends EventEmitter {
 						progress.add(config.metadata.name);
 
 						var kubectl = new Kubectl({
-							kubeconfig: configFile,
-							version: self.options.apiVersion
+							cwd: path.dirname(configFile),
+							kubeconfig: config,
+							kubeconfigFile: configFile
 						});
 						kubectl.on("spawn", (args) => {
 							self.emit("spawn", args);
+						});
+						kubectl.on("request", (args) => {
+							self.emit("request", args);
 						});
 
 						// Create namespaces before deploying any manifests

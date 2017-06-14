@@ -1,11 +1,25 @@
 const exec = require("child_process").exec;
 const expect = require("chai").expect;
 const Kubectl = require("../../src/lib/kubectl");
+const fs = require("fs");
+const path = require("path");
+const yaml = require("js-yaml");
+
+function clean(kubeconfigFile, namespace) {
+	const cwd = path.dirname(kubeconfigFile);
+	const kubectl = new Kubectl({
+		cwd: cwd,
+		kubeconfig: yaml.safeLoad(fs.readFileSync(kubeconfigFile, "utf8")),
+		kubeconfigFile: kubeconfigFile
+	});
+	return kubectl.deleteByName("namespace", namespace);
+}
 
 describe("Functional", function() {
 	this.timeout(180000);
 
 	beforeEach(function() {
+		process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 		process.env.SELECTOR = "app in (test)";
 		process.env.DEBUG = "true";
 		process.env.DRY_RUN = "false";
@@ -26,9 +40,10 @@ describe("Functional", function() {
 	});
 
 	describe("when deploying to example cluster", function() {
+		const kubeconfigFile = "/test/functional/clusters/configs/example-kubeconfig.yaml";
 		describe("and example cluster does not exist yet", function() {
 			it("should deploy without error", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
 					expect(error).to.be.a("null", stdout);
@@ -54,7 +69,7 @@ describe("Functional", function() {
 
 		describe("and when running same deploy again (no differences)", function() {
 			it("should deploy nothing and send webhooks", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
 					expect(error).to.be.a("null", stdout);
@@ -78,17 +93,15 @@ describe("Functional", function() {
 		});
 
 		after(function() {
-			var kubectl = new Kubectl({
-				kubeconfig: process.env.CONFIGS
-			});
-			return kubectl.deleteByName("namespace", "example");
+			return clean(kubeconfigFile, "example");
 		});
 	});
 
 	describe("when deploying to example cluster", function() {
+		const kubeconfigFile = "/test/functional/clusters/configs/example-kubeconfig.yaml";
 		describe("and exceeding AVAILABLE_TIMEOUT", function() {
 			it("should trigger a TimeoutError", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/example-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 				process.env.AVAILABLE_TIMEOUT = 1;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
@@ -102,17 +115,15 @@ describe("Functional", function() {
 		});
 
 		after(function() {
-			var kubectl = new Kubectl({
-				kubeconfig: process.env.CONFIGS
-			});
-			return kubectl.deleteByName("namespace", "example");
+			return clean(kubeconfigFile, "example");
 		});
 	});
 
 	describe("when deploying to badimage cluster", function() {
+		const kubeconfigFile = "/test/functional/clusters/configs/badimage-kubeconfig.yaml";
 		describe("and deployment fails because of image pull errors", function() {
 			it("should trigger a health check failure", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/badimage-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
 					expect(stdout).not.to.be.empty;
@@ -130,17 +141,15 @@ describe("Functional", function() {
 		});
 
 		after(function() {
-			var kubectl = new Kubectl({
-				kubeconfig: process.env.CONFIGS
-			});
-			return kubectl.deleteByName("namespace", "badimage");
+			return clean(kubeconfigFile, "badimage");
 		});
 	});
 
 	describe("when deploying multiple deployments cluster", function() {
+		const kubeconfigFile = "/test/functional/clusters/configs/multi-deployments-kubeconfig.yaml";
 		describe("and multi-deployments cluster does not exist yet", function() {
 			it("should deploy without error", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/multi-deployments-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
 					expect(error).to.be.a("null", stdout);
@@ -173,7 +182,7 @@ describe("Functional", function() {
 
 		describe("and multi-deployments cluster has already been deployed", function() {
 			it("should deploy nothing and send webhooks", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/multi-deployments-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
 					expect(error).to.be.a("null", stdout);
@@ -205,18 +214,16 @@ describe("Functional", function() {
 		});
 
 		after(function() {
-			var kubectl = new Kubectl({
-				kubeconfig: process.env.CONFIGS
-			});
-			return kubectl.deleteByName("namespace", "multi-deployments");
+			return clean(kubeconfigFile, "multi-deployments");
 		});
 	});
 
 	describe("when deploying mix deployment and service cluster", function() {
 		const clusterName = "mix-deployment-service-cluster";
+		const kubeconfigFile = "/test/functional/clusters/configs/mix-deployment-service-kubeconfig.yaml";
 		describe("and mix-deployment-service cluster does not exist yet", function() {
 			it("should deploy without error", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/mix-deployment-service-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
 					expect(error).to.be.a("null", stdout);
@@ -248,7 +255,7 @@ describe("Functional", function() {
 
 		describe("and mix-deployment-service cluster has already been deployed", function() {
 			it("should deploy nothing and send webhooks", function(done) {
-				process.env.CONFIGS = "/test/functional/clusters/configs/mix-deployment-service-kubeconfig.yaml";
+				process.env.CONFIGS = kubeconfigFile;
 
 				exec("./src/deployer", function(error, stdout, stderr) {
 					expect(error).to.be.a("null", stdout);
@@ -279,10 +286,7 @@ describe("Functional", function() {
 		});
 
 		after(function() {
-			var kubectl = new Kubectl({
-				kubeconfig: process.env.CONFIGS
-			});
-			return kubectl.deleteByName("namespace", "mix-deployment-service");
+			return clean(kubeconfigFile, "mix-deployment-service");
 		});
 	});
 
@@ -305,8 +309,9 @@ describe("Functional", function() {
 	});
 
 	describe("when deploying a single job to a cluster", function() {
+		const kubeconfigFile = "/test/functional/clusters/configs/single-job-kubeconfig.yaml";
 		it("should deploy without error", function(done) {
-			process.env.CONFIGS = "/test/functional/clusters/configs/single-job-kubeconfig.yaml";
+			process.env.CONFIGS = kubeconfigFile;
 
 			exec("./src/deployer", function(error, stdout, stderr) {
 				expect(error).to.be.a("null", stdout);
@@ -329,9 +334,14 @@ describe("Functional", function() {
 				done();
 			});
 		});
+
+		after(function() {
+			return clean(kubeconfigFile, "single-job");
+		});
 	});
 
 	afterEach(function() {
+		delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
 		delete process.env.SELECTOR;
 		delete process.env.DEBUG;
 		delete process.env.DRY_RUN;
