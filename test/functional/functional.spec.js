@@ -1,3 +1,5 @@
+"use strict";
+
 const exec = require("child_process").exec;
 const expect = require("chai").expect;
 const Kubectl = require("../../src/lib/kubectl");

@@ -207,13 +207,20 @@ class Kubectl extends EventEmitter {
 
 	get(resource, name) {
 		return new Promise((resolve, reject) => {
+			resource = resource.toLowerCase();
 			const method = "get";
 			// Avoid passing "undefined" to kubeapi get methods
 			if (!name) {
 				name = "";
 			}
 			try {
-				this.kubeapi.core.namespaces[resource](name).get(function(err, data) {
+				let core;
+				if (_.isFunction(this.kubeapi.core.namespaces[resource])) {
+					core = this.kubeapi.core.namespaces[resource](name);
+				} else {
+					core = this.kubeapi.core.namespaces[resource];
+				}
+				core.get(function(err, data) {
 					if (err) {
 						return reject(err);
 					}
@@ -228,7 +235,13 @@ class Kubectl extends EventEmitter {
 				// It is not a core resource type, so try using the extensions api
 				if (coreErr instanceof TypeError) {
 					try {
-						this.kubeapi.ext.namespaces[resource](name).get(function(extErr, extData) {
+						let ext;
+						if (_.isFunction(this.kubeapi.ext.namespaces[resource])) {
+							ext = this.kubeapi.ext.namespaces[resource](name);
+						} else {
+							ext = this.kubeapi.ext.namespaces[resource];
+						}
+						ext.get(function(extErr, extData) {
 							if (extErr) {
 								return reject(extErr);
 							}

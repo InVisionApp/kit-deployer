@@ -1,5 +1,6 @@
-"use strict"
+"use strict";
 
+const _ = require("lodash");
 const chai = require("chai");
 const expect = chai.expect;
 const Kubectl = require("../../../src/lib/kubectl");
@@ -8,7 +9,10 @@ const fs = require("fs");
 const path = require("path");
 const yaml = require("js-yaml");
 
-var manifests = new Manifests();
+const manifests = new Manifests();
+var supportedTypes = manifests.supportedTypes;
+supportedTypes.push("events");
+
 
 describe("Kubectl", () => {
 	var kubectl, cwd;
@@ -31,9 +35,15 @@ describe("Kubectl", () => {
 	});
 
 	describe("Get", () => {
-		manifests.supportedTypes.forEach((resource) => {
+		var requests = [];
+		var spawns = [];
+		it("should have supportedTypes to test", () => {
+			expect(supportedTypes.length).to.be.greaterThan(0);
+		});
+		_.each(supportedTypes, (resource) => {
 			it("should emit request get event for " + resource, (done) => {
 				kubectl.on("request", (args) => {
+					requests.push(resource);
 					expect(args.method).to.equal("get");
 					expect(args.resource).to.equal(resource);
 					expect(args.name).to.equal("resource-name");
@@ -41,6 +51,7 @@ describe("Kubectl", () => {
 				});
 				// The ones that aren't supported will fallback to using spawn (kubectl binary)
 				kubectl.on("spawn", (args) => {
+					spawns.push(resource);
 					expect(args[0]).to.equal("get");
 					done();
 				});
@@ -52,6 +63,24 @@ describe("Kubectl", () => {
 					done();
 				});
 			});
+		});
+		it("should have the expected number of spawns", () => {
+			expect(spawns).to.deep.equal([
+				"scheduledjob",
+				"cronjob"
+			]);
+		});
+		it("should have the expected number of requests", () => {
+			expect(requests).to.deep.equal([
+				"deployment",
+				"ingress",
+				"service",
+				"secret",
+				"job",
+				"daemonset",
+				"persistentvolumeclaim",
+				"events"
+			]);
 		});
 	});
 
