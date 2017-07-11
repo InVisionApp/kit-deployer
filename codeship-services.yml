@@ -13,7 +13,7 @@ test:
   cached: true
   entrypoint: npm run
   environment:
-    - KUBE_VERSION=v1.6.3
+    - KUBE_VERSION=v1.3.4
 publish:
   image: quay.io/invision/docker-node-publisher:v1
   encrypted_env_file: codeship-publish.env.encrypted
@@ -22,4 +22,4 @@ publish:
     - .:/var/publish
   environment:
     - PUBLISH_PATH=/var/publish
-    - KUBE_VERSION=v1.6.3
+    - KUBE_VERSION=v1.3.4
