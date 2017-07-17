@@ -20,6 +20,7 @@ ENV \
 	NAMESPACES_DIR=/namespaces\
 	MANIFESTS_DIR=/manifests\
 	DRY_RUN=true\
+	STRATEGY=rolling-update\
 	IS_ROLLBACK=false\
 	DIFF=false\
 	FORCE=false\

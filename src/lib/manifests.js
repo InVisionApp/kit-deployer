@@ -18,10 +18,12 @@ const readFileAsync = Promise.promisify(fs.readFile);
 const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
 const rimraf = Promise.promisify(require("rimraf"));
-const Annotator = require("./annotator").Annotator;
-const Annotations = require("./annotator").Annotations;
+const Annotator = require("./annotator/annotator");
+const Annotations = require("./annotator/annotations");
 const Backup = require("./backup");
 const Elroy = require("./elroy").Elroy;
+const Strategies = require("./strategy").Strategies;
+const Strategy = require("./strategy").Strategy;
 const supportedTypes = [
 	"deployment",
 	"ingress",
@@ -45,6 +47,8 @@ class Manifests extends EventEmitter {
 		super();
 		this.options = _.merge({
 			uuid: null,
+			deployId: undefined,
+			strategyName: Strategies.RollingUpdate,
 			resource: null,
 			isRollback: false,
 			sha: undefined,
@@ -85,6 +89,11 @@ class Manifests extends EventEmitter {
 			kubectl: undefined
 		}, options);
 		this.kubectl = this.options.kubectl;
+		this.emit("info", `Using '${this.options.strategyName}' strategy`);
+		this.strategy = new Strategy(this.options.strategyName, this.options);
+		this.strategy.on("info", (msg) => {
+			this.emit("info", msg);
+		});
 	}
 
 	get supportedTypes() {
@@ -177,6 +186,7 @@ class Manifests extends EventEmitter {
 	deploy() {
 		return new Promise((resolve, reject) => {
 			const tmpDir = path.join("/tmp/kit-deployer", uuid.v4());
+			var generatedManifests = [];
 			var availablePromises = [];
 			var dependencies = new Dependencies({
 				kubectl: this.kubectl
@@ -251,7 +261,8 @@ class Manifests extends EventEmitter {
 			// Annotator
 			const annotator = new Annotator({
 				uuid: this.options.uuid,
-				sha: this.options.sha
+				sha: this.options.sha,
+				strategy: this.strategy
 			});
 
 			return this
@@ -286,7 +297,6 @@ class Manifests extends EventEmitter {
 					var kubePromises = [];
 					var promiseFuncsWithDependencies = [];
 					var remaining = _.cloneDeep(existing);
-					var generatedManifests = [];
 					_.each(this.manifestFiles, (manifestFile) => {
 						var manifest = manifestFile.content;
 
@@ -329,7 +339,7 @@ class Manifests extends EventEmitter {
 							method = "Create";
 						}
 
-						if (differences || this.options.force) {
+						if (!this.strategy.skipDeploy(manifest, found, differences) || this.options.force) {
 							var promiseFunc = () => {
 								// Initialize annotations object if it doesn't have one yet
 								if (!manifest.metadata) {
@@ -386,71 +396,76 @@ class Manifests extends EventEmitter {
 											})
 											.then(() => {
 												this.emit("info", method + " " + manifest.metadata.name);
-												if (!this.options.dryRun) {
-													return this.kubectl[method.toLowerCase()](tmpApplyingConfigurationPath)
-														.then((msg) => {
-															this.emit("info", msg);
-															this.emit("status", {
-																cluster: this.options.cluster.metadata.name,
-																name: manifestName,
-																kind: manifest.kind,
-																phase: "STARTED",
-																status: "IN_PROGRESS",
-																manifest: manifest
-															});
-
-															// Only check if resource is available if it's required
-															if (this.options.available.enabled) {
-																var availablePromise = status
-																	.available(manifest.kind, manifestName, differences)
-																	.then(() => {
-																		this.emit("status", {
-																			cluster: this.options.cluster.metadata.name,
-																			name: manifestName,
-																			kind: manifest.kind,
-																			phase: "COMPLETED",
-																			status: "SUCCESS",
-																			manifest: manifest
-																		});
-																	})
-																	.catch((err) => {
-																		this.emit("error", err);
-																		this.emit("status", {
-																			cluster: this.options.cluster.metadata.name,
-																			reason: (err.name || "other"),
-																			name: manifestName,
-																			kind: manifest.kind,
-																			phase: "COMPLETED",
-																			status: "FAILURE",
-																			manifest: manifest
-																		});
-																	});
-																availablePromises.push(availablePromise);
-																// Wait for promise to resolve if we need to wait until available is successful
-																if (this.options.available.required) {
-																	return availablePromise;
-																}
-															}
-															return null;
-														})
-														.then(() => {
-															return backup.save(this.options.cluster.metadata.name, manifest)
-																.then( (data) => {
-																	if (!data) {
-																		this.emit("debug", `No Backup of ${manifest.metadata.name}`);
-																	} else {
-																		this.emit("debug", "backup result " + JSON.stringify(data));
-																	}
-																})
-																.catch( (err) => {
-																	this.emit("warn", `Warning: (${(err ? err.message : "undefined")}) Backing up ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
+												// Perform pre deploy check
+												return this.strategy.preDeploy(manifest, found, differences, tmpApplyingConfigurationPath)
+													.then((skip) => {
+														if (skip || this.options.dryRun) {
+															return;
+														}
+														// Initiate deploy
+														return this.kubectl[method.toLowerCase()](tmpApplyingConfigurationPath)
+															.then((msg) => {
+																this.emit("info", msg);
+																this.emit("status", {
+																	cluster: this.options.cluster.metadata.name,
+																	name: manifestName,
+																	kind: manifest.kind,
+																	phase: "STARTED",
+																	status: "IN_PROGRESS",
+																	manifest: manifest
 																});
-														})
-														.catch((err) => {
-															this.emit("error", "Error running kubectl." + method.toLowerCase() + "('" + tmpApplyingConfigurationPath + "') " + err);
-														});
-												}
-												return null;
+
+																// Only check if resource is available if it's required
+																if (this.options.available.enabled) {
+																	var availablePromise = status
+																		.available(manifest.kind, manifestName, differences)
+																		.then(() => {
+																			this.emit("status", {
+																				cluster: this.options.cluster.metadata.name,
+																				name: manifestName,
+																				kind: manifest.kind,
+																				phase: "COMPLETED",
+																				status: "SUCCESS",
+																				manifest: manifest
+																			});
+																		})
+																		.catch((err) => {
+																			this.emit("error", err);
+																			this.emit("status", {
+																				cluster: this.options.cluster.metadata.name,
+																				reason: (err.name || "other"),
+																				name: manifestName,
+																				kind: manifest.kind,
+																				phase: "COMPLETED",
+																				status: "FAILURE",
+																				manifest: manifest
+																			});
+																		});
+																	availablePromises.push(availablePromise);
+																	// Wait for promise to resolve if we need to wait until available is successful
+																	if (this.options.available.required) {
+																		return availablePromise;
+																	}
+																}
+																return null;
+															})
+															.then(() => {
+																return backup.save(this.options.cluster.metadata.name, manifest)
+																	.then( (data) => {
+																		if (!data) {
+																			this.emit("debug", `No Backup of ${manifest.metadata.name}`);
+																		} else {
+																			this.emit("debug", "backup result " + JSON.stringify(data));
+																		}
+																	})
+																	.catch( (err) => {
+																		this.emit("warn", `Warning: (${(err ? err.message : "undefined")}) Backing up ${manifest.metadata.name} to ${this.options.cluster.metadata.name}`);
+																	});
+															})
+															.catch((err) => {
+																this.emit("error", "Error running kubectl." + method.toLowerCase() + "('" + tmpApplyingConfigurationPath + "') " + err);
+															})
+													});
 											});
 									});
 							};
@@ -544,6 +559,9 @@ class Manifests extends EventEmitter {
 					if (this.options.available.enabled) {
 						return Promise
 							.all(availablePromises)
+							.then(() => {
+								return this.strategy.allAvailable(generatedManifests);
+							})
 							.then(() => {
 								this.emit("status", {
 									name: this.options.cluster.metadata.name,

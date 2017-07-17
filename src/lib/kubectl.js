@@ -295,7 +295,7 @@ class Kubectl extends EventEmitter {
 
 	create(filepath) {
 		return new Promise((resolve, reject) => {
-			this.spawn(["create", "-f", filepath], function(err, data) {
+			this.spawn(["create", "--save-config=true", "-f", filepath], function(err, data) {
 				if (err) {
 					return reject(err);
 				}
@@ -309,7 +309,7 @@ class Kubectl extends EventEmitter {
 			.delete(filepath)
 			.then(() => {
 				return new Promise((resolve, reject) => {
-					this.spawn(["create", "-f", filepath], function(err, data) {
+					this.spawn(["create", "--save-config=true", "-f", filepath], function(err, data) {
 						if (err) {
 							return reject(err);
 						}

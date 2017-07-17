@@ -2,6 +2,8 @@
 
 const _ = require("lodash");
 const crypto = require("crypto");
+const Annotations = require("./annotations");
+const Strategy = require("../strategy").Strategy;
 
 const mustBeUnique = [
 	"Job",
@@ -9,31 +11,17 @@ const mustBeUnique = [
 	"CronJob"
 ];
 
-const Annotations = {
-	get UUID() {
-		// I'm sorry for the inconsistency...
-		return "deployment.invision/uuid";
-	},
-	get Commit() {
-		return "kit-deployer/commit";
-	},
-	get OriginalName() {
-		return "kit-deployer/original-name";
-	},
-	get LastAppliedConfiguration() {
-		return "kit-deployer/last-applied-configuration";
-	},
-	get LastAppliedConfigurationHash() {
-		return "kit-deployer/last-applied-configuration-sha1";
-	}
-};
-
 class Annotator {
 	constructor(options) {
 		this.options = _.merge({
 			uuid: undefined,
-			sha: undefined
+			sha: undefined,
+			strategy: undefined
 		}, options);
+
+		if (!(this.options.strategy instanceof Strategy)) {
+			throw new Error("Invalid strategy provided to annotator");
+		}
 	}
 
 	/**
@@ -79,11 +67,11 @@ class Annotator {
 		// Add commit annotation to manifest we are creating/updating
 		manifest.metadata.annotations[Annotations.Commit] = JSON.stringify(this.options.sha);
 
+		// Apply any strategy annotations
+		manifest = this.options.strategy.annotate(manifest);
+
 		return manifest;
 	}
 }
 
-module.exports = {
-	Annotator: Annotator,
-	Annotations: Annotations
-};
+module.exports = Annotator;

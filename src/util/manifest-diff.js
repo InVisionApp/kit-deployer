@@ -3,7 +3,7 @@
 const _ = require("lodash");
 const traverse = require("traverse");
 const diff = require("deep-diff");
-const Annotations = require("../lib/annotator").Annotations;
+const Annotations = require("../lib/annotator/annotations");
 
 /*
  * Given a manifest object it will search for any Arrays

@@ -3,10 +3,23 @@
 const _ = require("lodash");
 const chai = require("chai");
 const expect = chai.expect;
-const Annotator = require("../../../src/lib/annotator").Annotator;
-const Annotations = require("../../../src/lib/annotator").Annotations;
+const Annotator = require("../../../src/lib/annotator/annotator");
+const Annotations = require("../../../src/lib/annotator/annotations");
+const Strategy = require("../../../src/lib/strategy").Strategy;
+const Strategies = require("../../../src/lib/strategy").Strategies;
 
 describe("Annotator", () => {
+	describe("Create New missing strategy", () => {
+		it("should NOT be cool no strategy", () => {
+			const options = {
+				strategy: new Strategy(Strategies.RollingUpdate)
+			};
+			let fn = () => {
+				new Annotator(options)
+			};
+			expect(fn).to.throw;
+		});
+	});
 	describe("Create New", () => {
 		let annotator;
 		const originalManifest = {
@@ -23,7 +36,8 @@ describe("Annotator", () => {
 		};
 		const options = {
 			uuid: "dafbe5ac-f687-4b19-ba23-8fa91f84fbb8",
-			sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+			sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a",
+			strategy: new Strategy(Strategies.RollingUpdate)
 		};
 		beforeEach(() => {
 			annotator = new Annotator(options);
@@ -70,7 +84,8 @@ describe("Annotator", () => {
 			}
 		};
 		const options = {
-			sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+			sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a",
+			strategy: new Strategy(Strategies.RollingUpdate)
 		};
 		beforeEach(() => {
 			annotator = new Annotator(options);

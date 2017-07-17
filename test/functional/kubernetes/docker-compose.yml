@@ -1,5 +1,5 @@
 kubernetes:
-  image: gcr.io/google_containers/hyperkube-amd64:v1.2.0
+  image: gcr.io/google_containers/hyperkube-amd64:v1.4.6
   net: host
   pid: host
   privileged: true

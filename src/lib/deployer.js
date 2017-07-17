@@ -13,6 +13,7 @@ const Namespaces = require("./namespaces");
 const Progress = require("./progress");
 const Webhook = require("./webhook");
 const readFileAsync = Promise.promisify(fs.readFile);
+const Strategies = require("./strategy").Strategies;
 
 class Deployer extends EventEmitter {
 	constructor(options) {
@@ -20,6 +21,8 @@ class Deployer extends EventEmitter {
 		this.options = _.merge({
 			apiVersion: "v1",
 			uuid: null,
+			deployId: null,
+			strategyName: Strategies.RollingUpdate,
 			resource: null,
 			sha: undefined,
 			selector: undefined,
@@ -165,6 +168,8 @@ class Deployer extends EventEmitter {
 							.then(function() {
 								var manifests = new Manifests({
 									uuid: self.options.uuid,
+									deployId: self.options.deployId,
+									strategyName: self.options.strategyName,
 									resource: self.options.resource,
 									isRollback: self.options.isRollback,
 									sha: self.options.sha,

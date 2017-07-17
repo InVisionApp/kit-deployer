@@ -6,6 +6,7 @@ const Kubectl = require("../../src/lib/kubectl");
 const fs = require("fs");
 const path = require("path");
 const yaml = require("js-yaml");
+const _ = require("lodash");
 
 function clean(kubeconfigFile, namespace) {
 	const cwd = path.dirname(kubeconfigFile);
@@ -39,6 +40,7 @@ describe("Functional", function() {
 		process.env.AVAILABLE_REQUIRED = "true";
 		process.env.AVAILABLE_KEEP_ALIVE = "true";
 		process.env.AVAILABLE_WEBHOOK = "http://example.com/test";
+		process.env.STRATEGY = "rolling-update";
 	});
 
 	describe("when deploying to example cluster", function() {
@@ -52,6 +54,7 @@ describe("Functional", function() {
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain("example-cluster - Strategy rolling-update");
 					expect(stdout).to.contain("example-cluster - Getting list of namespaces");
 					expect(stdout).to.contain("example-cluster - Create example namespace");
 					expect(stdout).to.contain("example-cluster - namespace \"example\" created");
@@ -78,6 +81,7 @@ describe("Functional", function() {
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain("example-cluster - Strategy rolling-update");
 					expect(stdout).to.contain("example-cluster - Getting list of namespaces");
 					expect(stdout).not.to.contain("example-cluster - Create example namespace");
 					expect(stdout).not.to.contain("example-cluster - namespace \"example\" created");
@@ -158,6 +162,7 @@ describe("Functional", function() {
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain("multi-deployments-cluster - Strategy rolling-update");
 					expect(stdout).to.contain("multi-deployments-cluster - Getting list of namespaces");
 					expect(stdout).to.contain("multi-deployments-cluster - Create multi-deployments namespace");
 					expect(stdout).to.contain("multi-deployments-cluster - namespace \"multi-deployments\" created");
@@ -191,6 +196,7 @@ describe("Functional", function() {
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain("multi-deployments-cluster - Strategy rolling-update");
 					expect(stdout).to.contain("multi-deployments-cluster - Getting list of namespaces");
 					expect(stdout).not.to.contain("multi-deployments-cluster - Create multi-deployments namespace");
 					expect(stdout).not.to.contain("multi-deployments-cluster - namespace \"multi-deployments\" created");
@@ -232,6 +238,7 @@ describe("Functional", function() {
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain(clusterName + " - Strategy rolling-update");
 					expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
 					expect(stdout).to.contain(clusterName + " - Create mix-deployment-service namespace");
 					expect(stdout).to.contain(clusterName + " - namespace \"mix-deployment-service\" created");
@@ -264,6 +271,7 @@ describe("Functional", function() {
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain(clusterName + " - Strategy rolling-update");
 					expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
 					expect(stdout).not.to.contain(clusterName + " - Create mix-deployment-service namespace");
 					expect(stdout).not.to.contain(clusterName + " - namespace \"mix-deployment-service\" created");
@@ -292,6 +300,161 @@ describe("Functional", function() {
 		});
 	});
 
+	describe("when deploying deployment and service cluster using fast-rollback strategy", function() {
+		const firstKubeconfigFile = "/test/functional/clusters/configs/fast-rollback-kubeconfig-0.yaml";
+		describe("and fast-rollback-service cluster with NO deployId", function() {
+			var clusterName = "fast-rollback-cluster-0";
+			it("should deploy without error", function(done) {
+				process.env.CONFIGS = firstKubeconfigFile;
+				process.env.STRATEGY = "fast-rollback";
+				delete process.env.DEPLOY_ID;
+
+				exec("./src/deployer", function(error, stdout, stderr) {
+					expect(error).to.be.a("null", stdout);
+					expect(stderr).to.be.empty;
+					expect(stdout).not.to.be.empty;
+					expect(stdout).to.contain("Generating tmp directory:");
+					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback");
+					expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
+					expect(stdout).to.contain(clusterName + " - Create fast-rollback namespace");
+					expect(stdout).to.contain(clusterName + " - namespace \"fast-rollback\" created");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-svc for nginx1-svc with status STARTED/IN_PROGRESS");
+					expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
+					expect(stdout).to.contain(clusterName + " - Found 0 resources");
+					expect(stdout).to.contain(clusterName + " - Create nginx1-deployment");
+					expect(stdout).to.contain(clusterName + " - Create nginx1-svc");
+					expect(stdout).to.contain(clusterName + " - deployment \"nginx1-deployment\" created");
+					expect(stdout).to.contain(clusterName + " - service \"nginx1-svc\" created");
+					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment is available");
+					expect(stdout).to.contain(clusterName + " - Service:nginx1-svc is available");
+					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment has 1/1 replicas available");
+					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
+					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployed 0 services after all deployments available");
+					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback found 0 backup deployments on reserve that match the nginx1-deployment deployment group label service=nginx");
+					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback skipping delete of older deployments because insufficent backup deployments on reserve");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS");
+					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-svc for nginx1-svc with status COMPLETED/SUCCESS");
+					expect(stdout).to.contain("Finished successfully");
+					expect(stdout).to.contain("Deleted tmp directory:");
+					done();
+				});
+			});
+		});
+
+		const deployIds = ["dep-1", "dep-2", "dep-3", "dep-4", "dep-5"];
+		_.each(deployIds, (id, index) => {
+			var clusterName = "fast-rollback-cluster-" + (index+1);
+			var kubeconfigFile = "/test/functional/clusters/configs/fast-rollback-kubeconfig-" + (index+1) +".yaml";
+			describe("and fast-rollback-service cluster deployId=" + id, function() {
+				it("should deploy without error", function(done) {
+					process.env.CONFIGS = kubeconfigFile;
+					process.env.STRATEGY = "fast-rollback";
+					process.env.DEPLOY_ID = id;
+
+					exec("./src/deployer", function(error, stdout, stderr) {
+						expect(error).to.be.a("null", stdout);
+						expect(stderr).to.be.empty;
+						expect(stdout).not.to.be.empty;
+						expect(stdout).to.contain("Generating tmp directory:");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback");
+						expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
+						expect(stdout).not.to.contain(clusterName + " - Create fast-rollback namespace");
+						expect(stdout).not.to.contain(clusterName + " - namespace \"fast-rollback\" created");
+						expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
+						expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-deployment");
+						expect(stdout).to.contain(clusterName + " - Differences for nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - Create nginx1-deployment-" + process.env.DEPLOY_ID);
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback waiting for all deployments to be available before deploying service nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - Apply nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - deployment \"nginx1-deployment-" + process.env.DEPLOY_ID + "\" created");
+						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " is available");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,id=" + id);
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployed 1 services after all deployments available");
+						if (index < 3) {
+							expect(stdout).to.contain(clusterName + " - Strategy fast-rollback found " + (index+1) + " backup deployments on reserve that match the nginx1-deployment-dep-" + (index+1) + " deployment group label service=nginx,id!=" + id);
+							expect(stdout).to.contain(clusterName + " - Found " + (index+2) + " resources");
+							expect(stdout).to.contain(clusterName + " - Strategy fast-rollback skipping delete of older deployments because insufficent backup deployments on reserve");
+						} else {
+							// expect(stdout).to.contain(clusterName + " - Found 5 resources");
+							expect(stdout).to.contain(clusterName + " - Strategy fast-rollback found 4 backup deployments on reserve that match the nginx1-deployment-dep-" + (index+1) + " deployment group label service=nginx");
+							expect(stdout).to.contain(clusterName + " - Strategy fast-rollback attempting to delete 1 deployments older than nginx1-deployment-dep-" + (index+1));
+							if (index == 3) {
+								expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deleted backup deployment nginx1-deployment");
+							} else {
+								expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deleted backup deployment nginx1-deployment-dep-" + (index-3));
+							}
+							expect(stdout).to.contain(clusterName + " - Strategy fast-rollback successfully deleted 1 deployments older than nginx1-deployment-dep-" + (index+1));
+						}
+						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " has 1/1 replicas available");
+						expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS");
+						expect(stdout).to.contain("Finished successfully");
+						expect(stdout).to.contain("Deleted tmp directory:");
+						done();
+					});
+				});
+			});
+		});
+
+		describe("and rolling back fast-rollback-service cluster", function() {
+			var clusterName = "fast-rollback-cluster-3";
+			var kubeconfigFile = "/test/functional/clusters/configs/fast-rollback-kubeconfig-3.yaml";
+			var id = "dep-3";
+			describe("to deployId=" + id, function() {
+				it("should deploy without error", function(done) {
+					process.env.CONFIGS = kubeconfigFile;
+					process.env.STRATEGY = "fast-rollback";
+					process.env.DEPLOY_ID = id;
+					process.env.IS_ROLLBACK = "true";
+			
+					exec("./src/deployer", function(error, stdout, stderr) {
+						expect(error).to.be.a("null", stdout);
+						expect(stderr).to.be.empty;
+						expect(stdout).not.to.be.empty;
+						expect(stdout).to.contain("Generating tmp directory:");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback");
+						expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
+						expect(stdout).not.to.contain(clusterName + " - Create fast-rollback namespace");
+						expect(stdout).not.to.contain(clusterName + " - namespace \"fast-rollback\" created");
+						expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS");
+						expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
+						expect(stdout).to.contain(clusterName + " - Found 5 resources");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-deployment");
+						expect(stdout).to.contain(clusterName + " - Differences for nginx1-svc");
+						expect(stdout).not.to.contain(clusterName + " - Create nginx1-deployment-" + process.env.DEPLOY_ID);
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployment nginx1-deployment-" + id + " already exists in the cluster so skipping");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback waiting for all deployments to be available before deploying service nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - Apply nginx1-svc");
+						expect(stdout).not.to.contain(clusterName + " - deployment \"nginx1-deployment-" + process.env.DEPLOY_ID + "\" created");
+						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " is available");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,id=" + id);
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployed 1 services after all deployments available");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback found 3 deployments that match the nginx1-deployment-dep-3 deployment group label service=nginx,id!=dep-3");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback attempting to delete 2 deployments newer than nginx1-deployment-dep-3");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deleted newer deployment nginx1-deployment-dep-4");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deleted newer deployment nginx1-deployment-dep-5");
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback successfully deleted 2 deployments newer than nginx1-deployment-dep-3");
+						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " has 1/1 replicas available");
+						expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS");
+						expect(stdout).to.contain("Finished successfully");
+						expect(stdout).to.contain("Deleted tmp directory:");
+						done();
+					});
+				});
+			});
+		});
+		after(function() {
+			return clean(firstKubeconfigFile, "fast-rollback");
+		});
+	});
+
 	describe("when no unique namespaces and deploying to cluster", function() {
 		it("should deploy without error", function(done) {
 			process.env.CONFIGS = "/test/functional/clusters/configs/no-namespaces-kubeconfig.yaml";
@@ -301,6 +464,7 @@ describe("Functional", function() {
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
 				expect(stdout).not.to.contain("Generating tmp directory:");
+				expect(stdout).to.contain("no-namespaces-cluster - Strategy rolling-update");
 				expect(stdout).to.contain("no-namespaces-cluster - No namespace files to processs, skipping no-namespaces-cluster");
 				expect(stdout).to.contain("no-namespaces-cluster - No cluster files to processs, skipping no-namespaces-cluster");
 				expect(stdout).to.contain("no-namespaces-cluster - Deleted tmp directory:");
@@ -320,6 +484,7 @@ describe("Functional", function() {
 				expect(stderr).to.be.empty;
 				expect(stdout).not.to.be.empty;
 				expect(stdout).to.contain("Generating tmp directory:");
+				expect(stdout).to.contain("single-job-cluster - Strategy rolling-update");
 				expect(stdout).to.contain("single-job-cluster - Getting list of namespaces");
 				expect(stdout).to.contain("Sending payload to http://example.com/test/ls-job for ls-job with status STARTED/IN_PROGRESS");
 				expect(stdout).to.contain("single-job-cluster - Getting list of job matching 'app in (test)'");
@@ -359,5 +524,7 @@ describe("Functional", function() {
 		delete process.env.AVAILABLE_REQUIRED;
 		delete process.env.AVAILABLE_KEEP_ALIVE;
 		delete process.env.AVAILABLE_WEB;
+		delete process.env.STRATEGY;
+		delete process.env.DEPLOY_ID;
 	});
 });

@@ -185,6 +185,8 @@ The following environment variables are used by this service.
 | `MANIFESTS_DIR` | Set the directory where all the manifest files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to | yes | `/manifests` |
 | `DRY_RUN` | Will only show the diff and will not push anything to the cluster | yes | `true` |
 | `UUID` | A UUID to be used in webhooks and API requests | false | *empty* |
+| `DEPLOY_ID` | A unique id to be used in deployments | false | *empty* |
+| `STRATEGY` | The deployment strategy to use. Currently supports rolling-update, fast-rollback. | false | `rolling-update` |
 | `RESOURCE` | The resource name for the manifests being deployed | false | *empty* |
 | `DEBUG` | A boolean flag to enable debug mode | yes | `false` |
 | `IS_ROLLBACK` | A boolean flag that is passed in the available payload post | yes | `false` |
