@@ -41,6 +41,10 @@ class Elroy extends EventEmitter {
 	 * @return {promise}            Promise that will resolve or reject
 	 */
 	start(manifests) {
+		if (!this.options.enabled) {
+			this.emit("info", "Elroy is not enabled, skipping...");
+			return Promise.resolve();
+		}
 		// Skip starting if there are no manifests being deployed
 		if (!manifests) {
 			this.emit("debug", `No manifests to deploy for ${this.options.clusterName}/${this.options.resource}`);
