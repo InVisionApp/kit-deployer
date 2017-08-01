@@ -13,6 +13,7 @@ const mustBeUnique = [
 
 class Annotator {
 	constructor(options) {
+		this.start = new Date();
 		this.options = _.merge({
 			uuid: undefined,
 			sha: undefined,
@@ -66,6 +67,9 @@ class Annotator {
 
 		// Add commit annotation to manifest we are creating/updating
 		manifest.metadata.annotations[Annotations.Commit] = JSON.stringify(this.options.sha);
+
+		// Add updated unix timestamp
+		manifest.metadata.annotations[Annotations.LastUpdated] = this.start.toISOString();
 
 		// Apply any strategy annotations
 		manifest = this.options.strategy.annotate(manifest);

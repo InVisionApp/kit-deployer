@@ -103,6 +103,21 @@ class FastRollback extends EventEmitter {
 					}
 				})
 				.then(() => {
+					return this.kubectl.get("service", manifestName);
+				})
+				.then((result) => {
+					// If it does not have a last update annotation yet then continue
+					if (!_.has(result, ["metadata", "annotations", Annotations.LastUpdated])) {
+						return;
+					}
+					// Check if LastUpdated is newer than when this deploy started
+					const currentServiceLastUpdated = new Date(result.metadata.annotations[Annotations.LastUpdated]).getTime();
+					const newServiceLastUpdated = new Date(service.manifest.metadata.annotations[Annotations.LastUpdated]).getTime();
+					if (currentServiceLastUpdated > newServiceLastUpdated) {
+						throw new Error("Aborting because current service has been updated since this deploy has started");
+					}
+				})
+				.then(() => {
 					// Deploy service now
 					return this.kubectl
 						.apply(service.tmpPath)

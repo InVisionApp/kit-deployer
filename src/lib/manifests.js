@@ -395,7 +395,7 @@ class Manifests extends EventEmitter {
 												return dependencies.ready(manifest, checkAvailable);
 											})
 											.then(() => {
-												this.emit("info", method + " " + manifest.metadata.name);
+												this.emit("info", "Running pre-deploy check to " + method + " " + manifest.metadata.name);
 												// Perform pre deploy check
 												return this.strategy.preDeploy(manifest, found, differences, tmpApplyingConfigurationPath)
 													.then((skip) => {
@@ -440,6 +440,7 @@ class Manifests extends EventEmitter {
 																				status: "FAILURE",
 																				manifest: manifest
 																			});
+																			throw err;
 																		});
 																	availablePromises.push(availablePromise);
 																	// Wait for promise to resolve if we need to wait until available is successful
@@ -464,6 +465,7 @@ class Manifests extends EventEmitter {
 															})
 															.catch((err) => {
 																this.emit("error", "Error running kubectl." + method.toLowerCase() + "('" + tmpApplyingConfigurationPath + "') " + err);
+																throw err;
 															})
 													});
 											});
@@ -515,6 +517,7 @@ class Manifests extends EventEmitter {
 														status: "FAILURE",
 														manifest: manifest
 													});
+													throw err;
 												});
 											availablePromises.push(availablePromise);
 											// Wait for promise to resolve if we need to wait until available is successful

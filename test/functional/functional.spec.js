@@ -61,7 +61,7 @@ describe("Functional", function() {
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("example-cluster - Getting list of service matching 'app in (test)'");
 					expect(stdout).to.contain("example-cluster - Found 0 resources");
-					expect(stdout).to.contain("example-cluster - Create auth-svc");
+					expect(stdout).to.contain("example-cluster - Running pre-deploy check to Create auth-svc");
 					expect(stdout).to.contain("example-cluster - service \"auth-svc\" created");
 					expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
@@ -87,7 +87,7 @@ describe("Functional", function() {
 					expect(stdout).not.to.contain("example-cluster - namespace \"example\" created");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("example-cluster - Getting list of service matching 'app in (test)'");
-					expect(stdout).not.to.contain("example-cluster - Create auth-svc");
+					expect(stdout).not.to.contain("example-cluster - Running pre-deploy check to Create auth-svc");
 					expect(stdout).not.to.contain("example-cluster - service \"auth-svc\" created");
 					expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
@@ -170,8 +170,8 @@ describe("Functional", function() {
 					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment matching 'app in (test)'");
 					expect(stdout).to.contain("multi-deployments-cluster - Found 0 resources");
-					expect(stdout).to.contain("multi-deployments-cluster - Create nginx1-deployment");
-					expect(stdout).to.contain("multi-deployments-cluster - Create nginx2-deployment");
+					expect(stdout).to.contain("multi-deployments-cluster - Running pre-deploy check to Create nginx1-deployment");
+					expect(stdout).to.contain("multi-deployments-cluster - Running pre-deploy check to Create nginx2-deployment");
 					expect(stdout).to.contain("multi-deployments-cluster - deployment \"nginx1-deployment\" created");
 					expect(stdout).to.contain("multi-deployments-cluster - deployment \"nginx2-deployment\" created");
 					expect(stdout).to.contain("multi-deployments-cluster - Deployment:nginx1-deployment is available");
@@ -204,8 +204,8 @@ describe("Functional", function() {
 					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("multi-deployments-cluster - Getting list of deployment matching 'app in (test)'");
 					expect(stdout).to.contain("multi-deployments-cluster - Found 2 resources");
-					expect(stdout).not.to.contain("multi-deployments-cluster - Create nginx1-deployment");
-					expect(stdout).not.to.contain("multi-deployments-cluster - Create nginx2-deployment");
+					expect(stdout).not.to.contain("multi-deployments-cluster - Running pre-deploy check to Create nginx1-deployment");
+					expect(stdout).not.to.contain("multi-deployments-cluster - Running pre-deploy check to Create nginx2-deployment");
 					expect(stdout).not.to.contain("multi-deployments-cluster - deployment \"nginx1-deployment\" created");
 					expect(stdout).not.to.contain("multi-deployments-cluster - deployment \"nginx2-deployment\" created");
 					expect(stdout).to.contain("multi-deployments-cluster - Deployment:nginx1-deployment is available");
@@ -246,8 +246,8 @@ describe("Functional", function() {
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
 					expect(stdout).to.contain(clusterName + " - Found 0 resources");
-					expect(stdout).to.contain(clusterName + " - Create nginx1-deployment");
-					expect(stdout).to.contain(clusterName + " - Create auth-svc");
+					expect(stdout).to.contain(clusterName + " - Running pre-deploy check to Create nginx1-deployment");
+					expect(stdout).to.contain(clusterName + " - Running pre-deploy check to Create auth-svc");
 					expect(stdout).to.contain(clusterName + " - deployment \"nginx1-deployment\" created");
 					expect(stdout).to.contain(clusterName + " - service \"auth-svc\" created");
 					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment is available");
@@ -279,8 +279,8 @@ describe("Functional", function() {
 					expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
 					expect(stdout).to.contain(clusterName + " - Found 2 resources");
-					expect(stdout).not.to.contain(clusterName + " - Create nginx1-deployment");
-					expect(stdout).not.to.contain(clusterName + " - Create auth-svc");
+					expect(stdout).not.to.contain(clusterName + " - Running pre-deploy check to Create nginx1-deployment");
+					expect(stdout).not.to.contain(clusterName + " - Running pre-deploy check to Create auth-svc");
 					expect(stdout).not.to.contain(clusterName + " - deployment \"nginx1-deployment\" created");
 					expect(stdout).not.to.contain(clusterName + " - service \"auth-svc\" created");
 					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment is available");
@@ -322,8 +322,8 @@ describe("Functional", function() {
 					expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-svc for nginx1-svc with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain(clusterName + " - Getting list of deployment,service matching 'app in (test)'");
 					expect(stdout).to.contain(clusterName + " - Found 0 resources");
-					expect(stdout).to.contain(clusterName + " - Create nginx1-deployment");
-					expect(stdout).to.contain(clusterName + " - Create nginx1-svc");
+					expect(stdout).to.contain(clusterName + " - Running pre-deploy check to Create nginx1-deployment");
+					expect(stdout).to.contain(clusterName + " - Running pre-deploy check to Create nginx1-svc");
 					expect(stdout).to.contain(clusterName + " - deployment \"nginx1-deployment\" created");
 					expect(stdout).to.contain(clusterName + " - service \"nginx1-svc\" created");
 					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment is available");
@@ -366,9 +366,9 @@ describe("Functional", function() {
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-svc");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-deployment");
 						expect(stdout).to.contain(clusterName + " - Differences for nginx1-svc");
-						expect(stdout).to.contain(clusterName + " - Create nginx1-deployment-" + process.env.DEPLOY_ID);
+						expect(stdout).to.contain(clusterName + " - Running pre-deploy check to Create nginx1-deployment-" + process.env.DEPLOY_ID);
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback waiting for all deployments to be available before deploying service nginx1-svc");
-						expect(stdout).to.contain(clusterName + " - Apply nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - Running pre-deploy check to Apply nginx1-svc");
 						expect(stdout).to.contain(clusterName + " - deployment \"nginx1-deployment-" + process.env.DEPLOY_ID + "\" created");
 						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " is available");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
@@ -426,10 +426,10 @@ describe("Functional", function() {
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-svc");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback annotating nginx1-deployment");
 						expect(stdout).to.contain(clusterName + " - Differences for nginx1-svc");
-						expect(stdout).not.to.contain(clusterName + " - Create nginx1-deployment-" + process.env.DEPLOY_ID);
+						expect(stdout).not.to.contain(clusterName + " - Running pre-deploy check to Create nginx1-deployment-" + process.env.DEPLOY_ID);
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployment nginx1-deployment-" + id + " already exists in the cluster so skipping");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback waiting for all deployments to be available before deploying service nginx1-svc");
-						expect(stdout).to.contain(clusterName + " - Apply nginx1-svc");
+						expect(stdout).to.contain(clusterName + " - Running pre-deploy check to Apply nginx1-svc");
 						expect(stdout).not.to.contain(clusterName + " - deployment \"nginx1-deployment-" + process.env.DEPLOY_ID + "\" created");
 						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " is available");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
@@ -491,7 +491,7 @@ describe("Functional", function() {
 				expect(stdout).to.contain("single-job-cluster - Create single-job namespace");
 				expect(stdout).to.contain("single-job-cluster - namespace \"single-job\" created");
 				expect(stdout).to.contain("single-job-cluster - Found 0 resources");
-				expect(stdout).to.contain("single-job-cluster - Create ls-job");
+				expect(stdout).to.contain("single-job-cluster - Running pre-deploy check to Create ls-job");
 				expect(stdout).to.match(/.*single-job-cluster - job \"ls-job-\b[0-9a-f]{5,40}\b\" created*/);
 				expect(stdout).to.match(/.*single-job-cluster - Job:ls-job-\b[0-9a-f]{5,40}\b is available.*/);
 				expect(stdout).to.match(/.*single-job-cluster - Job:ls-job-\b[0-9a-f]{5,40}\b has 1\/1 succeeded.*/);

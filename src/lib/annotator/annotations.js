@@ -16,6 +16,9 @@ const Annotations = {
 	},
 	get LastAppliedConfigurationHash() {
 		return "kit-deployer/last-applied-configuration-sha1";
+	},
+	get LastUpdated() {
+		return "kit-deployer/last-updated";
 	}
 };
 
