@@ -67,6 +67,18 @@ describe("FastRollback Strategy", () => {
 					labels: {
 						name: "test-deployment"
 					}
+				},
+				spec: {
+					selector: {
+						matchLabels: {
+						}
+					},
+					template: {
+						metadata: {
+							labels: {
+							}
+						}
+					}
 				}
 			};
 			const expectedManifest = {
@@ -75,6 +87,20 @@ describe("FastRollback Strategy", () => {
 					name: "test-deployment-dep1",
 					labels: {
 						name: "test-deployment"
+					}
+				},
+				spec: {
+					selector: {
+						matchLabels: {
+							id: "dep1"
+						}
+					},
+					template: {
+						metadata: {
+							labels: {
+								id: "dep1"
+							}
+						}
 					}
 				}
 			};

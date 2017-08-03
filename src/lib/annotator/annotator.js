@@ -107,7 +107,7 @@ class Annotator {
 
 		// Add deploy ID label
 		if (!_.isUndefined(manifest.metadata.labels[Labels.ID])) {
-			throw new Error(`Reserved label ${Labels.ID} has been manually set`);
+			throw new Error(`Reserved label ${Labels.ID} has been manually set on ${manifest.metadata.name}`);
 		}
 		manifest.metadata.labels[Labels.ID] = this.deployId;
 
@@ -143,7 +143,16 @@ class Annotator {
 			if (!manifest.spec.selector.matchLabels) {
 				manifest.spec.selector.matchLabels = {};
 			}
-			manifest.spec.selector.matchLabels[Labels.ID] = this.deployId;
+			if (!manifest.spec.template) {
+				manifest.spec.template = {};
+			}
+			if (!manifest.spec.template.metadata) {
+				manifest.spec.template.metadata = {};
+			}
+			if (!manifest.spec.template.metadata.labels) {
+				manifest.spec.template.metadata.labels = {};
+			}
+
 			manifest.spec.selector.matchLabels[Labels.Strategy] = this.options.strategy.name;
 			// Make sure label and selectors match by syncing them
 			if (_.has(manifest, ["spec", "template", "metadata", "labels"])) {
@@ -170,7 +179,9 @@ class Annotator {
 			if (_.isUndefined(manifest.spec.selector[Labels.Name])) {
 				throw new Error(`Required selector ${Labels.Name} must be manually set on ${manifest.metadata.name}`);
 			}
-			manifest.spec.selector[Labels.ID] = this.deployId;
+			if (!_.isUndefined(manifest.spec.selector[Labels.Strategy])) {
+				throw new Error(`Reserved label ${Labels.Strategy} has been manually set`);
+			}
 			manifest.spec.selector[Labels.Strategy] = this.options.strategy.name;
 		}
 		return manifest;

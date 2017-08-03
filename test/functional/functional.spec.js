@@ -393,7 +393,7 @@ describe("Functional", function() {
 					// expect(stdout).to.contain(clusterName + " - Service:nginx1-svc is available");
 					expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-unspecified has 1/1 replicas available");
 					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
-					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,id=unspecified,strategy=fast-rollback");
+					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,strategy=fast-rollback,id=unspecified");
 					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available");
 					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployed 1 services after all deployments available");
 					expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deleteNewer found 0 deployments that match the nginx1-deployment-unspecified deployment group label name=nginx1-pod,id!=unspecified,strategy=fast-rollback");
@@ -443,7 +443,7 @@ describe("Functional", function() {
 						expect(stdout).to.contain(clusterName + " - deployment \"nginx1-deployment-" + process.env.DEPLOY_ID + "\" created");
 						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " is available");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
-						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,id=" + id);
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,strategy=fast-rollback,id=" + id);
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployed 1 services after all deployments available");
 						if (index < 3) {
@@ -510,7 +510,7 @@ describe("Functional", function() {
 						expect(stdout).not.to.contain(clusterName + " - deployment \"nginx1-deployment-" + process.env.DEPLOY_ID + "\" created");
 						expect(stdout).to.contain(clusterName + " - Deployment:nginx1-deployment-" + process.env.DEPLOY_ID + " is available");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback all 2 manifests are available");
-						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,id=" + id);
+						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,strategy=fast-rollback,id=" + id);
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deployed 1 services after all deployments available");
 						expect(stdout).to.contain(clusterName + " - Strategy fast-rollback deleteNewer found 3 deployments that match the nginx1-deployment-dep-3 deployment group label name=nginx1-pod,id!=dep-3,strategy=fast-rollback");
@@ -596,7 +596,7 @@ describe("Functional", function() {
 				expect(stdout).to.contain("no-namespaces-cluster - Strategy rolling-update");
 				expect(stdout).to.contain("no-namespaces-cluster - No namespace files to processs, skipping no-namespaces-cluster");
 				expect(stdout).to.contain("no-namespaces-cluster - No cluster files to processs, skipping no-namespaces-cluster");
-				expect(stdout).to.contain("no-namespaces-cluster - Deleted tmp directory:");
+				expect(stdout).to.contain("no-namespaces-cluster - Strategy rolling-update deployed 0 services after all deployments available");
 				expect(stdout).to.contain("Finished successfully");
 				done();
 			});

@@ -31,8 +31,48 @@ class FastRollback extends EventEmitter {
 		if (this.options.deployId) {
 			deployId = this.options.deployId;
 		}
+
+		// Add ID label to deployment selector
 		if (kind === "deployment") {
+			// Initialize labels object if it doesn't have one yet
+			if (!manifest.spec) {
+				manifest.spec = {};
+			}
+			if (!manifest.spec.selector) {
+				manifest.spec.selector = {};
+			}
+			if (!manifest.spec.selector.matchLabels) {
+				manifest.spec.selector.matchLabels = {};
+			}
+			if (!manifest.spec.template) {
+				manifest.spec.template = {};
+			}
+			if (!manifest.spec.template.metadata) {
+				manifest.spec.template.metadata = {};
+			}
+			if (!manifest.spec.template.metadata.labels) {
+				manifest.spec.template.metadata.labels = {};
+			}
+			if (!_.isUndefined(manifest.spec.selector.matchLabels[Labels.ID]) || !_.isUndefined(manifest.spec.template.metadata.labels[Labels.ID])) {
+				throw new Error(`Reserved selector label ${Labels.ID} has been manually set on ${manifest.metadata.name}`);
+			}
 			manifest.metadata.name = `${manifest.metadata.name}-${deployId}`;
+			manifest.spec.selector.matchLabels[Labels.ID] = deployId;
+			manifest.spec.template.metadata.labels[Labels.ID] = deployId
+		}
+		// Add ID label to service selector
+		if (kind === "service") {
+			// Initialize selector object if it doesn't have one yet
+			if (!manifest.spec) {
+				manifest.spec = {};
+			}
+			if (!manifest.spec.selector) {
+				manifest.spec.selector = {};
+			}
+			if (!_.isUndefined(manifest.spec.selector[Labels.ID])) {
+				throw new Error(`Reserved selector label ${Labels.ID} has been manually set on ${manifest.metadata.name}`);
+			}
+			manifest.spec.selector[Labels.ID] = deployId;
 		}
 		return manifest;
 	}
