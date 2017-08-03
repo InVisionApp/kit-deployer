@@ -15,13 +15,13 @@ describe("Strategy", () => {
 	describe("New", () => {
 		describe("Providing invalid strategy name", () => {
 			it("should fail", () => {
-				const fn = () => { new Strategy("invalid") };
+				const fn = () => { new Strategy("invalid", {}) };
 				expect(fn).to.throw;
 			});
 		});
 		describe("Providing rolling-update strategy", () => {
 			it("should return name", () => {
-				const strategy = new Strategy("rolling-update");
+				const strategy = new Strategy("rolling-update", {});
 				expect(strategy.name).to.equal("rolling-update");
 			});
 		});

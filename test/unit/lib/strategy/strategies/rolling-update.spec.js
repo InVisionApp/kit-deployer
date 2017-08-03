@@ -61,7 +61,7 @@ describe("RollingUpdate Strategy", () => {
 				}
 			}];
 			return strategy.allAvailable(givenManifests).then((resp) => {
-				expect(resp).to.be.undefined;
+				expect(resp).to.be.empty;
 			});
 		});
 	});

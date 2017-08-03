@@ -12,7 +12,7 @@ describe("Annotator", () => {
 	describe("Create New missing strategy", () => {
 		it("should NOT be cool no strategy", () => {
 			const options = {
-				strategy: new Strategy(Strategies.RollingUpdate)
+				strategy: new Strategy(Strategies.RollingUpdate, {})
 			};
 			let fn = () => {
 				new Annotator(options)
@@ -25,7 +25,17 @@ describe("Annotator", () => {
 		const originalManifest = {
 			kind: "Deployment",
 			metadata: {
-				name: "manifest-deployment"
+				name: "manifest-deployment",
+				labels: {
+					name: "manifest-deployment"
+				}
+			},
+			spec: {
+				selector: {
+					matchLabels: {
+						name: "manifest-deployment"
+					}
+				}
 			}
 		};
 		const originalJobManifest = {
@@ -37,7 +47,7 @@ describe("Annotator", () => {
 		const options = {
 			uuid: "dafbe5ac-f687-4b19-ba23-8fa91f84fbb8",
 			sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a",
-			strategy: new Strategy(Strategies.RollingUpdate)
+			strategy: new Strategy(Strategies.RollingUpdate, {})
 		};
 		beforeEach(() => {
 			annotator = new Annotator(options);
@@ -52,7 +62,7 @@ describe("Annotator", () => {
 				expect(manifest.metadata.annotations[Annotations.UUID]).to.equal(options.uuid);
 				expect(manifest.metadata.annotations[Annotations.OriginalName]).to.equal(originalManifest.metadata.name);
 				expect(manifest.metadata.annotations[Annotations.LastAppliedConfiguration]).to.equal(JSON.stringify(originalManifest));
-				expect(manifest.metadata.annotations[Annotations.LastAppliedConfigurationHash]).to.equal("824c6735b631f957a285da2873d1465d797e4e6f");
+				expect(manifest.metadata.annotations[Annotations.LastAppliedConfigurationHash]).to.equal("5fe441d20dd25a28df2c84667aa9e611df83a6c3");
 				expect(manifest.metadata.annotations[Annotations.Commit]).to.equal(JSON.stringify(options.sha));
 			});
 		});
@@ -74,7 +84,17 @@ describe("Annotator", () => {
 		const originalManifest = {
 			kind: "Deployment",
 			metadata: {
-				name: "manifest-deployment"
+				name: "manifest-deployment",
+				labels: {
+					name: "manifest-deployment"
+				}
+			},
+			spec: {
+				selector: {
+					matchLabels: {
+						name: "manifest-deployment"
+					}
+				}
 			}
 		};
 		const originalJobManifest = {
@@ -85,7 +105,7 @@ describe("Annotator", () => {
 		};
 		const options = {
 			sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a",
-			strategy: new Strategy(Strategies.RollingUpdate)
+			strategy: new Strategy(Strategies.RollingUpdate, {})
 		};
 		beforeEach(() => {
 			annotator = new Annotator(options);
@@ -100,7 +120,7 @@ describe("Annotator", () => {
 				expect(manifest.metadata.annotations[Annotations.UUID]).to.be.empty;
 				expect(manifest.metadata.annotations[Annotations.OriginalName]).to.equal(originalManifest.metadata.name);
 				expect(manifest.metadata.annotations[Annotations.LastAppliedConfiguration]).to.equal(JSON.stringify(originalManifest));
-				expect(manifest.metadata.annotations[Annotations.LastAppliedConfigurationHash]).to.equal("824c6735b631f957a285da2873d1465d797e4e6f");
+				expect(manifest.metadata.annotations[Annotations.LastAppliedConfigurationHash]).to.equal("5fe441d20dd25a28df2c84667aa9e611df83a6c3");
 				expect(manifest.metadata.annotations[Annotations.Commit]).to.equal(JSON.stringify(options.sha));
 			});
 		});

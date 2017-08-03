@@ -130,6 +130,19 @@ metadata:
 
 All manifest files should be placed into directories corresponding to the name of the cluster + namespace they are for. So for example, if you wanted to deploy manifests to a cluster called `my-cluster`, you could place all the manifest files into `./manifests/my-cluster/**/*.yaml`.
 
+### Reserved Labels
+
+The following labels are dynamically generated and managed by kit for all manifests. They should not be manually set and if they are an error will be thrown halting the deploy.
+
+- `id`
+- `strategy`
+
+### Required Labels
+
+The following labels _must_ be set on Deployment manifests and on the labels for the pod template within the Deployment manifest.
+
+- `name`
+
 ### Supported Types
 
 Currently we only properly support the following types to be used as manifests. Any other type used will not be deployed and will display a warning:

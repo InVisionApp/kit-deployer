@@ -1,18 +1,18 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
+  annotations:
+    kit-deployer/original-name: test-rosie-v7-deployment
   name: nginx1-deployment
   labels:
     app: test
-    service: nginx
-    id: dep-0
+    name: nginx1-pod
 spec:
   replicas: 1
   template:
     metadata:
       labels:
         name: nginx1-pod
-        id: dep-0
     spec:
       containers:
         - name: nginx1-con

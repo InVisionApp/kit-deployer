@@ -2,13 +2,13 @@
 
 const _ = require("lodash");
 const Annotations = require("../../annotator/annotations");
+const Labels = require("../../annotator/labels");
+const Utils = require("../utils");
 const EventEmitter = require("events");
 
 const Name = "fast-rollback";
 
 // TODO: May want to make this configurable in the future
-const DeployGroupLabelName = "service";
-const DeployIdLabelName = "id";
 const NumDesiredReserve = 3;
 
 class FastRollback extends EventEmitter {
@@ -27,8 +27,11 @@ class FastRollback extends EventEmitter {
 	annotate(manifest) {
 		// If deployment manifest, append the deployId to the name
 		const kind = manifest.kind.toLowerCase();
-		const deployId = this.options.deployId;
-		if (kind === "deployment" && deployId) {
+		var deployId = "unspecified";
+		if (this.options.deployId) {
+			deployId = this.options.deployId;
+		}
+		if (kind === "deployment") {
 			manifest.metadata.name = `${manifest.metadata.name}-${deployId}`;
 		}
 		return manifest;
@@ -75,11 +78,17 @@ class FastRollback extends EventEmitter {
 		return this.deployServices()
 			.then(() => {
 				this.emit("info", `deployed ${this.services.length} services after all deployments available`);
-				if (this.options.isRollback) {
-					return this.deleteNewer();
-				} else {
-					return this.deleteBackups();
-				}
+			})
+			.then(() => {
+				// Delete any deployments that are newer than the deployment we are using
+				return this.deleteNewer();
+			})
+			.then(() => {
+				// Delete excessive backups
+				return this.deleteBackups();
+			})
+			.then(() => {
+				return Utils.cleanup(this, this.deployments);
 			});
 	}
 
@@ -143,16 +152,19 @@ class FastRollback extends EventEmitter {
 							throw new Error("Missing required creationTimestamp, aborting");
 						}
 						creationTimestamp = result.metadata.creationTimestamp;
-						if (!result.metadata.labels[DeployGroupLabelName] || !result.metadata.labels[DeployIdLabelName]) {
-							throw new Error(`Missing required ${DeployGroupLabelName} or ${DeployIdLabelName} label on deployment manifest ${deployment.manifest.metadata.name}`);
+						if (!result.metadata.labels[Labels.Name]) {
+							throw new Error(`Missing required ${Labels.Name} label on deployment manifest ${deployment.manifest.metadata.name}`);
 						}
-						const depSelectorString = `${DeployGroupLabelName}=${result.metadata.labels[DeployGroupLabelName]},${DeployIdLabelName}!=${result.metadata.labels[DeployIdLabelName]}`;
+						if (!result.metadata.labels[Labels.ID]) {
+							throw new Error(`Missing required ${Labels.ID} label on deployment manifest ${deployment.manifest.metadata.name}`);
+						}
+						const depSelectorString = `${Labels.Name}=${result.metadata.labels[Labels.Name]},${Labels.ID}!=${result.metadata.labels[Labels.ID]},${Labels.Strategy}=${this.name}`;
 						return this.kubectl
 							.list("deployments", depSelectorString)
 							.then((results) => {
 								let deletePromises = [];
-								let verified = FastRollback.verifyGroupDeployments(results.items, deployment.manifest);
-								this.emit("info", `found ${verified.length} deployments that match the ${deployment.manifest.metadata.name} deployment group label ${depSelectorString}`);
+								let verified = Utils.verifySameOriginalName(results.items, deployment.manifest);
+								this.emit("info", `deleteNewer found ${verified.length} deployments that match the ${deployment.manifest.metadata.name} deployment group label ${depSelectorString}`);
 								// Only select deployments that are newer than the current deployment
 								flaggedForDeletion = _.filter(verified, (dep) => {
 									return (new Date(dep.metadata.creationTimestamp).getTime() > new Date(creationTimestamp).getTime());
@@ -195,16 +207,19 @@ class FastRollback extends EventEmitter {
 							throw new Error("Missing required creationTimestamp, aborting");
 						}
 						creationTimestamp = result.metadata.creationTimestamp;
-						if (!result.metadata.labels[DeployGroupLabelName] || !result.metadata.labels[DeployIdLabelName]) {
-							throw new Error(`Missing required ${DeployGroupLabelName} or ${DeployIdLabelName} label on deployment manifest ${deployment.manifest.metadata.name}`);
+						if (!result.metadata.labels[Labels.Name]) {
+							throw new Error(`Missing required ${Labels.Name} label on deployment manifest ${deployment.manifest.metadata.name}`);
 						}
-						const depSelectorString = `${DeployGroupLabelName}=${result.metadata.labels[DeployGroupLabelName]},${DeployIdLabelName}!=${result.metadata.labels[DeployIdLabelName]}`;
+						if (!result.metadata.labels[Labels.ID]) {
+							throw new Error(`Missing required ${Labels.ID} label on deployment manifest ${deployment.manifest.metadata.name}`);
+						}
+						const depSelectorString = `${Labels.Name}=${result.metadata.labels[Labels.Name]},${Labels.ID}!=${result.metadata.labels[Labels.ID]},${Labels.Strategy}=${this.name}`;
 						return this.kubectl
 							.list("deployments", depSelectorString)
 							.then((results) => {
 								let deletePromises = [];
-								let verified = FastRollback.verifyGroupDeployments(results.items, deployment.manifest);
-								this.emit("info", `found ${verified.length} backup deployments on reserve that match the ${deployment.manifest.metadata.name} deployment group label ${depSelectorString}`);
+								let verified = Utils.verifySameOriginalName(results.items, deployment.manifest);
+								this.emit("info", `deleteBackups found ${verified.length} backup deployments on reserve that match the ${deployment.manifest.metadata.name} deployment group label ${depSelectorString}`);
 								// Sort the list by creationTimestamp
 								verified.sort((a, b) => {
 									return new Date(a.metadata.creationTimestamp).getTime() - new Date(b.metadata.creationTimestamp).getTime();
@@ -240,33 +255,6 @@ class FastRollback extends EventEmitter {
 		return Promise.all(promises).then(() => {
 			return flaggedForDeletion;
 		});
-	}
-
-	// VerifyGroupDeployments will take the given results and make sure they all match the original name of the manifest given
-	static verifyGroupDeployments(items, manifest) {
-		var verified = [];
-		// Exclude the current active deployment
-		if (!_.has(manifest, ["metadata", "name"]) && !manifest.metadata.name) {
-			throw new Error(`Deployment is missing it's name... huh?!`);
-		}
-		verified = _.reject(items, {
-			metadata: {
-				name: manifest.metadata.name
-			}
-		});
-
-		// Verify these deployments have the same original name as this deployment (just in case the
-		// label selector isn't safe enough)
-		if (!_.has(manifest, ["metadata", "annotations", Annotations.OriginalName]) && !manifest.metadata.annotations[Annotations.OriginalName]) {
-			throw new Error(`Deployment ${manifest.metadata.name} is missing it's original name annotation`);
-		}
-		verified = _.filter(verified, (dep) => {
-			if (_.has(dep, ["metadata", "annotations", Annotations.OriginalName])) {
-				return (dep.metadata.annotations[Annotations.OriginalName] == manifest.metadata.annotations[Annotations.OriginalName]);
-			}
-			return false;
-		});
-		return verified;
 	}
 }
 

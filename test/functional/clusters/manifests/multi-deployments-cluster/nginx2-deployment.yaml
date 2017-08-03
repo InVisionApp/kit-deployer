@@ -4,6 +4,7 @@ metadata:
   name: nginx2-deployment
   labels:
     app: test
+    name: nginx2-pod
 spec:
   replicas: 1
   template:

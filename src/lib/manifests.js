@@ -262,7 +262,8 @@ class Manifests extends EventEmitter {
 			const annotator = new Annotator({
 				uuid: this.options.uuid,
 				sha: this.options.sha,
-				strategy: this.strategy
+				strategy: this.strategy,
+				deployId: this.options.deployId
 			});
 
 			return this

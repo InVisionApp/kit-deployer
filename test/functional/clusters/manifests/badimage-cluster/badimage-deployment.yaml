@@ -4,6 +4,7 @@ metadata:
   name: badimage-deployment
   labels:
     app: test
+    name: badimage-pod
 spec:
   replicas: 1
   template:

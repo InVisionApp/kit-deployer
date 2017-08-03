@@ -11,4 +11,3 @@ spec:
       protocol: TCP
   selector:
     name: nginx1-pod
-    id: dep-3

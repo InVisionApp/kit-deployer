@@ -63,13 +63,19 @@ describe("FastRollback Strategy", () => {
 			const givenManifest = {
 				kind: "Deployment",
 				metadata: {
-					name: "test-deployment"
+					name: "test-deployment",
+					labels: {
+						name: "test-deployment"
+					}
 				}
 			};
 			const expectedManifest = {
 				kind: "Deployment",
 				metadata: {
-					name: "test-deployment-dep1"
+					name: "test-deployment-dep1",
+					labels: {
+						name: "test-deployment"
+					}
 				}
 			};
 			expect(strategy.annotate(givenManifest)).to.deep.equal(expectedManifest);
@@ -199,7 +205,7 @@ describe("FastRollback Strategy", () => {
 								"kit-deployer/original-name": "test-deployment"
 							},
 							labels: {
-								service: "test-svc",
+								name: "test-deployment",
 								id: "dep-1"
 							},
 							creationTimestamp: timestampAddDays(currentDate, 0)
@@ -289,7 +295,7 @@ describe("FastRollback Strategy", () => {
 								}
 							},
 							labels: {
-								service: "test-svc",
+								name: "test-deployment",
 								id: "dep-1"
 							}
 						}
@@ -298,7 +304,7 @@ describe("FastRollback Strategy", () => {
 						expect(kubectlGetSpy).to.have.been.calledOnce;
 						expect(kubectlGetSpy).to.have.been.calledWith("deployment", "test-deployment-dep-1");
 						expect(kubectlListSpy).to.have.been.calledOnce;
-						expect(kubectlListSpy).to.have.been.calledWith("deployments", "service=test-svc,id!=dep-1");
+						expect(kubectlListSpy).to.have.been.calledWith("deployments", "name=test-deployment,id!=dep-1,strategy=fast-rollback");
 						expect(res).to.contain(results.items[4]);
 						expect(res).to.contain(results.items[5]);
 						expect(res).to.have.length(2);
@@ -329,7 +335,7 @@ describe("FastRollback Strategy", () => {
 								"kit-deployer/original-name": "test-deployment"
 							},
 							labels: {
-								service: "test-svc",
+								name: "test-deployment",
 								id: "dep-1"
 							},
 							creationTimestamp: timestampAddDays(currentDate, 0)
@@ -419,7 +425,7 @@ describe("FastRollback Strategy", () => {
 								}
 							},
 							labels: {
-								service: "test-svc",
+								name: "test-deployment",
 								id: "dep-1"
 							}
 						}
@@ -428,7 +434,7 @@ describe("FastRollback Strategy", () => {
 						expect(kubectlGetSpy).to.have.been.calledOnce;
 						expect(kubectlGetSpy).to.have.been.calledWith("deployment", "test-deployment-dep-1");
 						expect(kubectlListSpy).to.have.been.calledOnce;
-						expect(kubectlListSpy).to.have.been.calledWith("deployments", "service=test-svc,id!=dep-1");
+						expect(kubectlListSpy).to.have.been.calledWith("deployments", "name=test-deployment,id!=dep-1,strategy=fast-rollback");
 						expect(res).to.contain(results.items[1]);
 						expect(res).to.contain(results.items[2]);
 						expect(res).to.have.length(2);
