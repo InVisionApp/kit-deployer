@@ -27,10 +27,17 @@ function active_machine {
 		docker-machine active
 	fi
 }
+function remove_port_if_forwarded {
+	local port=$1
+	pkill -f "ssh.*docker.*$port:localhost:$port"
+}
 # Kube API is accessible on host at 8080, use ssh tunnel
 function forward_port_if_not_forwarded {
 	local port=$1
 	local machine=$(active_machine)
+
+	echo "Attempting to closing tunnel if one exists..."
+	remove_port_if_forwarded
 
 	if [ -n "$machine" ]; then
 		if ! pgrep -f "ssh.*$port:localhost" > /dev/null; then
@@ -66,8 +73,4 @@ docker-compose -f test-functional.yml rm -f -v
 clean
 
 echo "Closing tunnel..."
-function remove_port_if_forwarded {
-	local port=$1
-	pkill -f "ssh.*docker.*$port:localhost:$port"
-}
 remove_port_if_forwarded
