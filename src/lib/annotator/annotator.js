@@ -119,9 +119,6 @@ class Annotator {
 		}
 
 		// Add strategy name label
-		if (!_.isUndefined(manifest.metadata.labels[Labels.Strategy])) {
-			throw new Error(`Reserved label ${Labels.Strategy} has been manually set`);
-		}
 		if (!_.isString(this.options.strategy.name)) {
 			throw new Error(`Requires string strategyName for reserved label ${Labels.Strategy}`);
 		}
