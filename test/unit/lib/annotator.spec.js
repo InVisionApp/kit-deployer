@@ -123,6 +123,14 @@ describe("Annotator", () => {
 				expect(manifest.metadata.annotations[Annotations.LastAppliedConfigurationHash]).to.equal("5fe441d20dd25a28df2c84667aa9e611df83a6c3");
 				expect(manifest.metadata.annotations[Annotations.Commit]).to.equal(JSON.stringify(options.sha));
 			});
+			it("should set the annotations with existing", () => {
+				let origManifest = _.cloneDeep(originalManifest);
+				origManifest.spec.selector.matchLabels.strategy = "some-update"
+				const manifest = annotator.annotate(_.cloneDeep(origManifest));
+				expect(manifest.metadata.name).to.equal(origManifest.metadata.name);
+				expect(manifest.spec.selector.matchLabels.strategy).to.equal(options.strategy.name);
+				expect(manifest.metadata.annotations[Annotations.LastAppliedConfiguration]).to.equal(JSON.stringify(origManifest));
+			});
 		});
 		describe("and calling annotate on job", () => {
 			it("should set the expected annotations", () => {
