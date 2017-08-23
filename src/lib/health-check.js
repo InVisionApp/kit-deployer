@@ -23,9 +23,9 @@ const excludeReasons = [
  * @fires HealthCheck#error
  */
 class HealthCheck extends EventEmitter {
-	constructor(kubectl, gracePeriod, since, threshold) {
+	constructor(kubectl, gracePeriod, since, threshold, interval) {
 		super();
-		this.events = kubectl.events(since);
+		this.events = kubectl.events(since, interval);
 		this.error = {
 			timeoutId: null,
 			involvedObjectName: null

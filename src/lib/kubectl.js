@@ -11,10 +11,10 @@ const _ = require("lodash");
 const yaml = require("js-yaml");
 
 class KubectlWatcher extends EventEmitter {
-	constructor(kubectl, resource, name) {
+	constructor(kubectl, resource, name, interval) {
 		super();
 		this.kubectl = kubectl;
-		this.interval = 3 * 1000; // 3 second polling
+		this.interval = interval * 1000 || 3 * 1000; // 3 second polling
 		this.resource = resource;
 		this.name = name;
 		this._previousResult;
@@ -49,10 +49,10 @@ class KubectlWatcher extends EventEmitter {
 }
 
 class KubectlEventWatcher extends EventEmitter {
-	constructor(kubectl, since) {
+	constructor(kubectl, since, interval) {
 		super();
 		this.kubectl = kubectl;
-		this.interval = 3 * 1000; // 3 second polling
+		this.interval = interval * 1000 || 3 * 1000; // 3 second polling
 		this._previousEvents = {};
 
 		if (since instanceof Date) {
@@ -368,8 +368,8 @@ class Kubectl extends EventEmitter {
 	 * @fires KubectlWatcher#change
 	 * @fires KubectlWatcher#error
 	 */
-	watch(resource, name) {
-		return new KubectlWatcher(this, resource, name);
+	watch(resource, name, interval) {
+		return new KubectlWatcher(this, resource, name, interval);
 	}
 
 	/**
@@ -380,8 +380,8 @@ class Kubectl extends EventEmitter {
 	 * @fires KubectlWatcher#new
 	 * @fires KubectlWatcher#error
 	 */
-	events(since) {
-		return new KubectlEventWatcher(this, since);
+	events(since, interval) {
+		return new KubectlEventWatcher(this, since, interval);
 	}
 }
 

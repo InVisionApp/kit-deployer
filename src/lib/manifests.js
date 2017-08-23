@@ -201,6 +201,7 @@ class Manifests extends EventEmitter {
 			dependencies.timeout = parseInt(this.options.dependency.timeout);
 
 			var status = new Status({
+				pollingInterval: this.options.available.pollingInterval,
 				healthCheck: this.options.available.healthCheck,
 				healthCheckGracePeriod: this.options.available.healthCheckGracePeriod,
 				healthCheckThreshold: this.options.available.healthCheckThreshold,

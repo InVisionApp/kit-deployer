@@ -32,6 +32,7 @@ describe("Functional", function() {
 		process.env.NAMESPACES_DIR = "/test/functional/clusters/namespaces";
 		process.env.MANIFESTS_DIR = "/test/functional/clusters/manifests";
 		process.env.AVAILABLE_ENABLED = "true";
+		process.env.AVAILABLE_POLLING_INTERVAL = "3";
 		process.env.AVAILABLE_HEALTH_CHECK = "true";
 		process.env.AVAILABLE_HEALTH_CHECK_GRACE_PERIOD = "3";
 		process.env.AVAILABLE_HEALTH_CHECK_THRESHOLD = "1";
@@ -138,7 +139,7 @@ describe("Functional", function() {
 					expect(stdout).to.match(/Healthcheck grace period of \d+ms expired/);
 					expect(stdout).to.contain("Stopping healthcheck watcher");
 					expect(stdout).to.contain("Clearing healthcheck timeout");
-					expect(stdout).to.match(/EventError: [\w\s"\/\-:(){}\\]+ for badimage-deployment-/);
+					expect(stdout).to.match(/EventError: (.*?) for badimage-deployment-/);
 					expect(stdout).to.contain("Sending payload to http://example.com/test/badimage-deployment for badimage-deployment with status STARTED/IN_PROGRESS");
 					expect(stdout).to.contain("Sending payload to http://example.com/test/badimage-deployment for badimage-deployment with status COMPLETED/FAILURE");
 					done();
@@ -487,7 +488,7 @@ describe("Functional", function() {
 					process.env.STRATEGY = "fast-rollback";
 					process.env.DEPLOY_ID = id;
 					process.env.IS_ROLLBACK = "true";
-			
+
 					exec("./src/deployer", function(error, stdout, stderr) {
 						expect(error).to.be.a("null", stdout);
 						expect(stderr).to.be.empty;
@@ -541,7 +542,7 @@ describe("Functional", function() {
 					process.env.STRATEGY = "rolling-update";
 					process.env.DEPLOY_ID = id;
 					process.env.IS_ROLLBACK = "false";
-			
+
 					exec("./src/deployer", function(error, stdout, stderr) {
 						expect(error).to.be.a("null", stdout);
 						expect(stderr).to.be.empty;

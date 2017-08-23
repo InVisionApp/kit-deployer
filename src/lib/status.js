@@ -23,6 +23,7 @@ class Status extends EventEmitter {
 	constructor(options) {
 		super();
 		this.options = _.merge({
+			pollingInterval: 10,
 			healthCheck: true,
 			healthCheckGracePeriod: undefined,
 			healthCheckThreshold: undefined,
@@ -69,7 +70,7 @@ class Status extends EventEmitter {
 			// If the resource has already been deployed and we're just re-checking it's status, we
 			// need to make sure the healthcheck observes all events for the resource
 			const since = (differences) ? null : -1;
-			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod, since, this.options.healthCheckThreshold);
+			const healthCheck = new HealthCheck(this.kubectl, this.options.healthCheckGracePeriod, since, this.options.healthCheckThreshold, this.options.pollingInterval);
 			healthCheck.on("info", (err) => {
 				this.emit("info", err);
 			});
@@ -81,7 +82,7 @@ class Status extends EventEmitter {
 			});
 
 			// Setup watcher
-			const watcher = this.kubectl.watch(resource, name);
+			const watcher = this.kubectl.watch(resource, name, this.options.pollingInterval);
 
 			// Setup error listener
 			this.on("_error", (err) => {
