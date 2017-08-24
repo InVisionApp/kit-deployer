@@ -309,12 +309,12 @@ describe("Functional", function() {
 				process.env.CONFIGS = firstKubeconfigFile;
 				delete process.env.DEPLOY_ID;
 
-				exec(`./bin/kubectl --kubeconfig=.${firstKubeconfigFile} create --save-config=true -f ./test/functional/clusters/namespaces/fast-rollback-cluster-0/fast-rollback-namespace.yaml`, function(error, stdout, stderr) {
+				exec(`./bin/kubectl --kubeconfig=.${firstKubeconfigFile} create -f ./test/functional/clusters/namespaces/fast-rollback-cluster-0/fast-rollback-namespace.yaml`, function(error, stdout, stderr) {
 					expect(error).to.be.a("null", stdout);
 					expect(stderr).to.be.empty;
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain(`namespace "fast-rollback" created`);
-					exec(`./bin/kubectl --kubeconfig=.${firstKubeconfigFile} create --save-config=true -f ./test/functional/clusters/manifests/fast-rollback-cluster-0`, function(error, stdout, stderr) {
+					exec(`./bin/kubectl --kubeconfig=.${firstKubeconfigFile} create -f ./test/functional/clusters/manifests/fast-rollback-cluster-0`, function(error, stdout, stderr) {
 						expect(error).to.be.a("null", stdout);
 						expect(stderr).to.be.empty;
 						expect(stdout).not.to.be.empty;
@@ -338,6 +338,7 @@ describe("Functional", function() {
 					expect(stdout).not.to.be.empty;
 					expect(stdout).to.contain("Generating tmp directory:");
 					expect(stdout).to.contain(clusterName + " - Strategy rolling-update");
+					expect(stdout).to.contain("Warning: kubectl apply should be used on resource created by either kubectl create --save-config or kubectl apply");
 					expect(stdout).to.contain(clusterName + " - Getting list of namespaces");
 					expect(stdout).not.to.contain(clusterName + " - Create fast-rollback namespace");
 					expect(stdout).to.contain(clusterName + ` - deployment "nginx1-deployment" configured`);

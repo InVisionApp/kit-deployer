@@ -184,15 +184,23 @@ class Kubectl extends EventEmitter {
 		var stdout = "";
 		var stderr = "";
 
-		kube.stdout.on("data", function(data) {
+		kube.stdout.on("data", (data) => {
 			stdout += data;
 		});
 
-		kube.stderr.on("data", function(data) {
+		kube.stderr.on("data", (data) => {
+			// If it's only a warning message just log it and move on
+			if (data && typeof data.toString === "function") {
+				let err = data.toString("utf8");
+				if (err.startsWith("Warning:")) {
+					this.emit("warn", err);
+					return;
+				}
+			}
 			stderr += data;
 		});
 
-		kube.on("close", function(code) {
+		kube.on("close", (code) => {
 			if (!stderr) {
 				stderr = undefined;
 			}

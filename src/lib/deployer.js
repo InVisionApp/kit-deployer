@@ -147,6 +147,9 @@ class Deployer extends EventEmitter {
 							kubeconfig: config,
 							kubeconfigFile: configFile
 						});
+						kubectl.on("warn", (msg) => {
+							self.emit("warn", msg);
+						});
 						kubectl.on("spawn", (args) => {
 							self.emit("spawn", args);
 						});
