@@ -10,23 +10,23 @@ const EventEmitter = require("events").EventEmitter;
  * @return {object} promise
  */
 class KeepAlive extends EventEmitter {
-	constructor(message, interval) {
-		super();
-		this._id;
-		this.interval = interval;
-		this.message = message;
-	}
+  constructor(message, interval) {
+    super();
+    this._id;
+    this.interval = interval;
+    this.message = message;
+  }
 
-	start() {
-		this._id = setTimeout(() => {
-			this.emit("info", this.message);
-			this.start();
-		}, parseInt(this.interval) * 1000);
-	}
+  start() {
+    this._id = setTimeout(() => {
+      this.emit("info", this.message);
+      this.start();
+    }, parseInt(this.interval) * 1000);
+  }
 
-	stop() {
-		clearTimeout(this._id);
-	}
+  stop() {
+    clearTimeout(this._id);
+  }
 }
 
 module.exports = KeepAlive;

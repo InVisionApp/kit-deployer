@@ -6,6 +6,9 @@
     # - name: Run lint tests
     #   service: test
     #   command: lint
+    - name: Format
+      service: test
+      command: format
     - name: Run unit tests
       service: test
       command: test-unit
