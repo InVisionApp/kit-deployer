@@ -11,6 +11,7 @@ codeship-dockercfg
 
 # IDE files
 .idea
+.tern-port
 
 # Dependency directories
 node_modules
