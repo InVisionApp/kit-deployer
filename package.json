@@ -23,7 +23,7 @@
     "test-functional": "mocha test/functional --recursive",
     "test-kubectl": "kubectl version --client | grep \\\"${KUBE_VERSION}\\\"; test $? -eq 0",
     "lint": "eslint src test scripts",
-    "format": "prettier -l '{scripts,src,test}/**/*.{js}'"
+    "format": "prettier -l '{scripts,src,test}/**/{deployer,*.js}'"
   },
   "dependencies": {
     "bluebird": "3.3.1",
