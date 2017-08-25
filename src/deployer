@@ -9,146 +9,289 @@ const Deployer = require("./lib/deployer");
 const convertStringToArray = require("./util/convert-string-to-array");
 
 const parseBoolean = function(str) {
-	return (str === "true");
+  return str === "true";
 };
 
 program
-	.version(packageJson.version)
-	.usage("[options]")
-	.option("--api-version <version>", "The kubernetes api version to use", process.env.API_VERSION)
-	.option("-s, --sha <sha>", "The commit sha that we are deploying", process.env.CI_COMMIT_ID)
-	.option("-l, --selector <selector>", "Selector (label query) to filter on", process.env.SELECTOR)
-	.option("-c, --configs <pattern>", "Set the glob pattern to search for cluster config files", process.env.CONFIGS)
-	.option("-n, --namespaces-dir <dir>", "Set the directory where all the namespace files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to", process.env.NAMESPACES_DIR)
-	.option("-m, --manifests-dir <dir>", "Set the directory where all the manifest files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to", process.env.MANIFESTS_DIR)
-	.option("-d, --dry-run <boolean>", "Will only show the diff and will not push anything to the cluster", parseBoolean, parseBoolean(process.env.DRY_RUN))
-	.option("--uuid <string>", "A UUID to be used in webhooks and API requests", process.env.UUID)
-	.option("--deployId <string>", "A unique id to be used in deployments", process.env.DEPLOY_ID)
-	.option("--strategy <string>", "The deployment strategy to use. Currently supports rolling-update, fast-rollback.", process.env.STRATEGY)
-	.option("--resource <string>", "The resource name for the manifests being deployed", process.env.RESOURCE)
-	.option("--debug <boolean>", "A boolean flag to enable debug mode", parseBoolean, parseBoolean(process.env.DEBUG))
-	.option("--is-rollback <boolean>", "A boolean flag that is passed in the available payload post", parseBoolean, parseBoolean(process.env.IS_ROLLBACK))
-	.option("--diff <boolean>", "Will show a diff", parseBoolean, parseBoolean(process.env.DIFF))
-	.option("--force <boolean>", "Will push all changes even if there are no differences", parseBoolean, parseBoolean(process.env.FORCE))
-	.option("--available-enabled <boolean>", "Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled", parseBoolean, parseBoolean(process.env.AVAILABLE_ENABLED))
-	.option("--available-polling-interval <int>", "The number of seconds to wait between status checking API requests", parseInt, parseInt(process.env.AVAILABLE_POLLING_INTERVAL))
-	.option("--available-all <boolean>", "When enabled it will send available webhooks for ALL manifests even if no differences were deployed", parseBoolean, parseBoolean(process.env.AVAILABLE_ALL))
-	.option("--available-health-check <boolean>", "Will monitor for issues during the deployment", parseBoolean, parseBoolean(process.env.AVAILABLE_HEALTH_CHECK))
-	.option("--available-health-check-grace-period <int>", "The amount of time in seconds that the health check will wait for a deployment to self-heal before triggering a failure", parseInt, parseInt(process.env.AVAILABLE_HEALTH_CHECK_GRACE_PERIOD))
-	.option("--available-health-check-threshold <int>", "The number times a particular error event can occur before triggering a failure", parseInt, parseInt(process.env.AVAILABLE_HEALTH_CHECK_THRESHOLD))
-	.option("--available-webhook <url>", "The URL you want to send the status payload of the deployment progress to. You can provide multiple endpoints by using a JSON array of URLs", process.env.AVAILABLE_WEBHOOK)
-	.option("--available-required <boolean>", "Will only finish once the manifest is considered available in the cluster", parseBoolean, parseBoolean(process.env.AVAILABLE_REQUIRED))
-	.option("--available-keep-alive <boolean>", "Will print the status of the available check every AVAILABLE_KEEP_ALIVE_INTERVAL seconds (useful for CI tools that require log output to prevent timeouts)", parseBoolean, parseBoolean(process.env.AVAILABLE_KEEP_ALIVE))
-	.option("--available-keep-alive-interval <int>", "Determines the interval at which the keep alive message will be printed", parseInt, parseInt(process.env.AVAILABLE_KEEP_ALIVE_INTERVAL))
-	.option("--available-timeout <int>", "The number of seconds to wait for a given manifest to be available", parseInt, parseInt(process.env.AVAILABLE_TIMEOUT))
-	.option("--dependency-wait <int>", "The number of seconds to wait between status check attempts for a dependency", parseInt, parseInt(process.env.DEPENDENCY_WAIT))
-	.option("--dependency-timeout <int>", "The number of seconds to wait before timing out waiting for a dependency to be available", parseInt, parseInt(process.env.DEPENDENCY_TIMEOUT))
-	.option("--github-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.GITHUB_ENABLED))
-	.option("--github-repo <repo>", "", process.env.GITHUB_REPO)
-	.option("--github-token <token>", "", process.env.GITHUB_AUTH_TOKEN)
-	.option("--github-user <user>", "", process.env.GITHUB_USER)
-	.option("--backup-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.BACKUP_ENABLED))
-	.option("--save-foramt <format>", "", process.env.SAVE_FORMAT)
-	.option("--aws-bucket <bucket>", "", process.env.AWS_BUCKET)
-	.option("--elroy-enabled <boolean>", "", parseBoolean, parseBoolean(process.env.ELROY_ENABLED))
-	.option("--elroy-url <string>", "", "", process.env.ELROY_URL)
-	.option("--elroy-secret <string>", "", "", process.env.ELROY_SECRET)
-	.parse(process.argv)
-;
+  .version(packageJson.version)
+  .usage("[options]")
+  .option(
+    "--api-version <version>",
+    "The kubernetes api version to use",
+    process.env.API_VERSION
+  )
+  .option(
+    "-s, --sha <sha>",
+    "The commit sha that we are deploying",
+    process.env.CI_COMMIT_ID
+  )
+  .option(
+    "-l, --selector <selector>",
+    "Selector (label query) to filter on",
+    process.env.SELECTOR
+  )
+  .option(
+    "-c, --configs <pattern>",
+    "Set the glob pattern to search for cluster config files",
+    process.env.CONFIGS
+  )
+  .option(
+    "-n, --namespaces-dir <dir>",
+    "Set the directory where all the namespace files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to",
+    process.env.NAMESPACES_DIR
+  )
+  .option(
+    "-m, --manifests-dir <dir>",
+    "Set the directory where all the manifest files are. They should be grouped in folders matching the metadata.name of the cluster that you want them deployed to",
+    process.env.MANIFESTS_DIR
+  )
+  .option(
+    "-d, --dry-run <boolean>",
+    "Will only show the diff and will not push anything to the cluster",
+    parseBoolean,
+    parseBoolean(process.env.DRY_RUN)
+  )
+  .option(
+    "--uuid <string>",
+    "A UUID to be used in webhooks and API requests",
+    process.env.UUID
+  )
+  .option(
+    "--deployId <string>",
+    "A unique id to be used in deployments",
+    process.env.DEPLOY_ID
+  )
+  .option(
+    "--strategy <string>",
+    "The deployment strategy to use. Currently supports rolling-update, fast-rollback.",
+    process.env.STRATEGY
+  )
+  .option(
+    "--resource <string>",
+    "The resource name for the manifests being deployed",
+    process.env.RESOURCE
+  )
+  .option(
+    "--debug <boolean>",
+    "A boolean flag to enable debug mode",
+    parseBoolean,
+    parseBoolean(process.env.DEBUG)
+  )
+  .option(
+    "--is-rollback <boolean>",
+    "A boolean flag that is passed in the available payload post",
+    parseBoolean,
+    parseBoolean(process.env.IS_ROLLBACK)
+  )
+  .option(
+    "--diff <boolean>",
+    "Will show a diff",
+    parseBoolean,
+    parseBoolean(process.env.DIFF)
+  )
+  .option(
+    "--force <boolean>",
+    "Will push all changes even if there are no differences",
+    parseBoolean,
+    parseBoolean(process.env.FORCE)
+  )
+  .option(
+    "--available-enabled <boolean>",
+    "Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled",
+    parseBoolean,
+    parseBoolean(process.env.AVAILABLE_ENABLED)
+  )
+  .option(
+    "--available-polling-interval <int>",
+    "The number of seconds to wait between status checking API requests",
+    parseInt,
+    parseInt(process.env.AVAILABLE_POLLING_INTERVAL)
+  )
+  .option(
+    "--available-all <boolean>",
+    "When enabled it will send available webhooks for ALL manifests even if no differences were deployed",
+    parseBoolean,
+    parseBoolean(process.env.AVAILABLE_ALL)
+  )
+  .option(
+    "--available-health-check <boolean>",
+    "Will monitor for issues during the deployment",
+    parseBoolean,
+    parseBoolean(process.env.AVAILABLE_HEALTH_CHECK)
+  )
+  .option(
+    "--available-health-check-grace-period <int>",
+    "The amount of time in seconds that the health check will wait for a deployment to self-heal before triggering a failure",
+    parseInt,
+    parseInt(process.env.AVAILABLE_HEALTH_CHECK_GRACE_PERIOD)
+  )
+  .option(
+    "--available-health-check-threshold <int>",
+    "The number times a particular error event can occur before triggering a failure",
+    parseInt,
+    parseInt(process.env.AVAILABLE_HEALTH_CHECK_THRESHOLD)
+  )
+  .option(
+    "--available-webhook <url>",
+    "The URL you want to send the status payload of the deployment progress to. You can provide multiple endpoints by using a JSON array of URLs",
+    process.env.AVAILABLE_WEBHOOK
+  )
+  .option(
+    "--available-required <boolean>",
+    "Will only finish once the manifest is considered available in the cluster",
+    parseBoolean,
+    parseBoolean(process.env.AVAILABLE_REQUIRED)
+  )
+  .option(
+    "--available-keep-alive <boolean>",
+    "Will print the status of the available check every AVAILABLE_KEEP_ALIVE_INTERVAL seconds (useful for CI tools that require log output to prevent timeouts)",
+    parseBoolean,
+    parseBoolean(process.env.AVAILABLE_KEEP_ALIVE)
+  )
+  .option(
+    "--available-keep-alive-interval <int>",
+    "Determines the interval at which the keep alive message will be printed",
+    parseInt,
+    parseInt(process.env.AVAILABLE_KEEP_ALIVE_INTERVAL)
+  )
+  .option(
+    "--available-timeout <int>",
+    "The number of seconds to wait for a given manifest to be available",
+    parseInt,
+    parseInt(process.env.AVAILABLE_TIMEOUT)
+  )
+  .option(
+    "--dependency-wait <int>",
+    "The number of seconds to wait between status check attempts for a dependency",
+    parseInt,
+    parseInt(process.env.DEPENDENCY_WAIT)
+  )
+  .option(
+    "--dependency-timeout <int>",
+    "The number of seconds to wait before timing out waiting for a dependency to be available",
+    parseInt,
+    parseInt(process.env.DEPENDENCY_TIMEOUT)
+  )
+  .option(
+    "--github-enabled <boolean>",
+    "",
+    parseBoolean,
+    parseBoolean(process.env.GITHUB_ENABLED)
+  )
+  .option("--github-repo <repo>", "", process.env.GITHUB_REPO)
+  .option("--github-token <token>", "", process.env.GITHUB_AUTH_TOKEN)
+  .option("--github-user <user>", "", process.env.GITHUB_USER)
+  .option(
+    "--backup-enabled <boolean>",
+    "",
+    parseBoolean,
+    parseBoolean(process.env.BACKUP_ENABLED)
+  )
+  .option("--save-foramt <format>", "", process.env.SAVE_FORMAT)
+  .option("--aws-bucket <bucket>", "", process.env.AWS_BUCKET)
+  .option(
+    "--elroy-enabled <boolean>",
+    "",
+    parseBoolean,
+    parseBoolean(process.env.ELROY_ENABLED)
+  )
+  .option("--elroy-url <string>", "", "", process.env.ELROY_URL)
+  .option("--elroy-secret <string>", "", "", process.env.ELROY_SECRET)
+  .parse(process.argv);
 
 if (program.dryRun === "true") {
-	logger.info("Dry run enabled, will not deploy any changes");
+  logger.info("Dry run enabled, will not deploy any changes");
 }
 
 const options = {
-	apiVersion: program.apiVersion,
-	uuid: program.uuid,
-	deployId: program.deployId,
-	strategyName: program.strategy,
-	resource: program.resource,
-	sha: program.sha,
-	selector: program.selector,
-	dryRun: program.dryRun,
-	isRollback: program.isRollback,
-	debug: program.debug,
-	diff: program.diff,
-	force: program.force,
-	available: {
-		enabled: program.availableEnabled,
-		pollingInterval: program.availablePollingInterval,
-		all: program.availableAll,
-		healthCheck: program.availableHealthCheck,
-		healthCheckGracePeriod: program.availableHealthCheckGracePeriod,
-		healthCheckThreshold: program.availableHealthCheckThreshold,
-		webhooks: convertStringToArray(program.availableWebhook),
-		required: program.availableRequired,
-		keepAlive: program.availableKeepAlive,
-		keepAliveInterval: program.availableKeepAliveInterval,
-		timeout: program.availableTimeout
-	},
-	dependency: {
-		wait: program.dependencyWait,
-		timeout: program.dependencyTimeout
-	},
-	backup: {
-		enabled: program.backupEnabled,
-		bucket: program.awsBucket,
-		saveFormat: program.saveFormat
-	},
-	elroy: {
-		enabled: program.elroyEnabled,
-		url: program.elroyUrl,
-		secret: program.elroySecret
-	},
-	github: {
-		enabled: program.githubEnabled,
-		token: program.githubToken,
-		user: program.githubUser,
-		repo: program.githubRepo
-	}
+  apiVersion: program.apiVersion,
+  uuid: program.uuid,
+  deployId: program.deployId,
+  strategyName: program.strategy,
+  resource: program.resource,
+  sha: program.sha,
+  selector: program.selector,
+  dryRun: program.dryRun,
+  isRollback: program.isRollback,
+  debug: program.debug,
+  diff: program.diff,
+  force: program.force,
+  available: {
+    enabled: program.availableEnabled,
+    pollingInterval: program.availablePollingInterval,
+    all: program.availableAll,
+    healthCheck: program.availableHealthCheck,
+    healthCheckGracePeriod: program.availableHealthCheckGracePeriod,
+    healthCheckThreshold: program.availableHealthCheckThreshold,
+    webhooks: convertStringToArray(program.availableWebhook),
+    required: program.availableRequired,
+    keepAlive: program.availableKeepAlive,
+    keepAliveInterval: program.availableKeepAliveInterval,
+    timeout: program.availableTimeout
+  },
+  dependency: {
+    wait: program.dependencyWait,
+    timeout: program.dependencyTimeout
+  },
+  backup: {
+    enabled: program.backupEnabled,
+    bucket: program.awsBucket,
+    saveFormat: program.saveFormat
+  },
+  elroy: {
+    enabled: program.elroyEnabled,
+    url: program.elroyUrl,
+    secret: program.elroySecret
+  },
+  github: {
+    enabled: program.githubEnabled,
+    token: program.githubToken,
+    user: program.githubUser,
+    repo: program.githubRepo
+  }
 };
 const deployer = new Deployer(options);
 
 // Set debugging level if enabled
 if (program.debug) {
-	logger.setLevel("DEBUG");
+  logger.setLevel("DEBUG");
 } else {
-	logger.setLevel("INFO");
+  logger.setLevel("INFO");
 }
 
 // setup logging of events
 deployer.on("debug", function(message) {
-	logger.debug(message);
+  logger.debug(message);
 });
 deployer.on("info", function(message) {
-	logger.info(message);
+  logger.info(message);
 });
 deployer.on("warn", function(message) {
-	logger.warn(message);
+  logger.warn(message);
 });
 deployer.on("error", function(message) {
-	logger.error(message);
+  logger.error(message);
 });
 deployer.on("fatal", function(message) {
-	logger.fatal(message);
+  logger.fatal(message);
 });
 
 deployer
-	.deploy(program.configs, program.manifestsDir, program.namespacesDir)
-	.then(() => {
-		// TODO: Should not have to manually exit process, more investigation is needed to determine
-		// why the process doesn't exit automatically, but this fix will resolve hanging builds in
-		// the meantime
-		process.exit(0);
-	})
-	.catch((err) => {
-		if (err instanceof Array) {
-			_.each(err, (e) => {
-				logger.fatal(e);
-			});
-		} else {
-			logger.fatal(err);
-		}
-		process.exit(1);
-	})
-	.done();
+  .deploy(program.configs, program.manifestsDir, program.namespacesDir)
+  .then(() => {
+    // TODO: Should not have to manually exit process, more investigation is needed to determine
+    // why the process doesn't exit automatically, but this fix will resolve hanging builds in
+    // the meantime
+    process.exit(0);
+  })
+  .catch(err => {
+    if (err instanceof Array) {
+      _.each(err, e => {
+        logger.fatal(e);
+      });
+    } else {
+      logger.fatal(err);
+    }
+    process.exit(1);
+  })
+  .done();

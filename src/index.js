@@ -3,7 +3,7 @@
 var Deployer = require("./lib/deployer");
 
 var KitDeployer = {
-	Deployer: Deployer
+  Deployer: Deployer
 };
 
 module.exports = KitDeployer;
