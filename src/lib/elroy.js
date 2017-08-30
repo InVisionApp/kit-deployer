@@ -167,12 +167,6 @@ class Elroy extends EventEmitter {
             `Error updating ${this.options.clusterName}/${this.options
               .resource} in Elroy: ${err.message}`
           );
-          const bodyStr = JSON.stringify(body);
-          this.emit(
-            "debug",
-            `Error updating ${this.options.clusterName}/${this.options
-              .resource} in Elroy to ${uri} with payload: ${bodyStr}`
-          );
           return reject(err);
         });
       return null;
