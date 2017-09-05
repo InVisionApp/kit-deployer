@@ -165,7 +165,7 @@ class Elroy extends EventEmitter {
           this.emit(
             "warn",
             `Error updating ${this.options.clusterName}/${this.options
-              .resource} in Elroy: ${err.message}`
+              .resource} in Elroy to ${uri} : ${err.message}`
           );
           return reject(err);
         });
