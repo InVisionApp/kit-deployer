@@ -113,54 +113,73 @@ class KubectlEventWatcher extends EventEmitter {
   }
 }
 
-class Kubeapi {
-  constructor(cwd, kubeconfig) {
+class Current {
+  constructor(kubeconfig) {
     // NOTE: we could not simply use KubeClient.config.fromKubeconfig(kubeconfig) because
     // it does not correctly resolve the relative cert paths
-    if (!cwd || !kubeconfig) {
-      throw new Error("cwd and kubeconfig are required for Kubeapi");
+    if (!kubeconfig) {
+      throw new Error("kubeconfig is required");
     }
-    const currentContext = _.find(kubeconfig.contexts, {
+    this.currentContext = _.find(kubeconfig.contexts, {
       name: kubeconfig["current-context"]
     });
-    if (!currentContext) {
+    if (!this.currentContext) {
       throw new Error("Unable to configure kubeapi with current context");
     }
-    const currentCluster = _.find(kubeconfig.clusters, {
-      name: currentContext.context.cluster
+    this.currentCluster = _.find(kubeconfig.clusters, {
+      name: this.currentContext.context.cluster
     });
-    if (!currentCluster) {
+    if (!this.currentCluster) {
       throw new Error("Unable to configure kubeapi with current cluster");
     }
-    const currentUser = _.find(kubeconfig.users, {
-      name: currentContext.context.user
+    this.currentUser = _.find(kubeconfig.users, {
+      name: this.currentContext.context.user
     });
-    if (!currentUser) {
+    if (!this.currentUser) {
       throw new Error("Unable to configure kubeapi with current user");
     }
+  }
+  get context() {
+    return this.currentContext;
+  }
+  get cluster() {
+    return this.currentCluster;
+  }
+  get user() {
+    return this.currentUser;
+  }
+}
 
+class Kubeapi {
+  constructor(cwd, kubeconfig) {
+    let current = new Current(kubeconfig);
+    if (!cwd) {
+      throw new Error("cwd is required for Kubeapi");
+    }
     var options = {
-      url: currentCluster.cluster.server,
-      namespace: currentContext.context.namespace
+      url: current.cluster.cluster.server,
+      namespace: current.context.context.namespace
     };
-    if (currentUser.user.token) {
+    if (current.user.user.token) {
       options.auth = {
-        bearer: currentUser.user.token
+        bearer: current.user.user.token
       };
       this.core = new KubeClient.Core(options);
+      this.batch = new KubeClient.Batch(options);
       this.ext = new KubeClient.Extensions(options);
       this.api = new KubeClient.Api(options);
     } else {
       options.ca = fs.readFileSync(
-        path.join(cwd, currentCluster.cluster["certificate-authority"])
+        path.join(cwd, current.cluster.cluster["certificate-authority"])
       );
       options.cert = fs.readFileSync(
-        path.join(cwd, currentUser.user["client-certificate"])
+        path.join(cwd, current.user.user["client-certificate"])
       );
       options.key = fs.readFileSync(
-        path.join(cwd, currentUser.user["client-key"])
+        path.join(cwd, current.user.user["client-key"])
       );
       this.core = new KubeClient.Core(options);
+      this.batch = new KubeClient.Batch(options);
       this.ext = new KubeClient.Extensions(options);
       this.api = new KubeClient.Api(options);
     }
@@ -170,6 +189,7 @@ class Kubeapi {
 class Kubectl extends EventEmitter {
   constructor(conf) {
     super();
+    this.current = new Current(conf.kubeconfig);
     this.kubeapi = new Kubeapi(conf.cwd, conf.kubeconfig);
 
     this.binary = conf.binary || "kubectl";
@@ -235,7 +255,7 @@ class Kubectl extends EventEmitter {
     return new Promise((resolve, reject) => {
       resource = resource.toLowerCase();
       const method = "get";
-      // Avoid passing "undefined" to kubeapi get methods
+      // Avoid passing "undefined" to kubeapi methods
       if (!name) {
         name = "";
       }
@@ -246,7 +266,7 @@ class Kubectl extends EventEmitter {
         } else {
           core = this.kubeapi.core.namespaces[resource];
         }
-        core.get(function(err, data) {
+        core[method](function(err, data) {
           if (err) {
             return reject(err);
           }
@@ -261,39 +281,67 @@ class Kubectl extends EventEmitter {
         // It is not a core resource type, so try using the extensions api
         if (coreErr instanceof TypeError) {
           try {
-            let ext;
-            if (_.isFunction(this.kubeapi.ext.namespaces[resource])) {
-              ext = this.kubeapi.ext.namespaces[resource](name);
+            let batch;
+            if (_.isFunction(this.kubeapi.batch.namespaces[resource])) {
+              batch = this.kubeapi.batch.namespaces[resource](name);
             } else {
-              ext = this.kubeapi.ext.namespaces[resource];
+              batch = this.kubeapi.batch.namespaces[resource];
             }
-            ext.get(function(extErr, extData) {
-              if (extErr) {
-                return reject(extErr);
+            batch[method](function(batchErr, batchData) {
+              if (batchErr) {
+                return reject(batchErr);
               }
-              return resolve(extData);
+              return resolve(batchData);
             });
             this.emit("request", {
               method: method,
               resource: resource,
               name: name
             });
-          } catch (extErr) {
-            // It is not a core resource type, so try using the extensions api
-            if (extErr instanceof TypeError) {
-              // If that fails, then fallback to spawning a kubectl process
-              const cmd = ["get", "--output=json", resource];
-              if (name) {
-                cmd.push(name);
-              }
-              this.spawn(cmd, (spawnErr, spawnData) => {
-                if (spawnErr) {
-                  return reject(new Error(spawnErr));
+          } catch (batchErr) {
+            if (batchErr instanceof TypeError) {
+              try {
+                let ext;
+                if (_.isFunction(this.kubeapi.ext.namespaces[resource])) {
+                  ext = this.kubeapi.ext.namespaces[resource](name);
+                } else {
+                  ext = this.kubeapi.ext.namespaces[resource];
                 }
-                return resolve(JSON.parse(spawnData));
-              });
+                ext[method](function(extErr, extData) {
+                  if (extErr) {
+                    return reject(extErr);
+                  }
+                  return resolve(extData);
+                });
+                this.emit("request", {
+                  method: method,
+                  resource: resource,
+                  name: name
+                });
+              } catch (extErr) {
+                if (extErr) {
+                  // If that fails, then fallback to spawning a kubectl process
+                  const cmd = [
+                    method,
+                    `--namespace=${this.current.context.context.namespace}`,
+                    "--output=json",
+                    resource
+                  ];
+                  if (name) {
+                    cmd.push(name);
+                  }
+                  this.spawn(cmd, (spawnErr, spawnData) => {
+                    if (spawnErr) {
+                      return reject(new Error(spawnErr));
+                    }
+                    return resolve(JSON.parse(spawnData));
+                  });
+                } else {
+                  reject(extErr);
+                }
+              }
             } else {
-              reject(extErr);
+              reject(batchErr);
             }
           }
         } else {

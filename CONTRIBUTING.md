@@ -30,7 +30,8 @@ Alternatively you can use docker-compose:
 
 We were unable to get the functional tests working via Codeship, so instead you will have to test via the `test-functional` command (which uses `docker-compose` internally). This will spin up a Kubernetes cluster and then run the functional tests against it and then shutdown and delete the cluster afterwards.
 
-1. `./test-functional`
+1. First install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+1. Then run `./test-functional`
 
 ## Manually building and running
 

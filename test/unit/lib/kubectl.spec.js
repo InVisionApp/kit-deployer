@@ -64,7 +64,7 @@ describe("Kubectl", () => {
       });
     });
     it("should have the expected number of spawns", () => {
-      expect(spawns).to.deep.equal(["scheduledjob", "cronjob"]);
+      expect(spawns).to.deep.equal([]);
     });
     it("should have the expected number of requests", () => {
       expect(requests).to.deep.equal([
@@ -73,6 +73,8 @@ describe("Kubectl", () => {
         "service",
         "secret",
         "job",
+        "scheduledjob",
+        "cronjob",
         "daemonset",
         "persistentvolumeclaim",
         "events"

@@ -1,32 +1,30 @@
 #!/bin/bash
 
+KUBE_VERSION=v1.6.4
 KUBERNETES_API_PORT=8080
 
-function clean {
-	# Delete kubelet memory
-	docker-machine ssh `docker-machine active` sudo rm -rf /var/lib/kubelet &> /dev/null
-
-	cd "$this_dir/test/functional/kubernetes"
-
-	if [ ! -z "$(docker-compose ps -q)" ]; then
-		docker-compose stop
-		docker-compose rm -f -v
-	fi
-
-	k8s_containers=`docker ps -a -f "name=k8s_" -q`
-
-	if [ ! -z "$k8s_containers" ]; then
-		echo "Stopping and removing all other containers that were started by Kubernetes..."
-		docker stop $k8s_containers
-		docker rm -f -v $k8s_containers
-	fi
+function stop {
+	echo "Stopping minikube..."
+	minikube stop
+	echo "Closing tunnel..."
+	remove_port_if_forwarded
 }
 
-function active_machine {
-	if [ $(command -v docker-machine) ]; then
-		docker-machine active
-	fi
+function start {
+	minikube config set kubernetes-version $KUBE_VERSION
+	minikube start
+	eval $(minikube docker-env)
+
+	echo "Setup tunnel..."
+	forward_port_if_not_forwarded $KUBERNETES_API_PORT
+
+	echo "Waiting for Kubernetes cluster to become available..."
+	until $(curl http://127.0.0.1:$KUBERNETES_API_PORT/api/v1/pods &> /dev/null); do
+		sleep 1
+	done
+	echo "Kubernetes cluster is up."
 }
+
 function remove_port_if_forwarded {
 	local port=$1
 	pkill -f "ssh.*docker.*$port:localhost:$port"
@@ -34,43 +32,38 @@ function remove_port_if_forwarded {
 # Kube API is accessible on host at 8080, use ssh tunnel
 function forward_port_if_not_forwarded {
 	local port=$1
-	local machine=$(active_machine)
 
-	echo "Attempting to closing tunnel if one exists..."
+	echo "Attempting to close tunnel if one exists..."
 	remove_port_if_forwarded
 
-	if [ -n "$machine" ]; then
-		if ! pgrep -f "ssh.*$port:localhost" > /dev/null; then
-			docker-machine ssh "$machine" -f -N -L "$port:localhost:$port"
-		else
-			echo "Did not set up port forwarding to the Docker machine: An ssh tunnel on port $port already exists. The kubernetes cluster may not be reachable from local kubectl."
-		fi
+	echo "Attempting to open tunnel..."
+	if ! pgrep -f "ssh.*$port:localhost" > /dev/null; then
+		ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -i $(minikube ssh-key) docker@$(minikube ip) -f -N -L $port:localhost:$port
+	else
+		echo "Did not set up port forwarding to the Docker machine: An ssh tunnel on port $port already exists. The kubernetes cluster may not be reachable from local kubectl."
 	fi
 }
 
-this_dir=$(cd -P "$(dirname "$0")" && pwd)
+function run_tests {
+	this_dir=$(cd -P "$(dirname "$0")" && pwd)
+	cd "$this_dir"
+	echo "Running tests..."
+	docker-compose -f test-functional.yml build && docker-compose -f test-functional.yml up
+	docker-compose -f test-functional.yml stop
+	docker-compose -f test-functional.yml rm -f -v
+}
 
-cd "$this_dir/test/functional/kubernetes"
+function prompt {
+	read -p "Run tests (y/n)? " CONT
+	if [ "$CONT" = "y" ]; then
+		run_tests
+		prompt
+	else
+		stop
+	fi
+}
+
 echo "Setting up Kubernetes..."
-clean
-docker-compose up -d
-
-echo "Setup tunnel..."
-forward_port_if_not_forwarded $KUBERNETES_API_PORT
-
-echo "Waiting for Kubernetes cluster to become available..."
-until $(curl http://localhost:8080/api/v1/pods &> /dev/null); do
-	sleep 1
-done
-echo "Kubernetes cluster is up."
-
-cd "$this_dir"
-echo "Running tests..."
-docker-compose -f test-functional.yml build && docker-compose -f test-functional.yml up
-docker-compose -f test-functional.yml stop
-docker-compose -f test-functional.yml rm -f -v
-
-clean
-
-echo "Closing tunnel..."
-remove_port_if_forwarded
+stop
+start
+prompt

@@ -139,9 +139,9 @@ describe("Functional", function() {
     });
   });
 
-  describe("when deploying to example cluster", function() {
+  describe("when deploying to example-timeout cluster", function() {
     const kubeconfigFile =
-      "/test/functional/clusters/configs/example-kubeconfig.yaml";
+      "/test/functional/clusters/configs/example-timeout-kubeconfig.yaml";
     describe("and exceeding AVAILABLE_TIMEOUT", function() {
       it("should trigger a TimeoutError", function(done) {
         process.env.CONFIGS = kubeconfigFile;
@@ -162,7 +162,7 @@ describe("Functional", function() {
     });
 
     after(function() {
-      return clean(kubeconfigFile, "example");
+      return clean(kubeconfigFile, "example-timeout");
     });
   });
 
