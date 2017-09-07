@@ -116,7 +116,7 @@ class Annotator {
     // Add deploy ID label
     if (!_.isUndefined(manifest.metadata.labels[Labels.ID])) {
       throw new Error(
-        `Reserved label ${Labels.ID} has been manually set on ${manifest
+        `Reserved metadata.label ${Labels.ID} has been manually set on ${manifest
           .metadata.name}`
       );
     }
@@ -126,7 +126,7 @@ class Annotator {
     if (manifest.kind == "Deployment") {
       if (_.isUndefined(manifest.metadata.labels[Labels.Name])) {
         throw new Error(
-          `Required label ${Labels.Name} must be manually set on ${manifest
+          `Required metadata.label ${Labels.Name} must be manually set on ${manifest
             .metadata.name}`
         );
       }
@@ -166,27 +166,47 @@ class Annotator {
         manifest.spec.template.metadata.labels = {};
       }
 
+      // Set the strategy on the labels
+      manifest.spec.template.metadata.labels[
+        Labels.Strategy
+      ] = this.options.strategy.name;
+
+      // If no selector, make the selector the same as the spec.template.metadata labels
+      if (_.isEmpty(manifest.spec.selector.matchLabels)) {
+        manifest.spec.selector.matchLabels =
+          manifest.spec.template.metadata.labels;
+      }
+
+      // Set the strategy on the selector
       manifest.spec.selector.matchLabels[
         Labels.Strategy
       ] = this.options.strategy.name;
-      // Make sure label and selectors match by syncing them
-      if (_.has(manifest, ["spec", "template", "metadata", "labels"])) {
-        manifest.spec.template.metadata.labels = _.merge(
-          manifest.spec.template.metadata.labels,
-          manifest.spec.selector.matchLabels
-        );
-        manifest.spec.selector.matchLabels = _.merge(
-          manifest.spec.selector.matchLabels,
-          manifest.spec.template.metadata.labels
-        );
-      }
-      // Require name label for deployment selectors
+
+      // If no name on selector yet, set it to the same name as the template metadata label
       if (_.isUndefined(manifest.spec.selector.matchLabels[Labels.Name])) {
+        // Set the name on the selector
+        manifest.spec.selector.matchLabels[Labels.Name] =
+          manifest.spec.template.metadata.labels[Labels.Name];
+      }
+
+      // If no name on labels yet, set it to the same name as the selector
+      if (_.isUndefined(manifest.spec.template.metadata.labels[Labels.Name])) {
+        // Set the name on the selector
+        manifest.spec.template.metadata.labels[Labels.Name] =
+          manifest.spec.selector.matchLabels[Labels.Name];
+      }
+
+      // Require name label AND selector for deployment spec template
+      if (
+        _.isUndefined(manifest.spec.template.metadata.labels[Labels.Name]) &&
+        _.isUndefined(manifest.spec.selector.matchLabels[Labels.Name])
+      ) {
         throw new Error(
-          `Required selector ${Labels.Name} must be manually set on ${manifest
+          `Required spec.template.metadata.labels or spec.selector.matchLabels ${Labels.Name} must be manually set on ${manifest
             .metadata.name}`
         );
       }
+
       // The name label should match the selector label
       if (
         manifest.metadata.labels[Labels.Name] !=
@@ -210,13 +230,13 @@ class Annotator {
       // Require name label for service selectors
       if (_.isUndefined(manifest.spec.selector[Labels.Name])) {
         throw new Error(
-          `Required selector ${Labels.Name} must be manually set on ${manifest
+          `Required spec.selector ${Labels.Name} must be manually set on ${manifest
             .metadata.name}`
         );
       }
       if (!_.isUndefined(manifest.spec.selector[Labels.Strategy])) {
         throw new Error(
-          `Reserved label ${Labels.Strategy} has been manually set`
+          `Reserved spec.selector ${Labels.Strategy} has been manually set`
         );
       }
       manifest.spec.selector[Labels.Strategy] = this.options.strategy.name;
