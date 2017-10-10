@@ -131,13 +131,16 @@ class Namespaces extends EventEmitter {
                 }
               });
 
-              Promise.all(promises).then(resolve).catch(reject).finally(() => {
-                if (errors.length) {
-                  this.emit("error", errors.length + " errors occurred");
-                  return reject(errors);
-                }
-                return null;
-              });
+              Promise.all(promises)
+                .then(resolve)
+                .catch(reject)
+                .finally(() => {
+                  if (errors.length) {
+                    this.emit("error", errors.length + " errors occurred");
+                    return reject(errors);
+                  }
+                  return null;
+                });
             })
             .catch(reject);
         });
