@@ -63,7 +63,7 @@ describe("Functional", function() {
             "example-cluster - Getting list of namespaces"
           );
           expect(stdout).to.contain(
-            "example-cluster - Create example namespace"
+            "example-cluster - Apply example namespace"
           );
           expect(stdout).to.contain(
             'example-cluster - namespace "example" created'
@@ -76,7 +76,7 @@ describe("Functional", function() {
           );
           expect(stdout).to.contain("example-cluster - Found 0 resources");
           expect(stdout).to.contain(
-            "example-cluster - Running pre-deploy check to Create auth-svc"
+            "example-cluster - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).to.contain(
             'example-cluster - service "auth-svc" created'
@@ -110,7 +110,7 @@ describe("Functional", function() {
             "example-cluster - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            "example-cluster - Create example namespace"
+            "example-cluster - Apply example namespace"
           );
           expect(stdout).not.to.contain(
             'example-cluster - namespace "example" created'
@@ -119,8 +119,8 @@ describe("Functional", function() {
           expect(stdout).to.contain(
             "example-cluster - Getting list of service matching 'app in (test)'"
           );
-          expect(stdout).not.to.contain(
-            "example-cluster - Running pre-deploy check to Create auth-svc"
+          expect(stdout).to.contain(
+            "example-cluster - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).not.to.contain(
             'example-cluster - service "auth-svc" created'
@@ -220,7 +220,7 @@ describe("Functional", function() {
             "multi-deployments-cluster - Getting list of namespaces"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Create multi-deployments namespace"
+            "multi-deployments-cluster - Apply multi-deployments namespace"
           );
           expect(stdout).to.contain(
             'multi-deployments-cluster - namespace "multi-deployments" created'
@@ -238,10 +238,10 @@ describe("Functional", function() {
             "multi-deployments-cluster - Found 0 resources"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx1-deployment"
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx1-deployment"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx2-deployment"
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx2-deployment"
           );
           expect(stdout).to.contain(
             'multi-deployments-cluster - deployment "nginx1-deployment" created'
@@ -290,7 +290,7 @@ describe("Functional", function() {
             "multi-deployments-cluster - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            "multi-deployments-cluster - Create multi-deployments namespace"
+            "multi-deployments-cluster - Apply multi-deployments namespace"
           );
           expect(stdout).not.to.contain(
             'multi-deployments-cluster - namespace "multi-deployments" created'
@@ -307,11 +307,11 @@ describe("Functional", function() {
           expect(stdout).to.contain(
             "multi-deployments-cluster - Found 2 resources"
           );
-          expect(stdout).not.to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx1-deployment"
+          expect(stdout).to.contain(
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx1-deployment"
           );
-          expect(stdout).not.to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx2-deployment"
+          expect(stdout).to.contain(
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx2-deployment"
           );
           expect(stdout).not.to.contain(
             'multi-deployments-cluster - deployment "nginx1-deployment" created'
@@ -367,7 +367,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).to.contain(
-            clusterName + " - Create mix-deployment-service namespace"
+            clusterName + " - Apply mix-deployment-service namespace"
           );
           expect(stdout).to.contain(
             clusterName + ' - namespace "mix-deployment-service" created'
@@ -385,10 +385,10 @@ describe("Functional", function() {
           expect(stdout).to.contain(clusterName + " - Found 0 resources");
           expect(stdout).to.contain(
             clusterName +
-              " - Running pre-deploy check to Create nginx1-deployment"
+              " - Running pre-deploy check to Apply nginx1-deployment"
           );
           expect(stdout).to.contain(
-            clusterName + " - Running pre-deploy check to Create auth-svc"
+            clusterName + " - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).to.contain(
             clusterName + ' - deployment "nginx1-deployment" created'
@@ -433,7 +433,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            clusterName + " - Create mix-deployment-service namespace"
+            clusterName + " - Apply mix-deployment-service namespace"
           );
           expect(stdout).not.to.contain(
             clusterName + ' - namespace "mix-deployment-service" created'
@@ -447,12 +447,12 @@ describe("Functional", function() {
               " - Getting list of deployment,service matching 'app in (test)'"
           );
           expect(stdout).to.contain(clusterName + " - Found 2 resources");
-          expect(stdout).not.to.contain(
+          expect(stdout).to.contain(
             clusterName +
-              " - Running pre-deploy check to Create nginx1-deployment"
+              " - Running pre-deploy check to Apply nginx1-deployment"
           );
-          expect(stdout).not.to.contain(
-            clusterName + " - Running pre-deploy check to Create auth-svc"
+          expect(stdout).to.contain(
+            clusterName + " - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).not.to.contain(
             clusterName + ' - deployment "nginx1-deployment" created'
@@ -537,7 +537,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            clusterName + " - Create fast-rollback namespace"
+            clusterName + " - Apply fast-rollback namespace"
           );
           expect(stdout).to.contain(
             clusterName + ` - deployment "nginx1-deployment" configured`
@@ -619,7 +619,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            clusterName + " - Create fast-rollback namespace"
+            clusterName + " - Apply fast-rollback namespace"
           );
           expect(stdout).not.to.contain(
             clusterName + ' - namespace "fast-rollback" created'
@@ -635,7 +635,7 @@ describe("Functional", function() {
           expect(stdout).to.contain(clusterName + " - Found 2 resources");
           expect(stdout).to.contain(
             clusterName +
-              " - Running pre-deploy check to Create nginx1-deployment-unspecified"
+              " - Running pre-deploy check to Apply nginx1-deployment-unspecified"
           );
           expect(stdout).to.contain(
             clusterName +
@@ -738,7 +738,7 @@ describe("Functional", function() {
               clusterName + " - Getting list of namespaces"
             );
             expect(stdout).not.to.contain(
-              clusterName + " - Create fast-rollback namespace"
+              clusterName + " - Apply fast-rollback namespace"
             );
             expect(stdout).not.to.contain(
               clusterName + ' - namespace "fast-rollback" created'
@@ -762,7 +762,7 @@ describe("Functional", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Running pre-deploy check to Create nginx1-deployment-" +
+                " - Running pre-deploy check to Apply nginx1-deployment-" +
                 process.env.DEPLOY_ID
             );
             expect(stdout).to.contain(
@@ -933,7 +933,7 @@ describe("Functional", function() {
               clusterName + " - Getting list of namespaces"
             );
             expect(stdout).not.to.contain(
-              clusterName + " - Create fast-rollback namespace"
+              clusterName + " - Apply fast-rollback namespace"
             );
             expect(stdout).not.to.contain(
               clusterName + ' - namespace "fast-rollback" created'
@@ -958,7 +958,7 @@ describe("Functional", function() {
             );
             expect(stdout).not.to.contain(
               clusterName +
-                " - Running pre-deploy check to Create nginx1-deployment-" +
+                " - Running pre-deploy check to Apply nginx1-deployment-" +
                 process.env.DEPLOY_ID
             );
             expect(stdout).to.contain(
@@ -1079,7 +1079,7 @@ describe("Functional", function() {
               clusterName + " - Getting list of namespaces"
             );
             expect(stdout).not.to.contain(
-              clusterName + " - Create fast-rollback namespace"
+              clusterName + " - Apply fast-rollback namespace"
             );
             expect(stdout).not.to.contain(
               clusterName + ' - namespace "fast-rollback" created'
@@ -1104,7 +1104,7 @@ describe("Functional", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Running pre-deploy check to Create nginx1-deployment"
+                " - Running pre-deploy check to Apply nginx1-deployment"
             );
             expect(stdout).to.contain(
               clusterName +
@@ -1219,14 +1219,14 @@ describe("Functional", function() {
           "single-job-cluster - Getting list of job matching 'app in (test)'"
         );
         expect(stdout).to.contain(
-          "single-job-cluster - Create single-job namespace"
+          "single-job-cluster - Apply single-job namespace"
         );
         expect(stdout).to.contain(
           'single-job-cluster - namespace "single-job" created'
         );
         expect(stdout).to.contain("single-job-cluster - Found 0 resources");
         expect(stdout).to.contain(
-          "single-job-cluster - Running pre-deploy check to Create ls-job"
+          "single-job-cluster - Running pre-deploy check to Apply ls-job"
         );
         expect(stdout).to.match(
           /.*single-job-cluster - job \"ls-job-\b[0-9a-f]{5,40}\b\" created*/

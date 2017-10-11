@@ -107,19 +107,19 @@ class Namespaces extends EventEmitter {
                 if (!found) {
                   this.emit(
                     "info",
-                    "Create " + namespace.content.metadata.name + " namespace"
+                    "Apply " + namespace.content.metadata.name + " namespace"
                   );
                   if (this.options.dryRun === false) {
                     promises.push(
                       this.kubectl
-                        .create(namespace.path)
+                        .apply(namespace.path)
                         .then(msg => {
                           this.emit("info", msg);
                         })
                         .catch(err => {
                           this.emit(
                             "error",
-                            "Error running kubectl.create('" +
+                            "Error running kubectl.apply('" +
                               namespace.path +
                               "') " +
                               err

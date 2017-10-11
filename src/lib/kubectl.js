@@ -384,10 +384,7 @@ class Kubectl extends EventEmitter {
   recreate(filepath) {
     return this.delete(filepath).then(() => {
       return new Promise((resolve, reject) => {
-        this.spawn(["create", "--save-config=true", "-f", filepath], function(
-          err,
-          data
-        ) {
+        this.spawn(["apply", "-f", filepath], function(err, data) {
           if (err) {
             return reject(err);
           }

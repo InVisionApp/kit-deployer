@@ -391,7 +391,7 @@ class Manifests extends EventEmitter {
                 }
               }
             } else {
-              method = "Create";
+              method = "Apply";
             }
 
             if (
