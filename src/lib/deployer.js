@@ -74,6 +74,7 @@ class Deployer extends EventEmitter {
     var self = this;
     return new Promise(function(resolve, reject) {
       const progress = new Progress();
+      let clusterGeneratedManifests = [];
       progress.on("progress", msg => {
         self.emit("progress", msg);
       });
@@ -242,7 +243,8 @@ class Deployer extends EventEmitter {
           .then(() => {
             return Promise.all(promises);
           })
-          .then(() => {
+          .then(res => {
+            clusterGeneratedManifests = res;
             // If a webhook is set and available is required, only resolve once the webhook has finished
             if (
               webhook &&
@@ -272,7 +274,7 @@ class Deployer extends EventEmitter {
               return reject(errors.join(", "));
             }
             self.emit("info", "Finished successfully");
-            return resolve();
+            return resolve(clusterGeneratedManifests);
           })
           .done();
       });

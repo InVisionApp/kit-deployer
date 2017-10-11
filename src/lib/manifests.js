@@ -690,6 +690,10 @@ class Manifests extends EventEmitter {
           });
         })
         .then(() => {
+          let res = {
+            name: this.options.cluster.metadata.name,
+            manifests: generatedManifests
+          };
           // Can only consider cluster deployment status completed if available checking is enabled,
           // otherwise it would be inaccurate
           if (this.options.available.enabled) {
@@ -712,9 +716,12 @@ class Manifests extends EventEmitter {
                   // Ignore errors from elroy (we just log them)
                   this.emit("warn", `Elroy error: ${elroyErr}`);
                 });
+              })
+              .then(() => {
+                return res;
               });
           }
-          return null;
+          return res;
         })
         .then(resolve)
         .catch(err => {
