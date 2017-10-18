@@ -96,6 +96,12 @@ program
     parseBoolean(process.env.FORCE)
   )
   .option(
+    "--create-only <boolean>",
+    "Will only create resources that don't already exist. Will not perform any updates or removals.",
+    parseBoolean,
+    parseBoolean(process.env.CREATE_ONLY)
+  )
+  .option(
     "--available-enabled <boolean>",
     "Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled",
     parseBoolean,
@@ -216,6 +222,7 @@ const options = {
   debug: program.debug,
   diff: program.diff,
   force: program.force,
+  createOnly: program.createOnly,
   available: {
     enabled: program.availableEnabled,
     pollingInterval: program.availablePollingInterval,

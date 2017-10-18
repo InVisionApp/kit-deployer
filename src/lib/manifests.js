@@ -52,6 +52,8 @@ class Manifests extends EventEmitter {
         cluster: undefined,
         dir: undefined,
         selector: undefined,
+        force: false,
+        createOnly: false,
         dryRun: false,
         available: {
           enabled: false,
@@ -398,7 +400,11 @@ class Manifests extends EventEmitter {
                 }
               }
             } else {
-              method = "Apply";
+              if (this.options.createOnly) {
+                method = "Create";
+              } else {
+                method = "Apply";
+              }
             }
 
             if (

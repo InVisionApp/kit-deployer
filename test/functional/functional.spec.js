@@ -43,6 +43,7 @@ describe("Functional", function() {
     process.env.AVAILABLE_KEEP_ALIVE = "true";
     process.env.AVAILABLE_WEBHOOK = "http://example.com/test";
     process.env.STRATEGY = "rolling-update";
+    process.env.CREATE_ONLY = "false";
   });
 
   describe("when deploying to example cluster", function() {
@@ -187,6 +188,50 @@ describe("Functional", function() {
             "example-cluster - Getting list of service matching 'app in (test)'"
           );
           expect(stdout).to.contain(
+            "example-cluster - Running pre-deploy check to Apply auth-svc"
+          );
+          expect(stdout).not.to.contain(
+            'example-cluster - service "auth-svc" created'
+          );
+          // expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
+          // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
+          expect(stdout).to.contain("Finished successfully");
+          // expect(stdout).to.contain("Deleted tmp directory:");
+          done();
+        });
+      });
+    });
+
+    describe("and when running same deploy again with createOnly", function() {
+      it("should skip deployment and send webhooks", function(done) {
+        process.env.CONFIGS = kubeconfigFile;
+        process.env.CREATE_ONLY = "true";
+
+        exec("./src/deployer", function(error, stdout, stderr) {
+          expect(error).to.be.a("null", stdout);
+          expect(stderr).to.be.empty;
+          expect(stdout).not.to.be.empty;
+          expect(stdout).to.contain("Generating tmp directory:");
+          expect(stdout).to.contain(
+            "example-cluster - Strategy rolling-update"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Getting list of namespaces"
+          );
+          expect(stdout).not.to.contain(
+            "example-cluster - Apply example namespace"
+          );
+          expect(stdout).not.to.contain(
+            'example-cluster - namespace "example" created'
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Strategy rolling-update skipping deploy of auth-svc because it already exists and createOnly is enabled"
+          );
+          // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
+          expect(stdout).to.contain(
+            "example-cluster - Getting list of service matching 'app in (test)'"
+          );
+          expect(stdout).not.to.contain(
             "example-cluster - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).not.to.contain(
@@ -1432,5 +1477,6 @@ describe("Functional", function() {
     delete process.env.AVAILABLE_WEB;
     delete process.env.STRATEGY;
     delete process.env.DEPLOY_ID;
+    delete process.env.CREATE_ONLY;
   });
 });

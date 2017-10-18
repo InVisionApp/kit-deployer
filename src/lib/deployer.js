@@ -32,6 +32,7 @@ class Deployer extends EventEmitter {
         debug: false,
         diff: false,
         force: false,
+        createOnly: false,
         available: {
           enabled: false,
           all: false,
@@ -202,6 +203,7 @@ class Deployer extends EventEmitter {
                     available: self.options.available,
                     diff: self.options.diff,
                     force: self.options.force,
+                    createOnly: self.options.createOnly,
                     backup: self.options.backup,
                     elroy: self.options.elroy,
                     kubectl: kubectl
