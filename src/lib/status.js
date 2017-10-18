@@ -24,6 +24,7 @@ class Status extends EventEmitter {
     super();
     this.options = _.merge(
       {
+        dryRun: false,
         pollingInterval: 10,
         healthCheck: true,
         healthCheckGracePeriod: undefined,
@@ -55,6 +56,13 @@ class Status extends EventEmitter {
 	 */
   available(resource, name, differences) {
     return new Promise((resolve, reject) => {
+      if (this.options.dryRun) {
+        this.emit(
+          "info",
+          `DryRun is enabled: skipping available check for ${resource}:${name}`
+        );
+        return resolve();
+      }
       let timeoutId, keepAlive;
       let emitter = new EventEmitter();
 

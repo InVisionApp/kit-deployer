@@ -16,7 +16,6 @@ class Namespaces extends EventEmitter {
       {
         clusterName: undefined,
         dir: undefined,
-        dryRun: true,
         kubectl: undefined
       },
       options
@@ -109,25 +108,23 @@ class Namespaces extends EventEmitter {
                     "info",
                     "Apply " + namespace.content.metadata.name + " namespace"
                   );
-                  if (this.options.dryRun === false) {
-                    promises.push(
-                      this.kubectl
-                        .apply(namespace.path)
-                        .then(msg => {
-                          this.emit("info", msg);
-                        })
-                        .catch(err => {
-                          this.emit(
-                            "error",
-                            "Error running kubectl.apply('" +
-                              namespace.path +
-                              "') " +
-                              err
-                          );
-                          errors.push(err);
-                        })
-                    );
-                  }
+                  promises.push(
+                    this.kubectl
+                      .apply(namespace.path)
+                      .then(msg => {
+                        this.emit("info", msg);
+                      })
+                      .catch(err => {
+                        this.emit(
+                          "error",
+                          "Error running kubectl.apply('" +
+                            namespace.path +
+                            "') " +
+                            err
+                        );
+                        errors.push(err);
+                      })
+                  );
                 }
               });
 

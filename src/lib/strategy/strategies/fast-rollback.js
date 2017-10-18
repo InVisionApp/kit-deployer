@@ -149,6 +149,10 @@ class FastRollback extends EventEmitter {
         return this.deleteBackups();
       })
       .then(() => {
+        if (this.options.dryRun) {
+          this.emit("info", "DryRun is enabled: skipping cleanup");
+          return Promise.resolve();
+        }
         return Utils.cleanup(this, this.deployments);
       });
   }
@@ -180,31 +184,34 @@ class FastRollback extends EventEmitter {
             }
           })
           .then(() => {
-            return this.kubectl.get("service", manifestName);
-          })
-          .then(result => {
-            // If it does not have a last update annotation yet then continue
-            if (
-              !_.has(result, [
-                "metadata",
-                "annotations",
-                Annotations.LastUpdated
-              ])
-            ) {
+            // Skip this check if it's only a dryRun
+            if (this.options.dryRun) {
               return;
             }
-            // Check if LastUpdated is newer than when this deploy started
-            const currentServiceLastUpdated = new Date(
-              result.metadata.annotations[Annotations.LastUpdated]
-            ).getTime();
-            const newServiceLastUpdated = new Date(
-              service.manifest.metadata.annotations[Annotations.LastUpdated]
-            ).getTime();
-            if (currentServiceLastUpdated > newServiceLastUpdated) {
-              throw new Error(
-                "Aborting because current service has been updated since this deploy has started"
-              );
-            }
+            return this.kubectl.get("service", manifestName).then(result => {
+              // If it does not have a last update annotation yet then continue
+              if (
+                !_.has(result, [
+                  "metadata",
+                  "annotations",
+                  Annotations.LastUpdated
+                ])
+              ) {
+                return;
+              }
+              // Check if LastUpdated is newer than when this deploy started
+              const currentServiceLastUpdated = new Date(
+                result.metadata.annotations[Annotations.LastUpdated]
+              ).getTime();
+              const newServiceLastUpdated = new Date(
+                service.manifest.metadata.annotations[Annotations.LastUpdated]
+              ).getTime();
+              if (currentServiceLastUpdated > newServiceLastUpdated) {
+                throw new Error(
+                  "Aborting because current service has been updated since this deploy has started"
+                );
+              }
+            });
           })
           .then(() => {
             // Deploy service now
@@ -222,11 +229,15 @@ class FastRollback extends EventEmitter {
   }
 
   deleteNewer() {
+    if (this.options.dryRun) {
+      this.emit("info", "DryRun is enabled: skipping deleteNewer");
+      return Promise.resolve();
+    }
     let promises = [];
     let flaggedForDeletion = [];
     _.each(this.deployments, deployment => {
-      var creationTimestamp;
-      var depSelectors = [];
+      let creationTimestamp;
+      let depSelectors = [];
       promises.push(
         this.kubectl
           .get("deployment", deployment.manifest.metadata.name)
@@ -305,6 +316,13 @@ class FastRollback extends EventEmitter {
                 });
               });
           })
+          .catch(err => {
+            // Ignore if we can't find the deployment
+            if (err && err.code && err.code === 404) {
+              return;
+            }
+            throw err;
+          })
       );
     });
     return Promise.all(promises).then(() => {
@@ -313,11 +331,15 @@ class FastRollback extends EventEmitter {
   }
 
   deleteBackups() {
+    if (this.options.dryRun) {
+      this.emit("info", "DryRun is enabled: skipping deleteBackups");
+      return Promise.resolve();
+    }
     let promises = [];
     let flaggedForDeletion = [];
     _.each(this.deployments, deployment => {
-      var creationTimestamp;
-      var depSelectors = [];
+      let creationTimestamp;
+      let depSelectors = [];
       promises.push(
         this.kubectl
           .get("deployment", deployment.manifest.metadata.name)

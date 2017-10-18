@@ -52,6 +52,7 @@ class Manifests extends EventEmitter {
         cluster: undefined,
         dir: undefined,
         selector: undefined,
+        dryRun: false,
         available: {
           enabled: false,
           all: false,
@@ -204,7 +205,10 @@ class Manifests extends EventEmitter {
 	 */
   deploy() {
     return new Promise((resolve, reject) => {
-      const tmpDir = path.join("/tmp/kit-deployer", uuid.v4());
+      const tmpDir = path.join(
+        "/tmp/kit-deployer",
+        this.options.uuid || uuid.v4()
+      );
       var generatedManifests = [];
       var availablePromises = [];
       var dependencies = new Dependencies({
@@ -220,6 +224,7 @@ class Manifests extends EventEmitter {
       dependencies.timeout = parseInt(this.options.dependency.timeout);
 
       var status = new Status({
+        dryRun: this.options.dryRun,
         pollingInterval: this.options.available.pollingInterval,
         healthCheck: this.options.available.healthCheck,
         healthCheckGracePeriod: this.options.available.healthCheckGracePeriod,
@@ -253,7 +258,8 @@ class Manifests extends EventEmitter {
       const backup = new Backup(
         this.options.backup.enabled,
         this.options.backup.bucket,
-        this.options.backup.saveFormat
+        this.options.backup.saveFormat,
+        this.options.dryRun
       );
       backup.on("info", msg => {
         this.emit("info", msg);
@@ -271,7 +277,8 @@ class Manifests extends EventEmitter {
           uuid: this.options.uuid,
           isRollback: this.options.isRollback,
           clusterName: this.options.cluster.metadata.name,
-          resource: this.options.resource
+          resource: this.options.resource,
+          dryRun: this.options.dryRun
         })
       );
       elroy.on("info", msg => {
@@ -503,7 +510,7 @@ class Manifests extends EventEmitter {
                           tmpApplyingConfigurationPath
                         )
                         .then(skip => {
-                          if (skip || this.options.dryRun) {
+                          if (skip) {
                             return;
                           }
                           // Initiate deploy
@@ -617,56 +624,54 @@ class Manifests extends EventEmitter {
               }
             } else {
               // No differences, verify service is available and emit status on it if AVAILABLE_ALL enabled
-              if (!this.options.dryRun) {
-                const noDiffPromiseFunc = () => {
-                  if (this.options.available.all) {
-                    this.emit("status", {
-                      cluster: this.options.cluster.metadata.name,
-                      name: manifestName,
-                      kind: manifest.kind,
-                      phase: "STARTED",
-                      status: "IN_PROGRESS",
-                      manifest: manifest
-                    });
+              const noDiffPromiseFunc = () => {
+                if (this.options.available.all) {
+                  this.emit("status", {
+                    cluster: this.options.cluster.metadata.name,
+                    name: manifestName,
+                    kind: manifest.kind,
+                    phase: "STARTED",
+                    status: "IN_PROGRESS",
+                    manifest: manifest
+                  });
 
-                    if (this.options.available.enabled) {
-                      var availablePromise = status
-                        .available(manifest.kind, manifestName)
-                        .then(() => {
-                          this.emit("status", {
-                            cluster: this.options.cluster.metadata.name,
-                            name: manifestName,
-                            kind: manifest.kind,
-                            phase: "COMPLETED",
-                            status: "SUCCESS",
-                            manifest: manifest
-                          });
-                        })
-                        .catch(err => {
-                          this.emit("error", err);
-                          this.emit("status", {
-                            cluster: this.options.cluster.metadata.name,
-                            reason: err.name || "other",
-                            name: manifestName,
-                            kind: manifest.kind,
-                            phase: "COMPLETED",
-                            status: "FAILURE",
-                            manifest: manifest
-                          });
-                          throw err;
+                  if (this.options.available.enabled) {
+                    var availablePromise = status
+                      .available(manifest.kind, manifestName)
+                      .then(() => {
+                        this.emit("status", {
+                          cluster: this.options.cluster.metadata.name,
+                          name: manifestName,
+                          kind: manifest.kind,
+                          phase: "COMPLETED",
+                          status: "SUCCESS",
+                          manifest: manifest
                         });
-                      availablePromises.push(availablePromise);
-                      // Wait for promise to resolve if we need to wait until available is successful
-                      if (this.options.available.required) {
-                        return availablePromise;
-                      }
+                      })
+                      .catch(err => {
+                        this.emit("error", err);
+                        this.emit("status", {
+                          cluster: this.options.cluster.metadata.name,
+                          reason: err.name || "other",
+                          name: manifestName,
+                          kind: manifest.kind,
+                          phase: "COMPLETED",
+                          status: "FAILURE",
+                          manifest: manifest
+                        });
+                        throw err;
+                      });
+                    availablePromises.push(availablePromise);
+                    // Wait for promise to resolve if we need to wait until available is successful
+                    if (this.options.available.required) {
+                      return availablePromise;
                     }
                   }
-                  // Nothing to do, just resolve
-                  return Promise.resolve();
-                };
-                kubePromises.push(noDiffPromiseFunc());
-              }
+                }
+                // Nothing to do, just resolve
+                return Promise.resolve();
+              };
+              kubePromises.push(noDiffPromiseFunc());
             }
           });
 

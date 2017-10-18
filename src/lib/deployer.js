@@ -157,9 +157,13 @@ class Deployer extends EventEmitter {
               progress.add(config.metadata.name);
 
               var kubectl = new Kubectl({
+                dryRun: self.options.dryRun,
                 cwd: path.dirname(configFile),
                 kubeconfig: config,
                 kubeconfigFile: configFile
+              });
+              kubectl.on("info", msg => {
+                self.emit("info", msg);
               });
               kubectl.on("warn", msg => {
                 self.emit("warn", msg);
@@ -175,7 +179,6 @@ class Deployer extends EventEmitter {
               var namespaces = new Namespaces({
                 clusterName: config.metadata.name,
                 dir: namespacesDir,
-                dryRun: self.options.dryRun,
                 kubectl: kubectl
               });
               namespaces.on("debug", clusterDebug);
@@ -262,7 +265,7 @@ class Deployer extends EventEmitter {
           .finally(function() {
             if (self.options.dryRun) {
               self.emit(
-                "debug",
+                "info",
                 "This was a dry run and no changes were deployed"
               );
             }

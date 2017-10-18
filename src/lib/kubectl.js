@@ -189,6 +189,7 @@ class Kubeapi {
 class Kubectl extends EventEmitter {
   constructor(conf) {
     super();
+    this.dryRun = conf.dryRun || false;
     this.current = new Current(conf.kubeconfig);
     this.kubeapi = new Kubeapi(conf.cwd, conf.kubeconfig);
 
@@ -266,7 +267,7 @@ class Kubectl extends EventEmitter {
         } else {
           core = this.kubeapi.core.namespaces[resource];
         }
-        core[method](function(err, data) {
+        core[method]((err, data) => {
           if (err) {
             return reject(err);
           }
@@ -287,7 +288,7 @@ class Kubectl extends EventEmitter {
             } else {
               batch = this.kubeapi.batch.namespaces[resource];
             }
-            batch[method](function(batchErr, batchData) {
+            batch[method]((batchErr, batchData) => {
               if (batchErr) {
                 return reject(batchErr);
               }
@@ -307,7 +308,7 @@ class Kubectl extends EventEmitter {
                 } else {
                   ext = this.kubeapi.ext.namespaces[resource];
                 }
-                ext[method](function(extErr, extData) {
+                ext[method]((extErr, extData) => {
                   if (extErr) {
                     return reject(extErr);
                   }
@@ -369,6 +370,11 @@ class Kubectl extends EventEmitter {
 
   create(filepath) {
     return new Promise((resolve, reject) => {
+      if (this.dryRun) {
+        return resolve(
+          `DryRun is enabled: skipping kubectl.create(${filepath})`
+        );
+      }
       this.spawn(["create", "--save-config=true", "-f", filepath], function(
         err,
         data
@@ -382,6 +388,11 @@ class Kubectl extends EventEmitter {
   }
 
   recreate(filepath) {
+    if (this.dryRun) {
+      return Promise.resolve(
+        `DryRun is enabled: skipping kubectl.recreate(${filepath})`
+      );
+    }
     return this.delete(filepath).then(() => {
       return new Promise((resolve, reject) => {
         this.spawn(["apply", "-f", filepath], function(err, data) {
@@ -396,6 +407,11 @@ class Kubectl extends EventEmitter {
 
   delete(filepath) {
     return new Promise((resolve, reject) => {
+      if (this.dryRun) {
+        return resolve(
+          `DryRun is enabled: skipping kubectl.delete(${filepath})`
+        );
+      }
       this.spawn(["delete", "-f", filepath], function(err, data) {
         if (err) {
           return reject(err);
@@ -407,6 +423,11 @@ class Kubectl extends EventEmitter {
 
   deleteByName(kind, name) {
     return new Promise((resolve, reject) => {
+      if (this.dryRun) {
+        return resolve(
+          `DryRun is enabled: skipping kubectl.deleteByName(${filepath})`
+        );
+      }
       this.spawn(["delete", kind, name], function(err, data) {
         if (err) {
           return reject(err);
@@ -418,6 +439,11 @@ class Kubectl extends EventEmitter {
 
   apply(filepath) {
     return new Promise((resolve, reject) => {
+      if (this.dryRun) {
+        return resolve(
+          `DryRun is enabled: skipping kubectl.apply(${filepath})`
+        );
+      }
       this.spawn(["apply", "-f", filepath], function(err, data) {
         if (err) {
           return reject(err);

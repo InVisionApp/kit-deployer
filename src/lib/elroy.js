@@ -38,7 +38,8 @@ class Elroy extends EventEmitter {
         enabled: false,
         isRollback: false,
         clusterName: undefined,
-        resource: undefined
+        resource: undefined,
+        dryRun: false
       },
       options
     );
@@ -143,6 +144,14 @@ class Elroy extends EventEmitter {
 
       // Make request to Elroy
       const uri = this.options.url + "/api/v1/deploy";
+      if (this.options.dryRun) {
+        this.emit(
+          "info",
+          `DryRun is enabled: skipping Elroy request to ${uri} for ${this
+            .options.clusterName}/${this.options.resource}`
+        );
+        return resolve();
+      }
       this.request({
         simple: true,
         method: "PUT",
