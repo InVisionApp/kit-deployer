@@ -105,7 +105,6 @@ describe("Functional", function() {
           expect(stdout).to.contain(
             "Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS"
           );
-          expect(stdout).to.contain("Deleted tmp directory:");
           expect(stdout).to.contain(
             "This was a dry run and no changes were deployed"
           );
@@ -156,7 +155,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -196,7 +194,6 @@ describe("Functional", function() {
           // expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
           // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          // expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -240,7 +237,6 @@ describe("Functional", function() {
           // expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
           // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          // expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -380,7 +376,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -450,7 +445,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -553,7 +547,6 @@ describe("Functional", function() {
             "This was a dry run and no changes were deployed"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -619,7 +612,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -679,7 +671,6 @@ describe("Functional", function() {
           );
           // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -803,7 +794,6 @@ describe("Functional", function() {
           );
           // expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-svc for nginx1-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -913,7 +903,6 @@ describe("Functional", function() {
           );
           // expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-svc for nginx1-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -1108,7 +1097,6 @@ describe("Functional", function() {
               "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
             );
             expect(stdout).to.contain("Finished successfully");
-            expect(stdout).to.contain("Deleted tmp directory:");
             done();
           });
         });
@@ -1255,7 +1243,6 @@ describe("Functional", function() {
               "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
             );
             expect(stdout).to.contain("Finished successfully");
-            expect(stdout).to.contain("Deleted tmp directory:");
             done();
           });
         });
@@ -1362,7 +1349,6 @@ describe("Functional", function() {
               "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
             );
             expect(stdout).to.contain("Finished successfully");
-            expect(stdout).to.contain("Deleted tmp directory:");
             done();
           });
         });
@@ -1447,7 +1433,6 @@ describe("Functional", function() {
           "Sending payload to http://example.com/test/ls-job for ls-job with status COMPLETED/SUCCESS"
         );
         expect(stdout).to.contain("Finished successfully");
-        expect(stdout).to.contain("Deleted tmp directory:");
         done();
       });
     });

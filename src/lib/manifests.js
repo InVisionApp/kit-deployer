@@ -17,7 +17,6 @@ const writeFileAsync = Promise.promisify(fs.writeFile);
 const readFileAsync = Promise.promisify(fs.readFile);
 const uuid = require("uuid");
 const mkdirp = Promise.promisify(require("mkdirp"));
-const rimraf = Promise.promisify(require("rimraf"));
 const Annotator = require("./annotator/annotator");
 const Annotations = require("./annotator/annotations");
 const Backup = require("./backup");
@@ -750,11 +749,6 @@ class Manifests extends EventEmitter {
             this.emit("warn", `Elroy error: ${elroyErr}`);
           });
           reject(err);
-        })
-        .finally(() => {
-          return rimraf(tmpDir).then(() => {
-            this.emit("debug", "Deleted tmp directory: " + tmpDir);
-          });
         });
     });
   }

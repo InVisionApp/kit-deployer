@@ -21,7 +21,8 @@
     "prepublish": "node scripts/download-kubectl.js",
     "test-unit": "mocha test/unit --recursive",
     "test-functional": "mocha test/functional --recursive",
-    "test-kubectl": "kubectl version --client | grep \\\"${KUBE_VERSION}\\\"; test $? -eq 0",
+    "test-kubectl":
+      "kubectl version --client | grep \\\"${KUBE_VERSION}\\\"; test $? -eq 0",
     "lint": "eslint src test scripts",
     "format": "prettier -l '{scripts,src,test}/**/{deployer,*.js}'"
   },
@@ -37,7 +38,6 @@
     "lodash": "4.3.0",
     "mkdirp": "0.5.1",
     "request-promise": "3.0.0",
-    "rimraf": "2.5.3",
     "traverse": "0.6.6",
     "uuid": "2.0.2",
     "aws-sdk": "2.7.7"
