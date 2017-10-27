@@ -6,6 +6,7 @@
 
 # kit-deployer
 [ ![Codeship Status for InVisionApp/kit-deployer](https://codeship.com/projects/71a53610-0fe1-0134-46a8-063ac029d855/status?branch=master)](https://codeship.com/projects/156809)
+[![Build Status](https://travis-ci.org/InVisionApp/kit-deployer.svg?branch=master)](https://travis-ci.org/InVisionApp/kit-deployer)
 [![Docker Repository on Quay](https://quay.io/repository/invision/kit-deployer/status "Docker Repository on Quay")](https://quay.io/repository/invision/kit-deployer)
 [![npm version](https://badge.fury.io/js/kit-deployer.svg)](https://badge.fury.io/js/kit-deployer)
 [![Dependency Status](https://david-dm.org/InVisionApp/kit-deployer.svg)](https://david-dm.org/InVisionApp/kit-deployer)
@@ -205,6 +206,7 @@ The following environment variables are used by this service.
 | `IS_ROLLBACK` | A boolean flag that is passed in the available payload post | yes | `false` |
 | `DIFF` | Will show a diff | yes | `false` |
 | `FORCE` | Will push all changes even if there are no differences | yes | `false` |
+| `CREATE_ONLY` | Will only create resources that don't already exist. Will not perform any updates or removals. | yes | `false` |
 | `AVAILABLE_ENABLED` | Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled | yes | `false` |
 | `AVAILABLE_POLLING_INTERVAL` | The number of seconds to wait between status checking API requests | yes | `false` |
 | `AVAILABLE_HEALTH_CHECK` | Will monitor for issues during the deployment | yes | `true` |

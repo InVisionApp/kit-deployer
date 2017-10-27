@@ -73,6 +73,10 @@ class RollingUpdate extends EventEmitter {
         );
       })
       .then(() => {
+        if (this.options.dryRun) {
+          this.emit("info", "DryRun is enabled: skipping cleanup");
+          return Promise.resolve();
+        }
         return Utils.cleanup(this, this.deployments);
       });
   }

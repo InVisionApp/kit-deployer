@@ -22,6 +22,7 @@ describe("Functional", function() {
   this.timeout(180000);
 
   beforeEach(function() {
+    process.env.UUID = "9543ac65-223e-4746-939f-391231ec64bb";
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     process.env.SELECTOR = "app in (test)";
     process.env.DEBUG = "true";
@@ -42,11 +43,77 @@ describe("Functional", function() {
     process.env.AVAILABLE_KEEP_ALIVE = "true";
     process.env.AVAILABLE_WEBHOOK = "http://example.com/test";
     process.env.STRATEGY = "rolling-update";
+    process.env.CREATE_ONLY = "false";
   });
 
   describe("when deploying to example cluster", function() {
     const kubeconfigFile =
       "/test/functional/clusters/configs/example-kubeconfig.yaml";
+    describe("and dryRun is enabled and example cluster does not exist yet", function() {
+      it("should deploy without error", function(done) {
+        process.env.DRY_RUN = "true";
+        process.env.CONFIGS = kubeconfigFile;
+
+        exec("./src/deployer", function(error, stdout, stderr) {
+          expect(error).to.be.a("null", stdout);
+          expect(stderr).to.be.empty;
+          expect(stdout).not.to.be.empty;
+          expect(stdout).to.contain("Generating tmp directory:");
+          expect(stdout).to.contain(
+            "example-cluster - Strategy rolling-update"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Getting list of namespaces"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Apply example namespace"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - DryRun is enabled: skipping kubectl.apply(/test/functional/clusters/namespaces/example-cluster/example-namespace.yaml)"
+          );
+          expect(stdout).not.to.contain(
+            'example-cluster - namespace "example" created'
+          );
+          expect(stdout).to.contain(
+            "Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Getting list of service matching 'app in (test)'"
+          );
+          expect(stdout).to.contain("example-cluster - Found 0 resources");
+          expect(stdout).to.contain(
+            "example-cluster - Running pre-deploy check to Apply auth-svc"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - DryRun is enabled: skipping kubectl.apply(/tmp/kit-deployer/9543ac65-223e-4746-939f-391231ec64bb/example-cluster-auth-svc.yaml.json)"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - DryRun is enabled: skipping available check for Service:auth-svc"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Strategy rolling-update all 1 manifests are available"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Strategy rolling-update deployed 0 services after all deployments available"
+          );
+          expect(stdout).not.to.contain(
+            'example-cluster - service "auth-svc" created'
+          );
+          expect(stdout).not.to.contain(
+            "example-cluster - Service:auth-svc is available"
+          );
+          expect(stdout).to.contain(
+            "Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS"
+          );
+          expect(stdout).to.contain(
+            "This was a dry run and no changes were deployed"
+          );
+          expect(stdout).to.contain("Finished successfully");
+          done();
+        });
+      });
+    });
+
     describe("and example cluster does not exist yet", function() {
       it("should deploy without error", function(done) {
         process.env.CONFIGS = kubeconfigFile;
@@ -63,7 +130,7 @@ describe("Functional", function() {
             "example-cluster - Getting list of namespaces"
           );
           expect(stdout).to.contain(
-            "example-cluster - Create example namespace"
+            "example-cluster - Apply example namespace"
           );
           expect(stdout).to.contain(
             'example-cluster - namespace "example" created'
@@ -76,7 +143,7 @@ describe("Functional", function() {
           );
           expect(stdout).to.contain("example-cluster - Found 0 resources");
           expect(stdout).to.contain(
-            "example-cluster - Running pre-deploy check to Create auth-svc"
+            "example-cluster - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).to.contain(
             'example-cluster - service "auth-svc" created'
@@ -88,7 +155,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -110,7 +176,7 @@ describe("Functional", function() {
             "example-cluster - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            "example-cluster - Create example namespace"
+            "example-cluster - Apply example namespace"
           );
           expect(stdout).not.to.contain(
             'example-cluster - namespace "example" created'
@@ -119,8 +185,8 @@ describe("Functional", function() {
           expect(stdout).to.contain(
             "example-cluster - Getting list of service matching 'app in (test)'"
           );
-          expect(stdout).not.to.contain(
-            "example-cluster - Running pre-deploy check to Create auth-svc"
+          expect(stdout).to.contain(
+            "example-cluster - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).not.to.contain(
             'example-cluster - service "auth-svc" created'
@@ -128,7 +194,49 @@ describe("Functional", function() {
           // expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
           // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          // expect(stdout).to.contain("Deleted tmp directory:");
+          done();
+        });
+      });
+    });
+
+    describe("and when running same deploy again with createOnly", function() {
+      it("should skip deployment and send webhooks", function(done) {
+        process.env.CONFIGS = kubeconfigFile;
+        process.env.CREATE_ONLY = "true";
+
+        exec("./src/deployer", function(error, stdout, stderr) {
+          expect(error).to.be.a("null", stdout);
+          expect(stderr).to.be.empty;
+          expect(stdout).not.to.be.empty;
+          expect(stdout).to.contain("Generating tmp directory:");
+          expect(stdout).to.contain(
+            "example-cluster - Strategy rolling-update"
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Getting list of namespaces"
+          );
+          expect(stdout).not.to.contain(
+            "example-cluster - Apply example namespace"
+          );
+          expect(stdout).not.to.contain(
+            'example-cluster - namespace "example" created'
+          );
+          expect(stdout).to.contain(
+            "example-cluster - Strategy rolling-update skipping deploy of auth-svc because it already exists and createOnly is enabled"
+          );
+          // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS");
+          expect(stdout).to.contain(
+            "example-cluster - Getting list of service matching 'app in (test)'"
+          );
+          expect(stdout).not.to.contain(
+            "example-cluster - Running pre-deploy check to Apply auth-svc"
+          );
+          expect(stdout).not.to.contain(
+            'example-cluster - service "auth-svc" created'
+          );
+          // expect(stdout).to.contain("example-cluster - Service:auth-svc is available");
+          // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
+          expect(stdout).to.contain("Finished successfully");
           done();
         });
       });
@@ -220,7 +328,7 @@ describe("Functional", function() {
             "multi-deployments-cluster - Getting list of namespaces"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Create multi-deployments namespace"
+            "multi-deployments-cluster - Apply multi-deployments namespace"
           );
           expect(stdout).to.contain(
             'multi-deployments-cluster - namespace "multi-deployments" created'
@@ -238,10 +346,10 @@ describe("Functional", function() {
             "multi-deployments-cluster - Found 0 resources"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx1-deployment"
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx1-deployment"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx2-deployment"
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx2-deployment"
           );
           expect(stdout).to.contain(
             'multi-deployments-cluster - deployment "nginx1-deployment" created'
@@ -268,7 +376,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -290,7 +397,7 @@ describe("Functional", function() {
             "multi-deployments-cluster - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            "multi-deployments-cluster - Create multi-deployments namespace"
+            "multi-deployments-cluster - Apply multi-deployments namespace"
           );
           expect(stdout).not.to.contain(
             'multi-deployments-cluster - namespace "multi-deployments" created'
@@ -307,11 +414,11 @@ describe("Functional", function() {
           expect(stdout).to.contain(
             "multi-deployments-cluster - Found 2 resources"
           );
-          expect(stdout).not.to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx1-deployment"
+          expect(stdout).to.contain(
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx1-deployment"
           );
-          expect(stdout).not.to.contain(
-            "multi-deployments-cluster - Running pre-deploy check to Create nginx2-deployment"
+          expect(stdout).to.contain(
+            "multi-deployments-cluster - Running pre-deploy check to Apply nginx2-deployment"
           );
           expect(stdout).not.to.contain(
             'multi-deployments-cluster - deployment "nginx1-deployment" created'
@@ -338,7 +445,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -353,6 +459,99 @@ describe("Functional", function() {
     const clusterName = "mix-deployment-service-cluster";
     const kubeconfigFile =
       "/test/functional/clusters/configs/mix-deployment-service-kubeconfig.yaml";
+    describe("and dryRun is enabled and mix-deployment-service cluster does not exist yet", function() {
+      it("should deploy without error", function(done) {
+        process.env.DRY_RUN = "true";
+        process.env.CONFIGS = kubeconfigFile;
+
+        exec("./src/deployer", function(error, stdout, stderr) {
+          expect(error).to.be.a("null", stdout);
+          expect(stderr).to.be.empty;
+          expect(stdout).not.to.be.empty;
+          expect(stdout).to.contain("Generating tmp directory:");
+          expect(stdout).to.contain(clusterName + " - Strategy rolling-update");
+          expect(stdout).to.contain(
+            clusterName + " - Getting list of namespaces"
+          );
+          expect(stdout).to.contain(
+            clusterName + " - Apply mix-deployment-service namespace"
+          );
+          expect(stdout).to.contain(
+            clusterName +
+              " - DryRun is enabled: skipping kubectl.apply(/test/functional/clusters/namespaces/mix-deployment-service-cluster/mix-deployment-service-namespace.yaml)"
+          );
+          expect(stdout).not.to.contain(
+            clusterName + ' - namespace "mix-deployment-service" created'
+          );
+          expect(stdout).to.contain(
+            "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS"
+          );
+          expect(stdout).to.contain(
+            "Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS"
+          );
+          expect(stdout).to.contain(
+            clusterName +
+              " - Getting list of deployment,service matching 'app in (test)'"
+          );
+          expect(stdout).to.contain(clusterName + " - Found 0 resources");
+          expect(stdout).to.contain(
+            clusterName +
+              " - Running pre-deploy check to Apply nginx1-deployment"
+          );
+          expect(stdout).to.contain(
+            clusterName + " - Running pre-deploy check to Apply auth-svc"
+          );
+          expect(stdout).to.contain(
+            clusterName +
+              " - DryRun is enabled: skipping kubectl.apply(/tmp/kit-deployer/9543ac65-223e-4746-939f-391231ec64bb/mix-deployment-service-cluster-nginx1-deployment.yaml.json)"
+          );
+          expect(stdout).to.contain(
+            clusterName +
+              " - DryRun is enabled: skipping available check for Deployment:nginx1-deployment"
+          );
+          expect(stdout).to.contain(
+            clusterName +
+              " - DryRun is enabled: skipping kubectl.apply(/tmp/kit-deployer/9543ac65-223e-4746-939f-391231ec64bb/mix-deployment-service-cluster-auth-svc.yaml.json)"
+          );
+          expect(stdout).to.contain(
+            clusterName +
+              " - DryRun is enabled: skipping available check for Service:auth-svc"
+          );
+          expect(stdout).to.contain(
+            clusterName +
+              " - Strategy rolling-update DryRun is enabled: skipping cleanup"
+          );
+          expect(stdout).not.to.contain(
+            clusterName + ' - deployment "nginx1-deployment" created'
+          );
+          expect(stdout).not.to.contain(
+            clusterName + ' - service "auth-svc" created'
+          );
+          expect(stdout).not.to.contain(
+            clusterName + " - Deployment:nginx1-deployment is available"
+          );
+          expect(stdout).not.to.contain(
+            clusterName + " - Service:auth-svc is available"
+          );
+          expect(stdout).not.to.contain(
+            clusterName +
+              " - Deployment:nginx1-deployment has 1/1 replicas available"
+          );
+          expect(stdout).to.contain(
+            "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
+          );
+          expect(stdout).to.contain(
+            "Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS"
+          );
+          expect(stdout).to.contain(
+            "This was a dry run and no changes were deployed"
+          );
+          expect(stdout).to.contain("Finished successfully");
+          done();
+        });
+      });
+    });
+
     describe("and mix-deployment-service cluster does not exist yet", function() {
       it("should deploy without error", function(done) {
         process.env.CONFIGS = kubeconfigFile;
@@ -367,7 +566,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).to.contain(
-            clusterName + " - Create mix-deployment-service namespace"
+            clusterName + " - Apply mix-deployment-service namespace"
           );
           expect(stdout).to.contain(
             clusterName + ' - namespace "mix-deployment-service" created'
@@ -385,10 +584,10 @@ describe("Functional", function() {
           expect(stdout).to.contain(clusterName + " - Found 0 resources");
           expect(stdout).to.contain(
             clusterName +
-              " - Running pre-deploy check to Create nginx1-deployment"
+              " - Running pre-deploy check to Apply nginx1-deployment"
           );
           expect(stdout).to.contain(
-            clusterName + " - Running pre-deploy check to Create auth-svc"
+            clusterName + " - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).to.contain(
             clusterName + ' - deployment "nginx1-deployment" created'
@@ -413,7 +612,6 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS"
           );
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -433,7 +631,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            clusterName + " - Create mix-deployment-service namespace"
+            clusterName + " - Apply mix-deployment-service namespace"
           );
           expect(stdout).not.to.contain(
             clusterName + ' - namespace "mix-deployment-service" created'
@@ -447,12 +645,12 @@ describe("Functional", function() {
               " - Getting list of deployment,service matching 'app in (test)'"
           );
           expect(stdout).to.contain(clusterName + " - Found 2 resources");
-          expect(stdout).not.to.contain(
+          expect(stdout).to.contain(
             clusterName +
-              " - Running pre-deploy check to Create nginx1-deployment"
+              " - Running pre-deploy check to Apply nginx1-deployment"
           );
-          expect(stdout).not.to.contain(
-            clusterName + " - Running pre-deploy check to Create auth-svc"
+          expect(stdout).to.contain(
+            clusterName + " - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).not.to.contain(
             clusterName + ' - deployment "nginx1-deployment" created'
@@ -473,7 +671,6 @@ describe("Functional", function() {
           );
           // expect(stdout).to.contain("Sending payload to http://example.com/test/auth-svc for auth-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -537,7 +734,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            clusterName + " - Create fast-rollback namespace"
+            clusterName + " - Apply fast-rollback namespace"
           );
           expect(stdout).to.contain(
             clusterName + ` - deployment "nginx1-deployment" configured`
@@ -597,7 +794,6 @@ describe("Functional", function() {
           );
           // expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-svc for nginx1-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -619,7 +815,7 @@ describe("Functional", function() {
             clusterName + " - Getting list of namespaces"
           );
           expect(stdout).not.to.contain(
-            clusterName + " - Create fast-rollback namespace"
+            clusterName + " - Apply fast-rollback namespace"
           );
           expect(stdout).not.to.contain(
             clusterName + ' - namespace "fast-rollback" created'
@@ -635,7 +831,7 @@ describe("Functional", function() {
           expect(stdout).to.contain(clusterName + " - Found 2 resources");
           expect(stdout).to.contain(
             clusterName +
-              " - Running pre-deploy check to Create nginx1-deployment-unspecified"
+              " - Running pre-deploy check to Apply nginx1-deployment-unspecified"
           );
           expect(stdout).to.contain(
             clusterName +
@@ -707,7 +903,6 @@ describe("Functional", function() {
           );
           // expect(stdout).to.contain("Sending payload to http://example.com/test/nginx1-svc for nginx1-svc with status COMPLETED/SUCCESS");
           expect(stdout).to.contain("Finished successfully");
-          expect(stdout).to.contain("Deleted tmp directory:");
           done();
         });
       });
@@ -738,7 +933,7 @@ describe("Functional", function() {
               clusterName + " - Getting list of namespaces"
             );
             expect(stdout).not.to.contain(
-              clusterName + " - Create fast-rollback namespace"
+              clusterName + " - Apply fast-rollback namespace"
             );
             expect(stdout).not.to.contain(
               clusterName + ' - namespace "fast-rollback" created'
@@ -762,7 +957,7 @@ describe("Functional", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Running pre-deploy check to Create nginx1-deployment-" +
+                " - Running pre-deploy check to Apply nginx1-deployment-" +
                 process.env.DEPLOY_ID
             );
             expect(stdout).to.contain(
@@ -902,7 +1097,6 @@ describe("Functional", function() {
               "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
             );
             expect(stdout).to.contain("Finished successfully");
-            expect(stdout).to.contain("Deleted tmp directory:");
             done();
           });
         });
@@ -933,7 +1127,7 @@ describe("Functional", function() {
               clusterName + " - Getting list of namespaces"
             );
             expect(stdout).not.to.contain(
-              clusterName + " - Create fast-rollback namespace"
+              clusterName + " - Apply fast-rollback namespace"
             );
             expect(stdout).not.to.contain(
               clusterName + ' - namespace "fast-rollback" created'
@@ -958,7 +1152,7 @@ describe("Functional", function() {
             );
             expect(stdout).not.to.contain(
               clusterName +
-                " - Running pre-deploy check to Create nginx1-deployment-" +
+                " - Running pre-deploy check to Apply nginx1-deployment-" +
                 process.env.DEPLOY_ID
             );
             expect(stdout).to.contain(
@@ -1049,7 +1243,6 @@ describe("Functional", function() {
               "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
             );
             expect(stdout).to.contain("Finished successfully");
-            expect(stdout).to.contain("Deleted tmp directory:");
             done();
           });
         });
@@ -1079,7 +1272,7 @@ describe("Functional", function() {
               clusterName + " - Getting list of namespaces"
             );
             expect(stdout).not.to.contain(
-              clusterName + " - Create fast-rollback namespace"
+              clusterName + " - Apply fast-rollback namespace"
             );
             expect(stdout).not.to.contain(
               clusterName + ' - namespace "fast-rollback" created'
@@ -1104,7 +1297,7 @@ describe("Functional", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Running pre-deploy check to Create nginx1-deployment"
+                " - Running pre-deploy check to Apply nginx1-deployment"
             );
             expect(stdout).to.contain(
               clusterName +
@@ -1156,7 +1349,6 @@ describe("Functional", function() {
               "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
             );
             expect(stdout).to.contain("Finished successfully");
-            expect(stdout).to.contain("Deleted tmp directory:");
             done();
           });
         });
@@ -1219,14 +1411,14 @@ describe("Functional", function() {
           "single-job-cluster - Getting list of job matching 'app in (test)'"
         );
         expect(stdout).to.contain(
-          "single-job-cluster - Create single-job namespace"
+          "single-job-cluster - Apply single-job namespace"
         );
         expect(stdout).to.contain(
           'single-job-cluster - namespace "single-job" created'
         );
         expect(stdout).to.contain("single-job-cluster - Found 0 resources");
         expect(stdout).to.contain(
-          "single-job-cluster - Running pre-deploy check to Create ls-job"
+          "single-job-cluster - Running pre-deploy check to Apply ls-job"
         );
         expect(stdout).to.match(
           /.*single-job-cluster - job \"ls-job-\b[0-9a-f]{5,40}\b\" created*/
@@ -1241,7 +1433,6 @@ describe("Functional", function() {
           "Sending payload to http://example.com/test/ls-job for ls-job with status COMPLETED/SUCCESS"
         );
         expect(stdout).to.contain("Finished successfully");
-        expect(stdout).to.contain("Deleted tmp directory:");
         done();
       });
     });
@@ -1252,6 +1443,7 @@ describe("Functional", function() {
   });
 
   afterEach(function() {
+    delete process.env.UUID;
     delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
     delete process.env.SELECTOR;
     delete process.env.DEBUG;
@@ -1270,5 +1462,6 @@ describe("Functional", function() {
     delete process.env.AVAILABLE_WEB;
     delete process.env.STRATEGY;
     delete process.env.DEPLOY_ID;
+    delete process.env.CREATE_ONLY;
   });
 });

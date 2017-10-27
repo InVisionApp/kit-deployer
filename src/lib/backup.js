@@ -11,9 +11,10 @@ const yaml = require("js-yaml");
  * 		AWS_SECRET_ACCESS_KEY
  */
 class Backup extends EventEmitter {
-  constructor(enabled, bucket, saveFormat) {
+  constructor(enabled, bucket, saveFormat, dryRun) {
     super();
     this.options = {
+      dryRun: dryRun || false,
       enabled: enabled === true || enabled === "true",
       bucket: bucket,
       saveFormat: saveFormat === "json" ? "json" : "yaml"
@@ -74,15 +75,22 @@ class Backup extends EventEmitter {
         s3Request.Body = manifest;
       }
       // Save file to s3 bucket.
-      const _self = this;
-      this.s3.putObject(s3Request, function(err, data) {
+      if (this.options.dryRun) {
+        this.emit(
+          "info",
+          `DryRun is enabled: skipping saving file ${clusterName}/${manifest
+            .metadata.name}.${this.options.saveFormat} to S3`
+        );
+        return resolve();
+      }
+      this.s3.putObject(s3Request, (err, data) => {
         if (err) {
-          _self.emit("warn", `Issue saving backup to S3: ${err.message}`);
+          this.emit("warn", `Issue saving backup to S3: ${err.message}`);
           return reject(err);
         }
-        _self.emit(
+        this.emit(
           "debug",
-          `Saved file ${clusterName}/${manifest.metadata.name}.${_self.options
+          `Saved file ${clusterName}/${manifest.metadata.name}.${this.options
             .saveFormat} to S3`
         );
         return resolve(data);

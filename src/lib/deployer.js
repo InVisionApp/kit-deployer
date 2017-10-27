@@ -32,6 +32,7 @@ class Deployer extends EventEmitter {
         debug: false,
         diff: false,
         force: false,
+        createOnly: false,
         available: {
           enabled: false,
           all: false,
@@ -74,6 +75,7 @@ class Deployer extends EventEmitter {
     var self = this;
     return new Promise(function(resolve, reject) {
       const progress = new Progress();
+      let clusterGeneratedManifests = [];
       progress.on("progress", msg => {
         self.emit("progress", msg);
       });
@@ -156,9 +158,13 @@ class Deployer extends EventEmitter {
               progress.add(config.metadata.name);
 
               var kubectl = new Kubectl({
+                dryRun: self.options.dryRun,
                 cwd: path.dirname(configFile),
                 kubeconfig: config,
                 kubeconfigFile: configFile
+              });
+              kubectl.on("info", msg => {
+                self.emit("info", msg);
               });
               kubectl.on("warn", msg => {
                 self.emit("warn", msg);
@@ -174,7 +180,6 @@ class Deployer extends EventEmitter {
               var namespaces = new Namespaces({
                 clusterName: config.metadata.name,
                 dir: namespacesDir,
-                dryRun: self.options.dryRun,
                 kubectl: kubectl
               });
               namespaces.on("debug", clusterDebug);
@@ -198,6 +203,7 @@ class Deployer extends EventEmitter {
                     available: self.options.available,
                     diff: self.options.diff,
                     force: self.options.force,
+                    createOnly: self.options.createOnly,
                     backup: self.options.backup,
                     elroy: self.options.elroy,
                     kubectl: kubectl
@@ -242,7 +248,8 @@ class Deployer extends EventEmitter {
           .then(() => {
             return Promise.all(promises);
           })
-          .then(() => {
+          .then(res => {
+            clusterGeneratedManifests = res;
             // If a webhook is set and available is required, only resolve once the webhook has finished
             if (
               webhook &&
@@ -260,7 +267,7 @@ class Deployer extends EventEmitter {
           .finally(function() {
             if (self.options.dryRun) {
               self.emit(
-                "debug",
+                "info",
                 "This was a dry run and no changes were deployed"
               );
             }
@@ -272,7 +279,7 @@ class Deployer extends EventEmitter {
               return reject(errors.join(", "));
             }
             self.emit("info", "Finished successfully");
-            return resolve();
+            return resolve(clusterGeneratedManifests);
           })
           .done();
       });

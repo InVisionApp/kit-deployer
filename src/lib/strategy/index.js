@@ -16,12 +16,13 @@ const Strategies = {
 class Strategy extends EventEmitter {
   constructor(name, options) {
     super();
+    this._options = options;
     switch (name) {
       case Strategies.RollingUpdate:
-        this._strategy = new RollingUpdate.Strategy(options);
+        this._strategy = new RollingUpdate.Strategy(this._options);
         break;
       case Strategies.FastRollback:
-        this._strategy = new FastRollback.Strategy(options);
+        this._strategy = new FastRollback.Strategy(this._options);
         break;
     }
     if (!this._strategy) {
@@ -46,6 +47,17 @@ class Strategy extends EventEmitter {
   // SkipDeploy is given the manifest that is just about to be deployed and should return true if the deploy should
   // continue or false otherwise.
   skipDeploy(manifest, found, differences) {
+    // Skip if createOnly is enabled and the resoruce already exists
+    if (found && this._options.createOnly) {
+      this._strategy.emit(
+        "info",
+        "skipping deploy of " +
+          manifest.metadata.name +
+          " because it already exists and createOnly is enabled"
+      );
+      return true;
+    }
+
     return this._strategy.skipDeploy(manifest, found, differences);
   }
 

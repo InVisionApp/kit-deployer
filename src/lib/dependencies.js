@@ -77,7 +77,9 @@ class Dependencies extends EventEmitter {
       }
 
       // If any dependencies, resolve only after all of them are available
-      Promise.all(promises).then(resolve).catch(reject);
+      Promise.all(promises)
+        .then(resolve)
+        .catch(reject);
     });
   }
 

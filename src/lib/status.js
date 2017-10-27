@@ -24,6 +24,7 @@ class Status extends EventEmitter {
     super();
     this.options = _.merge(
       {
+        dryRun: false,
         pollingInterval: 10,
         healthCheck: true,
         healthCheckGracePeriod: undefined,
@@ -55,7 +56,15 @@ class Status extends EventEmitter {
 	 */
   available(resource, name, differences) {
     return new Promise((resolve, reject) => {
+      if (this.options.dryRun) {
+        this.emit(
+          "info",
+          `DryRun is enabled: skipping available check for ${resource}:${name}`
+        );
+        return resolve();
+      }
       let timeoutId, keepAlive;
+      let emitter = new EventEmitter();
 
       if (this.supportedTypes.indexOf(resource.toLowerCase()) < 0) {
         return reject(
@@ -89,7 +98,7 @@ class Status extends EventEmitter {
         this.emit("info", err);
       });
       healthCheck.on("error", err => {
-        this.emit("_error", err);
+        emitter.emit("_error", err);
       });
       healthCheck.on("debug", msg => {
         this.emit("debug", msg);
@@ -103,7 +112,7 @@ class Status extends EventEmitter {
       );
 
       // Setup error listener
-      this.on("_error", err => {
+      emitter.on("_error", err => {
         this.emit("error", err);
         watcher.stop();
         healthCheck.stop();
@@ -115,7 +124,7 @@ class Status extends EventEmitter {
       });
 
       watcher.on("error", err => {
-        this.emit("_error", err);
+        emitter.emit("_error", err);
       });
       watcher.on("change", res => {
         function stop(context, err) {
