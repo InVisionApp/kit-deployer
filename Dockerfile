@@ -1,4 +1,4 @@
-FROM quay.io/invision/alpine-node:5.5.0
+FROM node:6.11.5-alpine
 
 # Defines the version of the kubectl binary
 ARG KUBE_VERSION=v1.6.4
