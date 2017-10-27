@@ -1,9 +1,14 @@
 {
-	"extends": "eslint-config-invision",
-	"env": {
-		"mocha": true
-	},
-	"rules": {
-		"no-unused-expressions": 0
-	}
+  "parserOptions": {
+    "ecmaVersion": 6
+  },
+  "plugins": [
+    "prettier"
+  ],
+  "rules": {
+    "prettier/prettier": "error"
+  },
+  "extends": [
+    "prettier"
+  ]
 }
