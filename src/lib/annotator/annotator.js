@@ -236,7 +236,8 @@ class Annotator {
       }
       if (!_.isUndefined(manifest.spec.selector[Labels.Strategy])) {
         throw new Error(
-          `Reserved spec.selector ${Labels.Strategy} has been manually set`
+          `Reserved spec.selector ${Labels.Strategy} has been manually set on ${manifest
+            .metadata.name}`
         );
       }
       manifest.spec.selector[Labels.Strategy] = this.options.strategy.name;
