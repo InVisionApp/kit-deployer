@@ -208,7 +208,7 @@ class Manifests extends EventEmitter {
     return new Promise((resolve, reject) => {
       const tmpDir = path.join(
         "/tmp/kit-deployer",
-        this.options.uuid || uuid.v4()
+        `${this.options.uuid}_${uuid.v4()}`
       );
       var generatedManifests = [];
       var availablePromises = [];

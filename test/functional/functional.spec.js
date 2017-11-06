@@ -84,8 +84,8 @@ describe("Functional", function() {
           expect(stdout).to.contain(
             "example-cluster - Running pre-deploy check to Apply auth-svc"
           );
-          expect(stdout).to.contain(
-            "example-cluster - DryRun is enabled: skipping kubectl.apply(/tmp/kit-deployer/9543ac65-223e-4746-939f-391231ec64bb/example-cluster-auth-svc.yaml.json)"
+          expect(stdout).to.match(
+            /.*example-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f\-]{5,40}\/example-cluster-auth-svc\.yaml\.json\).*/
           );
           expect(stdout).to.contain(
             "example-cluster - DryRun is enabled: skipping available check for Service:auth-svc"
@@ -501,17 +501,15 @@ describe("Functional", function() {
           expect(stdout).to.contain(
             clusterName + " - Running pre-deploy check to Apply auth-svc"
           );
-          expect(stdout).to.contain(
-            clusterName +
-              " - DryRun is enabled: skipping kubectl.apply(/tmp/kit-deployer/9543ac65-223e-4746-939f-391231ec64bb/mix-deployment-service-cluster-nginx1-deployment.yaml.json)"
+          expect(stdout).to.match(
+            /.*mix-deployment-service-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f\-]{5,40}\/mix-deployment-service-cluster-nginx1-deployment\.yaml\.json\).*/
           );
           expect(stdout).to.contain(
             clusterName +
               " - DryRun is enabled: skipping available check for Deployment:nginx1-deployment"
           );
-          expect(stdout).to.contain(
-            clusterName +
-              " - DryRun is enabled: skipping kubectl.apply(/tmp/kit-deployer/9543ac65-223e-4746-939f-391231ec64bb/mix-deployment-service-cluster-auth-svc.yaml.json)"
+          expect(stdout).to.match(
+            /.*mix-deployment-service-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f\-]{5,40}\/mix-deployment-service-cluster-auth-svc\.yaml\.json\).*/
           );
           expect(stdout).to.contain(
             clusterName +
