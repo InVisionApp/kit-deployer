@@ -450,8 +450,22 @@ class Kubectl extends EventEmitter {
           `DryRun is enabled: skipping kubectl.delete(${filepath})`
         );
       }
-      this.spawn(["delete", "-f", filepath], function(err, data) {
+      this.spawn(["delete", "-f", filepath], (err, data) => {
         if (err) {
+          if (
+            typeof err === "string" &&
+            err.includes("Error from server (NotFound)")
+          ) {
+            // The resource already doesn't exist so assume the delete was
+            // successful. This will avoid concurrency situtations as well as
+            // avoid throwing a failure when really the endresult is still what
+            // was desired.
+            this.emit(
+              "warn",
+              `Attempting to delete ${filepath} which does not exist on the server`
+            );
+            return resolve(data);
+          }
           return reject(err);
         }
         return resolve(data);
@@ -466,8 +480,22 @@ class Kubectl extends EventEmitter {
           `DryRun is enabled: skipping kubectl.deleteByName(${filepath})`
         );
       }
-      this.spawn(["delete", kind, name], function(err, data) {
+      this.spawn(["delete", kind, name], (err, data) => {
         if (err) {
+          if (
+            typeof err === "string" &&
+            err.includes("Error from server (NotFound)")
+          ) {
+            // The resource already doesn't exist so assume the delete was
+            // successful. This will avoid concurrency situtations as well as
+            // avoid throwing a failure when really the endresult is still what
+            // was desired.
+            this.emit(
+              "warn",
+              `Attempting to delete ${kind}:${name} which does not exist on the server`
+            );
+            return resolve(data);
+          }
           return reject(err);
         }
         return resolve(data);
