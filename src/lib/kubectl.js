@@ -10,6 +10,12 @@ const KubeClient = require("kubernetes-client");
 const _ = require("lodash");
 const yaml = require("js-yaml");
 
+class KubectlError extends Error {
+  constructor(prefix, err) {
+    super(`${prefix}: ${err.message}`);
+  }
+}
+
 class KubectlWatcher extends EventEmitter {
   constructor(kubectl, resource, name, interval) {
     super();
@@ -184,6 +190,26 @@ class Kubeapi {
       this.api = new KubeClient.Api(options);
     }
   }
+
+  static get supportedTypes() {
+    return [
+      "deployment",
+      "ingress",
+      "service",
+      "secret",
+      "job",
+      "scheduledjob",
+      "cronjob",
+      "daemonset",
+      "persistentvolumeclaim",
+      "events"
+    ];
+  }
+
+  static isSupportedType(type) {
+    let resource = type.toLowerCase();
+    return Kubeapi.supportedTypes.indexOf(resource) >= 0;
+  }
 }
 
 class Kubectl extends EventEmitter {
@@ -260,6 +286,27 @@ class Kubectl extends EventEmitter {
       if (!name) {
         name = "";
       }
+
+      // Will use spawn cmd if not supported by kubeapi
+      const cmd = [
+        method,
+        `--namespace=${this.current.context.context.namespace}`,
+        "--output=json",
+        resource
+      ];
+      if (name) {
+        cmd.push(name);
+      }
+      if (!Kubeapi.isSupportedType(resource)) {
+        this.spawn(cmd, (spawnErr, spawnData) => {
+          if (spawnErr) {
+            return reject(new KubectlError("spawn", spawnErr));
+          }
+          return resolve(JSON.parse(spawnData));
+        });
+        return;
+      }
+
       try {
         let core;
         if (_.isFunction(this.kubeapi.core.namespaces[resource])) {
@@ -269,7 +316,7 @@ class Kubectl extends EventEmitter {
         }
         core[method]((err, data) => {
           if (err) {
-            return reject(err);
+            return reject(new KubectlError("core", err));
           }
           return resolve(data);
         });
@@ -290,7 +337,7 @@ class Kubectl extends EventEmitter {
             }
             batch[method]((batchErr, batchData) => {
               if (batchErr) {
-                return reject(batchErr);
+                return reject(new KubectlError("batch", batchErr));
               }
               return resolve(batchData);
             });
@@ -310,7 +357,7 @@ class Kubectl extends EventEmitter {
                 }
                 ext[method]((extErr, extData) => {
                   if (extErr) {
-                    return reject(extErr);
+                    return reject(new KubectlError("ext", extErr));
                   }
                   return resolve(extData);
                 });
@@ -320,33 +367,24 @@ class Kubectl extends EventEmitter {
                   name: name
                 });
               } catch (extErr) {
-                if (extErr) {
+                if (extErr instanceof TypeError) {
                   // If that fails, then fallback to spawning a kubectl process
-                  const cmd = [
-                    method,
-                    `--namespace=${this.current.context.context.namespace}`,
-                    "--output=json",
-                    resource
-                  ];
-                  if (name) {
-                    cmd.push(name);
-                  }
                   this.spawn(cmd, (spawnErr, spawnData) => {
                     if (spawnErr) {
-                      return reject(new Error(spawnErr));
+                      return reject(new KubectlError("spawn", spawnErr));
                     }
                     return resolve(JSON.parse(spawnData));
                   });
                 } else {
-                  reject(extErr);
+                  reject(new KubectlError("ext", extErr));
                 }
               }
             } else {
-              reject(batchErr);
+              reject(new KubectlError("batch", batchErr));
             }
           }
         } else {
-          reject(coreErr);
+          reject(new KubectlError("core", coreErr));
         }
       }
     });

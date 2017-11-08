@@ -10,8 +10,18 @@ const path = require("path");
 const yaml = require("js-yaml");
 
 const manifests = new Manifests();
-var supportedTypes = manifests.supportedTypes;
-supportedTypes.push("events");
+let supportedTypes = [
+  "deployment",
+  "ingress",
+  "service",
+  "secret",
+  "job",
+  "scheduledjob",
+  "cronjob",
+  "daemonset",
+  "persistentvolumeclaim",
+  "events"
+];
 
 describe("Kubectl", () => {
   var kubectl, cwd;

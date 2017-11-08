@@ -1,0 +1,15 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx1-horz
+  labels:
+    app: test
+    name: nginx1-horz
+spec:
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: nginx1-deployment
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 50

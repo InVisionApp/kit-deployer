@@ -7,17 +7,6 @@ const KeepAlive = require("./keep-alive");
 const HealthCheck = require("./health-check");
 const TimeoutError = require("../util/timeout-error");
 const PauseError = require("../util/pause-error");
-const supportedTypes = [
-  "deployment",
-  "ingress",
-  "service",
-  "secret",
-  "job",
-  "scheduledjob",
-  "cronjob",
-  "daemonset",
-  "persistentvolumeclaim"
-];
 
 class Status extends EventEmitter {
   constructor(options) {
@@ -37,10 +26,6 @@ class Status extends EventEmitter {
       options
     );
     this.kubectl = this.options.kubectl;
-  }
-
-  get supportedTypes() {
-    return supportedTypes;
   }
 
   /**
@@ -65,12 +50,6 @@ class Status extends EventEmitter {
       }
       let timeoutId, keepAlive;
       let emitter = new EventEmitter();
-
-      if (this.supportedTypes.indexOf(resource.toLowerCase()) < 0) {
-        return reject(
-          new Error("Unsupported resource " + resource + ":" + name)
-        );
-      }
 
       if (this.options.keepAlive) {
         keepAlive = new KeepAlive(

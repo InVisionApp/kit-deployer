@@ -340,7 +340,7 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status STARTED/IN_PROGRESS"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Getting list of deployment matching 'app in (test)'"
+            "multi-deployments-cluster - Getting list of deployment,horizontalpodautoscaler matching 'app in (test)'"
           );
           expect(stdout).to.contain(
             "multi-deployments-cluster - Found 0 resources"
@@ -409,10 +409,10 @@ describe("Functional", function() {
             "Sending payload to http://example.com/test/nginx2-deployment for nginx2-deployment with status STARTED/IN_PROGRESS"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Getting list of deployment matching 'app in (test)'"
+            "multi-deployments-cluster - Getting list of deployment,horizontalpodautoscaler matching 'app in (test)'"
           );
           expect(stdout).to.contain(
-            "multi-deployments-cluster - Found 2 resources"
+            "multi-deployments-cluster - Found 3 resources"
           );
           expect(stdout).to.contain(
             "multi-deployments-cluster - Running pre-deploy check to Apply nginx1-deployment"

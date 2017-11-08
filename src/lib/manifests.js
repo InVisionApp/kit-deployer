@@ -23,17 +23,6 @@ const Backup = require("./backup");
 const Elroy = require("./elroy").Elroy;
 const Strategies = require("./strategy").Strategies;
 const Strategy = require("./strategy").Strategy;
-const supportedTypes = [
-  "deployment",
-  "ingress",
-  "service",
-  "secret",
-  "job",
-  "scheduledjob",
-  "cronjob",
-  "daemonset",
-  "persistentvolumeclaim"
-];
 const mustBeRecreated = ["DaemonSet", "Job", "ScheduledJob", "CronJob"];
 
 class Manifests extends EventEmitter {
@@ -96,10 +85,6 @@ class Manifests extends EventEmitter {
     });
   }
 
-  get supportedTypes() {
-    return supportedTypes;
-  }
-
   load() {
     return new Promise((resolve, reject) => {
       this.manifestFiles = [];
@@ -132,6 +117,13 @@ class Manifests extends EventEmitter {
                     path: file,
                     content: content
                   });
+                } else {
+                  this.emit(
+                    "info",
+                    `Skipping ${content.metadata
+                      .name} because it does not match selector ${this.options
+                      .selector}`
+                  );
                 }
               })
             );
@@ -155,18 +147,6 @@ class Manifests extends EventEmitter {
     _.each(this.manifestFiles, manifestFile => {
       var manifest = manifestFile.content;
       var kind = manifest.kind.toLowerCase();
-      // Only parse manifests that are supported
-      if (this.supportedTypes.indexOf(kind) < 0) {
-        this.emit(
-          "warn",
-          "Skipping " +
-            manifest.metadata.name +
-            " because " +
-            kind +
-            " is unsupported"
-        );
-        return;
-      }
       if (listTypes.indexOf(kind) < 0) {
         listTypes.push(kind);
       }
