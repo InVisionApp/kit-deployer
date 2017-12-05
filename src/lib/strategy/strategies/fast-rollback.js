@@ -86,7 +86,7 @@ class FastRollback extends EventEmitter {
     return manifest;
   }
 
-  skipDeploy(manifest, found, differences) {
+  skipDeploy(manifest, found) {
     const kind = manifest.kind.toLowerCase();
     if (kind === "deployment") {
       // Keep track of deployments because we will need to query for it later
@@ -130,7 +130,7 @@ class FastRollback extends EventEmitter {
     return Promise.resolve(false);
   }
 
-  allAvailable(manifests) {
+  allAvailable() {
     // Deployment manifests are available and we can deploy the services now
     return this.deployServices()
       .then(() => {
@@ -237,7 +237,6 @@ class FastRollback extends EventEmitter {
     let flaggedForDeletion = [];
     _.each(this.deployments, deployment => {
       let creationTimestamp;
-      let depSelectors = [];
       promises.push(
         this.kubectl
           .get("deployment", deployment.manifest.metadata.name)
@@ -338,8 +337,6 @@ class FastRollback extends EventEmitter {
     let promises = [];
     let flaggedForDeletion = [];
     _.each(this.deployments, deployment => {
-      let creationTimestamp;
-      let depSelectors = [];
       promises.push(
         this.kubectl
           .get("deployment", deployment.manifest.metadata.name)
@@ -350,7 +347,6 @@ class FastRollback extends EventEmitter {
             ) {
               throw new Error("Missing required creationTimestamp, aborting");
             }
-            creationTimestamp = result.metadata.creationTimestamp;
             if (!result.metadata.labels[Labels.Name]) {
               throw new Error(
                 `Missing required ${Labels.Name} label on deployment manifest ${deployment

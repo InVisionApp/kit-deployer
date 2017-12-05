@@ -145,10 +145,10 @@ describe("FastRollback Strategy", () => {
             err = undefined;
             allAvailableFunc = function(strategy, res) {
               results = res;
-              return new Promise((resolve, reject) => {
+              return new Promise(resolve => {
                 strategy
                   .allAvailable(givenManifests)
-                  .then(resp => {
+                  .then(() => {
                     resolve();
                   })
                   .catch(msg => {

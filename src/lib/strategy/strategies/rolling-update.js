@@ -1,7 +1,6 @@
 "use strict";
 
 const _ = require("lodash");
-const Annotations = require("../../annotator/annotations");
 const Utils = require("../utils");
 const EventEmitter = require("events");
 
@@ -62,7 +61,7 @@ class RollingUpdate extends EventEmitter {
     return Promise.resolve(false);
   }
 
-  allAvailable(manifests) {
+  allAvailable() {
     // Deployment manifests are available and we can deploy the services now
     return this.deployServices()
       .then(() => {

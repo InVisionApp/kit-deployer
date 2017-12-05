@@ -9,6 +9,11 @@
     "prettier/prettier": "error"
   },
   "extends": [
-    "prettier"
-  ]
+    "prettier",
+    "eslint:recommended"
+  ],
+  "env": {
+    "node": true,
+    "es6": true
+  }
 }

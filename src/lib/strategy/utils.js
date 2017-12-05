@@ -9,8 +9,6 @@ class Utils {
     let promises = [];
     let flaggedForDeletion = [];
     _.each(deployments, deployment => {
-      let creationTimestamp;
-      let depSelectors = [];
       promises.push(
         strategy.kubectl
           .get("deployment", deployment.manifest.metadata.name)

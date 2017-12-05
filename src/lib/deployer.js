@@ -33,6 +33,11 @@ class Deployer extends EventEmitter {
         diff: false,
         force: false,
         createOnly: false,
+        backoff: {
+          failAfter: 10,
+          initialDelay: 1000,
+          maxDelay: 30000
+        },
         available: {
           enabled: false,
           all: false,
@@ -158,6 +163,7 @@ class Deployer extends EventEmitter {
               progress.add(config.metadata.name);
 
               var kubectl = new Kubectl({
+                backoff: self.options.backoff,
                 dryRun: self.options.dryRun,
                 cwd: path.dirname(configFile),
                 kubeconfig: config,
@@ -168,6 +174,9 @@ class Deployer extends EventEmitter {
               });
               kubectl.on("warn", msg => {
                 self.emit("warn", msg);
+              });
+              kubectl.on("backoff", args => {
+                self.emit("backoff", args);
               });
               kubectl.on("spawn", args => {
                 self.emit("spawn", args);

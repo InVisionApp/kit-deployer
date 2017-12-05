@@ -11,6 +11,11 @@ const _ = require("lodash");
 function clean(kubeconfigFile, namespace) {
   const cwd = path.dirname(kubeconfigFile);
   const kubectl = new Kubectl({
+    backoff: {
+      failAfter: parseInt(process.env.BACKOFF_FAIL_AFTER),
+      initialDelay: parseInt(process.env.BACKOFF_INITIAL_DELAY),
+      maxDelay: parseInt(process.env.BACKOFF_MAX_DELAY)
+    },
     cwd: cwd,
     kubeconfig: yaml.safeLoad(fs.readFileSync(kubeconfigFile, "utf8")),
     kubeconfigFile: kubeconfigFile
@@ -32,6 +37,9 @@ describe("Functional", function() {
     process.env.CI_COMMIT_ID = "6fc66dc2a0b75265ed14e45b754731d8c09b26d6";
     process.env.NAMESPACES_DIR = "/test/functional/clusters/namespaces";
     process.env.MANIFESTS_DIR = "/test/functional/clusters/manifests";
+    process.env.BACKOFF_FAIL_AFTER = "3";
+    process.env.BACKOFF_INITIAL_DELAY = "100";
+    process.env.BACKOFF_MAX_DELAY = "500";
     process.env.AVAILABLE_ENABLED = "true";
     process.env.AVAILABLE_POLLING_INTERVAL = "3";
     process.env.AVAILABLE_HEALTH_CHECK = "true";
@@ -85,7 +93,7 @@ describe("Functional", function() {
             "example-cluster - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).to.match(
-            /.*example-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f\-]{5,40}\/example-cluster-auth-svc\.yaml\.json\).*/
+            /.*example-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f-]{5,40}\/example-cluster-auth-svc\.yaml\.json\).*/
           );
           expect(stdout).to.contain(
             "example-cluster - DryRun is enabled: skipping available check for Service:auth-svc"
@@ -255,7 +263,7 @@ describe("Functional", function() {
         process.env.CONFIGS = kubeconfigFile;
         process.env.AVAILABLE_TIMEOUT = 1;
 
-        exec("./src/deployer", function(error, stdout, stderr) {
+        exec("./src/deployer", function(error, stdout) {
           expect(stdout).not.to.be.empty;
           expect(stdout).to.contain(
             "Sending payload to http://example.com/test/auth-svc for auth-svc with status STARTED/IN_PROGRESS"
@@ -281,7 +289,7 @@ describe("Functional", function() {
       it("should trigger a health check failure", function(done) {
         process.env.CONFIGS = kubeconfigFile;
 
-        exec("./src/deployer", function(error, stdout, stderr) {
+        exec("./src/deployer", function(error, stdout) {
           expect(stdout).not.to.be.empty;
           expect(stdout).to.match(
             /Healthcheck detected \w+ error occurred \d+ times for badimage-deployment/
@@ -502,14 +510,14 @@ describe("Functional", function() {
             clusterName + " - Running pre-deploy check to Apply auth-svc"
           );
           expect(stdout).to.match(
-            /.*mix-deployment-service-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f\-]{5,40}\/mix-deployment-service-cluster-nginx1-deployment\.yaml\.json\).*/
+            /.*mix-deployment-service-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f-]{5,40}\/mix-deployment-service-cluster-nginx1-deployment\.yaml\.json\).*/
           );
           expect(stdout).to.contain(
             clusterName +
               " - DryRun is enabled: skipping available check for Deployment:nginx1-deployment"
           );
           expect(stdout).to.match(
-            /.*mix-deployment-service-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f\-]{5,40}\/mix-deployment-service-cluster-auth-svc\.yaml\.json\).*/
+            /.*mix-deployment-service-cluster - DryRun is enabled: skipping kubectl\.apply\(\/tmp\/kit-deployer\/9543ac65-223e-4746-939f-391231ec64bb_[0-9a-f-]{5,40}\/mix-deployment-service-cluster-auth-svc\.yaml\.json\).*/
           );
           expect(stdout).to.contain(
             clusterName +
@@ -683,7 +691,6 @@ describe("Functional", function() {
     const firstKubeconfigFile =
       "/test/functional/clusters/configs/fast-rollback-kubeconfig-0.yaml";
     describe("and fast-rollback-service cluster manually deployed without strategy", function() {
-      var clusterName = "fast-rollback-cluster-0";
       it("should deploy without error", function(done) {
         process.env.CONFIGS = firstKubeconfigFile;
         delete process.env.DEPLOY_ID;
@@ -1419,7 +1426,7 @@ describe("Functional", function() {
           "single-job-cluster - Running pre-deploy check to Apply ls-job"
         );
         expect(stdout).to.match(
-          /.*single-job-cluster - job \"ls-job-\b[0-9a-f]{5,40}\b\" created*/
+          /.*single-job-cluster - job "ls-job-\b[0-9a-f]{5,40}\b" created*/
         );
         expect(stdout).to.match(
           /.*single-job-cluster - Job:ls-job-\b[0-9a-f]{5,40}\b is available.*/
@@ -1452,6 +1459,9 @@ describe("Functional", function() {
     delete process.env.CONFIGS;
     delete process.env.GITHUB_ENABLED;
     delete process.env.CI_COMMIT_ID;
+    delete process.env.BACKOFF_FAIL_AFTER;
+    delete process.env.BACKOFF_INITIAL_DELAY;
+    delete process.env.BACKOFF_MAX_DELAY;
     delete process.env.AVAILABLE_ENABLED;
     delete process.env.AVAILABLE_ALL;
     delete process.env.AVAILABLE_TIMEOUT;

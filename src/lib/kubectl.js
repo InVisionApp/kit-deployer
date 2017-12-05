@@ -9,6 +9,7 @@ const diff = require("deep-diff");
 const KubeClient = require("kubernetes-client");
 const _ = require("lodash");
 const yaml = require("js-yaml");
+const backoff = require("backoff");
 
 class KubectlError extends Error {
   constructor(prefix, err) {
@@ -215,6 +216,14 @@ class Kubeapi {
 class Kubectl extends EventEmitter {
   constructor(conf) {
     super();
+    this.backoff = _.merge(
+      {
+        failAfter: 10,
+        initialDelay: 1000,
+        maxDelay: 30000
+      },
+      conf.backoff
+    );
     this.dryRun = conf.dryRun || false;
     this.current = new Current(conf.kubeconfig);
     this.kubeapi = new Kubeapi(conf.cwd, conf.kubeconfig);
@@ -225,14 +234,7 @@ class Kubectl extends EventEmitter {
     this.endpoint = conf.endpoint || "";
   }
 
-  /**
-	 * Spawn is used internally by methods like get and create and it emits a message
-	 * for whenever its called so you can track the number of processes spawned if needed.
-	 * @param {array} args - Array list of the command args
-	 * @param {func} done - Function to call when done
-	 * @fires KubectlWatcher#spawn which tells when spawn is called and with what args
-	 */
-  spawn(args, done) {
+  _spawn(args, done) {
     this.emit("spawn", args);
     var ops = new Array();
 
@@ -265,7 +267,7 @@ class Kubectl extends EventEmitter {
       stderr += data;
     });
 
-    kube.on("close", code => {
+    kube.on("close", () => {
       if (!stderr) {
         stderr = undefined;
       }
@@ -278,115 +280,189 @@ class Kubectl extends EventEmitter {
     return kube;
   }
 
+  /**
+	 * Spawn is used internally by methods like get and create and it emits a message
+	 * for whenever its called so you can track the number of processes spawned if needed.
+	 * It includes an automatic retry and backoff.
+	 * @param {array} args - Array list of the command args
+	 * @param {func} done - Function to call when done
+	 * @fires KubectlWatcher#spawn which tells when spawn is called and with what args
+	 */
+  spawn(args, done) {
+    let call = backoff.call(this._spawn.bind(this), args, (stderr, stdout) => {
+      if (typeof done === "function") {
+        done(stderr, stdout);
+      }
+    });
+    call.setStrategy(
+      new backoff.FibonacciStrategy({
+        initialDelay: this.backoff.initialDelay,
+        maxDelay: this.backoff.maxDelay
+      })
+    );
+    call.failAfter(this.backoff.failAfter);
+    // Emit event when a retry happens
+    call.on("backoff", (number, delay, err) => {
+      this.emit("backoff", {
+        method: args[0],
+        resource: null,
+        args: args,
+        name: null,
+        number: number,
+        delay: delay,
+        err: err
+      });
+    });
+    call.start();
+  }
+
+  _get(resource, name, callback) {
+    if (typeof callback !== "function") {
+      callback = () => {};
+    }
+    resource = resource.toLowerCase();
+    const method = "get";
+    // Avoid passing "undefined" to kubeapi methods
+    if (!name) {
+      name = "";
+    }
+
+    // Will use spawn cmd if not supported by kubeapi
+    const cmd = [
+      method,
+      `--namespace=${this.current.context.context.namespace}`,
+      "--output=json",
+      resource
+    ];
+    if (name) {
+      cmd.push(name);
+    }
+    if (!Kubeapi.isSupportedType(resource)) {
+      this._spawn(cmd, (spawnErr, spawnData) => {
+        if (spawnErr) {
+          return callback(new KubectlError("spawn", spawnErr));
+        }
+        return callback(null, JSON.parse(spawnData));
+      });
+      return;
+    }
+
+    try {
+      let core;
+      if (_.isFunction(this.kubeapi.core.namespaces[resource])) {
+        core = this.kubeapi.core.namespaces[resource](name);
+      } else {
+        core = this.kubeapi.core.namespaces[resource];
+      }
+      core[method]((err, data) => {
+        if (err) {
+          return callback(new KubectlError("core", err));
+        }
+        return callback(null, data);
+      });
+      this.emit("request", {
+        method: method,
+        resource: resource,
+        args: [],
+        name: name
+      });
+    } catch (coreErr) {
+      // It is not a core resource type, so try using the extensions api
+      if (coreErr instanceof TypeError) {
+        try {
+          let batch;
+          if (_.isFunction(this.kubeapi.batch.namespaces[resource])) {
+            batch = this.kubeapi.batch.namespaces[resource](name);
+          } else {
+            batch = this.kubeapi.batch.namespaces[resource];
+          }
+          batch[method]((batchErr, batchData) => {
+            if (batchErr) {
+              return callback(new KubectlError("batch", batchErr));
+            }
+            return callback(null, batchData);
+          });
+          this.emit("request", {
+            method: method,
+            resource: resource,
+            name: name
+          });
+        } catch (batchErr) {
+          if (batchErr instanceof TypeError) {
+            try {
+              let ext;
+              if (_.isFunction(this.kubeapi.ext.namespaces[resource])) {
+                ext = this.kubeapi.ext.namespaces[resource](name);
+              } else {
+                ext = this.kubeapi.ext.namespaces[resource];
+              }
+              ext[method]((extErr, extData) => {
+                if (extErr) {
+                  return callback(new KubectlError("ext", extErr));
+                }
+                return callback(null, extData);
+              });
+              this.emit("request", {
+                method: method,
+                resource: resource,
+                name: name
+              });
+            } catch (extErr) {
+              if (extErr instanceof TypeError) {
+                // If that fails, then fallback to spawning a kubectl process
+                this.spawn(cmd, (spawnErr, spawnData) => {
+                  if (spawnErr) {
+                    return callback(new KubectlError("spawn", spawnErr));
+                  }
+                  return callback(null, JSON.parse(spawnData));
+                });
+              } else {
+                return callback(new KubectlError("ext", extErr));
+              }
+            }
+          } else {
+            return callback(new KubectlError("batch", batchErr));
+          }
+        }
+      } else {
+        return callback(new KubectlError("core", coreErr));
+      }
+    }
+  }
+
   get(resource, name) {
     return new Promise((resolve, reject) => {
-      resource = resource.toLowerCase();
-      const method = "get";
-      // Avoid passing "undefined" to kubeapi methods
-      if (!name) {
-        name = "";
-      }
-
-      // Will use spawn cmd if not supported by kubeapi
-      const cmd = [
-        method,
-        `--namespace=${this.current.context.context.namespace}`,
-        "--output=json",
-        resource
-      ];
-      if (name) {
-        cmd.push(name);
-      }
-      if (!Kubeapi.isSupportedType(resource)) {
-        this.spawn(cmd, (spawnErr, spawnData) => {
-          if (spawnErr) {
-            return reject(new KubectlError("spawn", spawnErr));
-          }
-          return resolve(JSON.parse(spawnData));
-        });
-        return;
-      }
-
-      try {
-        let core;
-        if (_.isFunction(this.kubeapi.core.namespaces[resource])) {
-          core = this.kubeapi.core.namespaces[resource](name);
-        } else {
-          core = this.kubeapi.core.namespaces[resource];
-        }
-        core[method]((err, data) => {
+      let call = backoff.call(
+        this._get.bind(this),
+        resource,
+        name,
+        (err, res) => {
           if (err) {
-            return reject(new KubectlError("core", err));
+            return reject(err);
           }
-          return resolve(data);
-        });
-        this.emit("request", {
-          method: method,
-          resource: resource,
-          name: name
-        });
-      } catch (coreErr) {
-        // It is not a core resource type, so try using the extensions api
-        if (coreErr instanceof TypeError) {
-          try {
-            let batch;
-            if (_.isFunction(this.kubeapi.batch.namespaces[resource])) {
-              batch = this.kubeapi.batch.namespaces[resource](name);
-            } else {
-              batch = this.kubeapi.batch.namespaces[resource];
-            }
-            batch[method]((batchErr, batchData) => {
-              if (batchErr) {
-                return reject(new KubectlError("batch", batchErr));
-              }
-              return resolve(batchData);
-            });
-            this.emit("request", {
-              method: method,
-              resource: resource,
-              name: name
-            });
-          } catch (batchErr) {
-            if (batchErr instanceof TypeError) {
-              try {
-                let ext;
-                if (_.isFunction(this.kubeapi.ext.namespaces[resource])) {
-                  ext = this.kubeapi.ext.namespaces[resource](name);
-                } else {
-                  ext = this.kubeapi.ext.namespaces[resource];
-                }
-                ext[method]((extErr, extData) => {
-                  if (extErr) {
-                    return reject(new KubectlError("ext", extErr));
-                  }
-                  return resolve(extData);
-                });
-                this.emit("request", {
-                  method: method,
-                  resource: resource,
-                  name: name
-                });
-              } catch (extErr) {
-                if (extErr instanceof TypeError) {
-                  // If that fails, then fallback to spawning a kubectl process
-                  this.spawn(cmd, (spawnErr, spawnData) => {
-                    if (spawnErr) {
-                      return reject(new KubectlError("spawn", spawnErr));
-                    }
-                    return resolve(JSON.parse(spawnData));
-                  });
-                } else {
-                  reject(new KubectlError("ext", extErr));
-                }
-              }
-            } else {
-              reject(new KubectlError("batch", batchErr));
-            }
-          }
-        } else {
-          reject(new KubectlError("core", coreErr));
+          return resolve(res);
         }
-      }
+      );
+      call.setStrategy(
+        new backoff.FibonacciStrategy({
+          initialDelay: this.backoff.initialDelay,
+          maxDelay: this.backoff.maxDelay
+        })
+      );
+      call.failAfter(this.backoff.failAfter);
+      // Emit event when a retry happens
+      call.on("backoff", (number, delay, err) => {
+        this.emit("backoff", {
+          method: "get",
+          resource: resource,
+          args: [],
+          name: name,
+          number: number,
+          delay: delay,
+          err: err
+        });
+      });
+      call.start();
     });
   }
 
@@ -477,7 +553,7 @@ class Kubectl extends EventEmitter {
     return new Promise((resolve, reject) => {
       if (this.dryRun) {
         return resolve(
-          `DryRun is enabled: skipping kubectl.deleteByName(${filepath})`
+          `DryRun is enabled: skipping kubectl.deleteByName(${kind}, ${name})`
         );
       }
       this.spawn(["delete", kind, name], (err, data) => {

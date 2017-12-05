@@ -4,7 +4,7 @@ const EventEmitter = require("events");
 const _ = require("lodash");
 
 class Progress extends EventEmitter {
-  constructor(options) {
+  constructor() {
     super();
     this._status = {
       clusters: {

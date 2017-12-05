@@ -207,6 +207,9 @@ The following environment variables are used by this service.
 | `DIFF` | Will show a diff | yes | `false` |
 | `FORCE` | Will push all changes even if there are no differences | yes | `false` |
 | `CREATE_ONLY` | Will only create resources that don't already exist. Will not perform any updates or removals. | yes | `false` |
+| `BACKOFF_FAIL_AFTER` | Maximum number of backoffs before the call is aborted | yes | `10` |
+| `BACKOFF_INITIAL_DELAY` | The initial delay when starting to backoff in ms | yes | `1000` |
+| `BACKOFF_MAX_DELAY` | The maximum delay when doing a backoff in ms | yes | `30000` |
 | `AVAILABLE_ENABLED` | Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled | yes | `false` |
 | `AVAILABLE_POLLING_INTERVAL` | The number of seconds to wait between status checking API requests | yes | `false` |
 | `AVAILABLE_HEALTH_CHECK` | Will monitor for issues during the deployment | yes | `true` |

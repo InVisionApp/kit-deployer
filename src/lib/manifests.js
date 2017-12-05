@@ -1,7 +1,6 @@
 "use strict";
 
 const _ = require("lodash");
-const crypto = require("crypto");
 const manifestDiff = require("../util/manifest-diff");
 const fs = require("fs");
 const glob = require("glob");
@@ -500,7 +499,7 @@ class Manifests extends EventEmitter {
                           }
                           // Initiate deploy
                           return this.kubectl
-                            [method.toLowerCase()](tmpApplyingConfigurationPath)
+                            [method.toLowerCase()](tmpApplyingConfigurationPath) // eslint-disable-line no-unexpected-multiline
                             .then(msg => {
                               this.emit("info", msg);
                               this.emit("status", {

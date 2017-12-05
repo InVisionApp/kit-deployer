@@ -102,6 +102,24 @@ program
     parseBoolean(process.env.CREATE_ONLY)
   )
   .option(
+    "--backoff-fail-after <int>",
+    "Maximum number of backoffs before the call is aborted",
+    parseInt,
+    parseInt(process.env.BACKOFF_FAIL_AFTER)
+  )
+  .option(
+    "--backoff-initial-delay <int>",
+    "The initial delay when starting to backoff in ms",
+    parseInt,
+    parseInt(process.env.BACKOFF_INITIAL_DELAY)
+  )
+  .option(
+    "--backoff-max-delay <int>",
+    "The maximum delay when doing a backoff in ms",
+    parseInt,
+    parseInt(process.env.BACKOFF_MAX_DELAY)
+  )
+  .option(
     "--available-enabled <boolean>",
     "Will check if deployed service is available, but will only affect if deployment is considered successful or not if --available-required is also enabled",
     parseBoolean,
@@ -223,6 +241,11 @@ const options = {
   diff: program.diff,
   force: program.force,
   createOnly: program.createOnly,
+  backoff: {
+    failAfter: program.backoffFailAfter,
+    initialDelay: program.backoffInitialDelay,
+    maxDelay: program.backoffMaxDelay
+  },
   available: {
     enabled: program.availableEnabled,
     pollingInterval: program.availablePollingInterval,

@@ -7,7 +7,6 @@ const Labels = require("./labels");
 const Strategy = require("../strategy").Strategy;
 
 const mustBeUnique = ["Job", "ScheduledJob", "CronJob"];
-const requiresDynamicSelectors = ["Deployment", "Service"];
 
 class Annotator {
   constructor(options) {

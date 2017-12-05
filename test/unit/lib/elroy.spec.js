@@ -121,7 +121,7 @@ describe("Elroy", () => {
         .then(() => {
           done("Should not be successful when expecting error");
         })
-        .catch(err => {
+        .catch(() => {
           done();
         });
     });

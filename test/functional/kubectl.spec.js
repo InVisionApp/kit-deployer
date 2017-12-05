@@ -16,6 +16,11 @@ const readFileAsync = Promise.promisify(fs.readFile);
 function clean(kubeconfigFile, namespace) {
   const cwd = path.dirname(kubeconfigFile);
   const kubectl = new Kubectl({
+    backoff: {
+      failAfter: 1,
+      initialDelay: 100,
+      maxDelay: 500
+    },
     cwd: cwd,
     kubeconfig: yaml.safeLoad(fs.readFileSync(kubeconfigFile, "utf8")),
     kubeconfigFile: kubeconfigFile
@@ -38,6 +43,11 @@ describe("Kubectl", function() {
         // Parse the cluster yaml file to JSON
         let config = yaml.safeLoad(rawContent);
         kubectl = new Kubectl({
+          backoff: {
+            failAfter: 1,
+            initialDelay: 100,
+            maxDelay: 500
+          },
           cwd: path.dirname(kubeconfigFile),
           kubeconfig: config,
           kubeconfigFile: kubeconfigFile

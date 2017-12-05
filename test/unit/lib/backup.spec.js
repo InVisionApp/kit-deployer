@@ -37,7 +37,7 @@ describe("Backup", () => {
   describe("Enabled invalid", () => {
     it("should throw an error without bucket value", done => {
       try {
-        const backup = new Backup(true, "");
+        new Backup(true, "");
       } catch (err) {
         expect(err).to.exist;
         done();
@@ -45,7 +45,7 @@ describe("Backup", () => {
     });
     it("should throw an error without ENV values", done => {
       try {
-        const backup = new Backup(true, "testBucket", "yaml");
+        new Backup(true, "testBucket", "yaml");
       } catch (err) {
         expect(err).to.exist;
         done();
