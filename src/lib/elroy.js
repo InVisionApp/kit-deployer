@@ -139,7 +139,7 @@ class Elroy extends EventEmitter {
       }
 
       if (error) {
-        body.error = error;
+        body.error = error.toString();
       }
 
       // Make request to Elroy
