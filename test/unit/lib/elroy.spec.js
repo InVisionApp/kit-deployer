@@ -153,7 +153,7 @@ describe("Elroy", () => {
           service: resource,
           type: Type.Promotion,
           status: Status.Failure,
-          error: error
+          error: error.toString()
         });
       });
     });
