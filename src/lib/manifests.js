@@ -22,7 +22,7 @@ const Backup = require("./backup");
 const Elroy = require("./elroy").Elroy;
 const Strategies = require("./strategy").Strategies;
 const Strategy = require("./strategy").Strategy;
-const mustBeRecreated = ["DaemonSet", "Job", "ScheduledJob", "CronJob"];
+const mustBeRecreated = ["Job", "ScheduledJob", "CronJob"];
 
 class Manifests extends EventEmitter {
   constructor(options) {
