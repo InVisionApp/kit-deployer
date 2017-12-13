@@ -102,6 +102,12 @@ program
     parseBoolean(process.env.CREATE_ONLY)
   )
   .option(
+    "--raw <boolean>",
+    "Will not perform any alterations to the manifest and simply deploy them as is",
+    parseBoolean,
+    parseBoolean(process.env.RAW)
+  )
+  .option(
     "--backoff-fail-after <int>",
     "Maximum number of backoffs before the call is aborted",
     parseInt,
@@ -241,6 +247,7 @@ const options = {
   diff: program.diff,
   force: program.force,
   createOnly: program.createOnly,
+  raw: program.raw,
   backoff: {
     failAfter: program.backoffFailAfter,
     initialDelay: program.backoffInitialDelay,

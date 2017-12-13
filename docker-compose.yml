@@ -5,4 +5,5 @@ deployer:
     - ./configs:/configs
     - ./manifests:/manifests
     - ./namespaces:/namespaces
+    - ./tmp:/tmp
   env_file: deployer.env

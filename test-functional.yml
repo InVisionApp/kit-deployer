@@ -3,5 +3,6 @@ test_functional:
   net: host
   volumes:
     - ./test:/test
+    - ./tmp:/tmp
   entrypoint: npm run
   command: test-functional

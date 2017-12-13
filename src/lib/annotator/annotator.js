@@ -16,7 +16,8 @@ class Annotator {
         uuid: undefined,
         sha: undefined,
         strategy: undefined,
-        deployId: undefined
+        deployId: undefined,
+        raw: false
       },
       options
     );
@@ -40,6 +41,11 @@ class Annotator {
 	 * @return {object}              Contains the annotated manifest and the tmp file path
 	 */
   annotate(manifest) {
+    // Do not annotate if raw manifest given
+    if (this.options.raw) {
+      return manifest;
+    }
+
     // Save configuration we're applying as metadata annotation so we can diff against
     // on future configuration changes
     var applyingConfiguration = JSON.stringify(manifest);

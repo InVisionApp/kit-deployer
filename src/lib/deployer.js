@@ -33,6 +33,7 @@ class Deployer extends EventEmitter {
         diff: false,
         force: false,
         createOnly: false,
+        raw: false,
         backoff: {
           failAfter: 10,
           initialDelay: 1000,
@@ -213,6 +214,7 @@ class Deployer extends EventEmitter {
                     diff: self.options.diff,
                     force: self.options.force,
                     createOnly: self.options.createOnly,
+                    raw: self.options.raw,
                     backup: self.options.backup,
                     elroy: self.options.elroy,
                     kubectl: kubectl

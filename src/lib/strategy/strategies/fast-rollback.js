@@ -188,6 +188,10 @@ class FastRollback extends EventEmitter {
             if (this.options.dryRun) {
               return;
             }
+            // Skip this check if it's a raw deployment
+            if (this.options.raw) {
+              return;
+            }
             return this.kubectl.get("service", manifestName).then(result => {
               // If it does not have a last update annotation yet then continue
               if (

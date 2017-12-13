@@ -1,0 +1,35 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx1-deployment-dep-2
+  labels:
+    app: test
+    name: nginx1-pod
+    id: dep-2
+    strategy: fast-rollback
+  annotations:
+    deployment.invision/uuid: 9543ac65-223e-4746-939f-391231ec64bb
+    kit-deployer/original-name: nginx1-deployment
+    kit-deployer/last-applied-configuration: '{"apiVersion":"extensions/v1beta1","kind":"Deployment","metadata":{"name":"nginx1-deployment","labels":{"app":"test","name":"nginx1-pod"}},"spec":{"replicas":1,"template":{"metadata":{"labels":{"name":"nginx1-pod"}},"spec":{"containers":[{"name":"nginx1-con","image":"oveits/docker-nginx-busybox:latest","ports":[{"containerPort":80}]}]}}}}'
+    kit-deployer/last-applied-configuration-sha1: ca61435aa2d9dd865f5e24c844c8956481198678
+    kit-deployer/commit: '"6fc66dc2a0b75265ed14e45b754731d8c09b26d6"'
+    kit-deployer/last-updated: '2017-12-13T14:47:17.492Z'
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: nginx1-pod
+        strategy: fast-rollback
+        id: dep-2
+    spec:
+      containers:
+      - name: nginx1-con
+        image: oveits/docker-nginx-busybox:latest
+        ports:
+        - containerPort: 80
+  selector:
+    matchLabels:
+      name: nginx1-pod
+      strategy: fast-rollback
+      id: dep-2

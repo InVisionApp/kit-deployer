@@ -5,6 +5,7 @@ codeship-dockercfg
 /generated
 /manifests
 /namespaces
+/tmp
 
 # Filesystem
 .DS_Store

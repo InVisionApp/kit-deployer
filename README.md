@@ -207,6 +207,7 @@ The following environment variables are used by this service.
 | `DIFF` | Will show a diff | yes | `false` |
 | `FORCE` | Will push all changes even if there are no differences | yes | `false` |
 | `CREATE_ONLY` | Will only create resources that don't already exist. Will not perform any updates or removals. | yes | `false` |
+| `RAW` | Will not perform any alterations to the manifest and simply deploy them as is | yes | `false` |
 | `BACKOFF_FAIL_AFTER` | Maximum number of backoffs before the call is aborted | yes | `10` |
 | `BACKOFF_INITIAL_DELAY` | The initial delay when starting to backoff in ms | yes | `1000` |
 | `BACKOFF_MAX_DELAY` | The maximum delay when doing a backoff in ms | yes | `30000` |

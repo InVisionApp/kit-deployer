@@ -41,6 +41,7 @@ class Manifests extends EventEmitter {
         selector: undefined,
         force: false,
         createOnly: false,
+        raw: false,
         dryRun: false,
         available: {
           enabled: false,
@@ -276,7 +277,8 @@ class Manifests extends EventEmitter {
         uuid: this.options.uuid,
         sha: this.options.sha,
         strategy: this.strategy,
-        deployId: this.options.deployId
+        deployId: this.options.deployId,
+        raw: this.options.raw
       });
 
       return this.load()
@@ -390,14 +392,6 @@ class Manifests extends EventEmitter {
               this.options.force
             ) {
               var promiseFunc = () => {
-                // Initialize annotations object if it doesn't have one yet
-                if (!manifest.metadata) {
-                  manifest.metadata = {};
-                }
-                if (!manifest.metadata.annotations) {
-                  manifest.metadata.annotations = {};
-                }
-
                 // Skip deploying this manifest if it's newer than what we currently have to deploy
                 var committerDate = null;
                 if (
