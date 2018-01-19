@@ -8,8 +8,9 @@ const EventEmitter = require("events");
 
 const Name = "fast-rollback";
 
-// TODO: May want to make this configurable in the future
-const NumDesiredReserve = 3;
+const NumDesiredReserve = parseInt(process.env.FASTROLLBACK_DESIRED_RESERVES)
+  ? parseInt(process.env.FASTROLLBACK_DESIRED_RESERVES)
+  : 3;
 
 class FastRollback extends EventEmitter {
   constructor(options) {

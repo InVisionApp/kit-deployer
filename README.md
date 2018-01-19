@@ -201,6 +201,7 @@ The following environment variables are used by this service.
 | `UUID` | A UUID to be used in webhooks and API requests | false | *empty* |
 | `DEPLOY_ID` | A unique id to be used in deployments | false | *empty* |
 | `STRATEGY` | The deployment strategy to use. Currently supports rolling-update, fast-rollback. | false | `rolling-update` |
+| `FASTROLLBACK_DESIRED_RESERVES` | The number of reserves to maintain for fast rollbacks | false | `3` |
 | `RESOURCE` | The resource name for the manifests being deployed | false | *empty* |
 | `DEBUG` | A boolean flag to enable debug mode | yes | `false` |
 | `IS_ROLLBACK` | A boolean flag that is passed in the available payload post | yes | `false` |
