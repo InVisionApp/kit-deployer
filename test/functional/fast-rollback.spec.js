@@ -476,7 +476,6 @@ describe("Functional fast-rollback", function() {
       });
     });
 
-    const deployIds = ["dep-1", "dep-2", "dep-3", "dep-4", "dep-5"];
     _.each(deployIds, (id, index) => {
       var clusterName = "fast-rollback-cluster-" + (index + 1);
       var kubeconfigFile =
