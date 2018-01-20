@@ -8,10 +8,6 @@ const EventEmitter = require("events");
 
 const Name = "fast-rollback";
 
-const NumDesiredReserve = parseInt(process.env.FASTROLLBACK_DESIRED_RESERVES)
-  ? parseInt(process.env.FASTROLLBACK_DESIRED_RESERVES)
-  : 3;
-
 class FastRollback extends EventEmitter {
   constructor(options) {
     super();
@@ -377,6 +373,10 @@ class FastRollback extends EventEmitter {
                   results.items,
                   deployment.manifest
                 );
+                let NumDesiredReserve = 3;
+                if (this.options.fastRollbackDesiredReserve) {
+                  NumDesiredReserve = this.options.fastRollbackDesiredReserve;
+                }
                 this.emit(
                   "info",
                   `deleteBackups found ${verified.length} backup deployments on reserve that match the ${deployment

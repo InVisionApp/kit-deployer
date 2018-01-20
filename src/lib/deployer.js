@@ -29,6 +29,7 @@ class Deployer extends EventEmitter {
         selector: undefined,
         dryRun: true,
         isRollback: false,
+        fastRollbackDesiredReserve: 3,
         debug: false,
         diff: false,
         force: false,
@@ -203,6 +204,8 @@ class Deployer extends EventEmitter {
                     strategyName: self.options.strategyName,
                     resource: self.options.resource,
                     isRollback: self.options.isRollback,
+                    fastRollbackDesiredReserve:
+                      self.options.fastRollbackDesiredReserve,
                     sha: self.options.sha,
                     cluster: config,
                     dir: manifestsDir,
