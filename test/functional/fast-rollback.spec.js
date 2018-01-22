@@ -281,9 +281,9 @@ describe("Functional fast-rollback", function() {
       });
     });
 
-    describe("and with FASTROLLBACK_DESIRED_RESERVES set", function() {
+    describe("and with FASTROLLBACK_DESIRED_RESERVE set", function() {
       after(() => {
-        delete process.env.FASTROLLBACK_DESIRED_RESERVES;
+        delete process.env.FASTROLLBACK_DESIRED_RESERVE;
       });
       const deployIds = ["dep-1", "dep-2", "dep-3"];
       _.each(deployIds, (id, index) => {
@@ -300,7 +300,7 @@ describe("Functional fast-rollback", function() {
               process.env.CONFIGS = kubeconfigFile;
               process.env.STRATEGY = "fast-rollback";
               process.env.DEPLOY_ID = id;
-              process.env.FASTROLLBACK_DESIRED_RESERVES = "1";
+              process.env.FASTROLLBACK_DESIRED_RESERVE = "1";
 
               exec("./src/deployer", function(error, stdout, stderr) {
                 expect(error).to.be.a("null", stdout);
@@ -494,7 +494,7 @@ describe("Functional fast-rollback", function() {
       });
     });
 
-    describe("and without FASTROLLBACK_DESIRED_RESERVES set", function() {
+    describe("and without FASTROLLBACK_DESIRED_RESERVE set", function() {
       const deployIds = ["dep-1", "dep-2", "dep-3", "dep-4", "dep-5"];
       _.each(deployIds, (id, index) => {
         var clusterName = "fast-rollback-cluster-" + (index + 1);

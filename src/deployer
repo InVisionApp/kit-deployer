@@ -87,7 +87,7 @@ program
     "--fastRollbackDesiredReserve <int>",
     "An integer flag that specifies number of reserves to maintain for fast rollbacks",
     parseInt,
-    parseInt(process.env.FASTROLLBACK_DESIRED_RESERVES)
+    parseInt(process.env.FASTROLLBACK_DESIRED_RESERVE)
   )
   .option(
     "--diff <boolean>",

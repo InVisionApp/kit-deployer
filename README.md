@@ -204,7 +204,7 @@ The following environment variables are used by this service.
 | `RESOURCE` | The resource name for the manifests being deployed | false | *empty* |
 | `DEBUG` | A boolean flag to enable debug mode | yes | `false` |
 | `IS_ROLLBACK` | A boolean flag that is passed in the available payload post | yes | `false` |
-| `FASTROLLBACK_DESIRED_RESERVES` | The number of reserves to maintain for fast rollbacks | false | `3` |
+| `FASTROLLBACK_DESIRED_RESERVE` | The number of reserves to maintain for fast rollbacks | false | `3` |
 | `DIFF` | Will show a diff | yes | `false` |
 | `FORCE` | Will push all changes even if there are no differences | yes | `false` |
 | `CREATE_ONLY` | Will only create resources that don't already exist. Will not perform any updates or removals. | yes | `false` |
