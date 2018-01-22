@@ -281,198 +281,418 @@ describe("Functional fast-rollback", function() {
       });
     });
 
-    const deployIds = ["dep-1", "dep-2", "dep-3", "dep-4", "dep-5"];
-    _.each(deployIds, (id, index) => {
-      var clusterName = "fast-rollback-cluster-" + (index + 1);
-      var kubeconfigFile =
-        "/test/functional/clusters/configs/fast-rollback-kubeconfig-" +
-        (index + 1) +
-        ".yaml";
-      describe("and fast-rollback-service cluster deployId=" + id, function() {
-        it("should deploy without error", function(done) {
-          process.env.CONFIGS = kubeconfigFile;
-          process.env.STRATEGY = "fast-rollback";
-          process.env.DEPLOY_ID = id;
+    describe("and with FASTROLLBACK_DESIRED_RESERVE set", function() {
+      after(() => {
+        delete process.env.FASTROLLBACK_DESIRED_RESERVE;
+      });
+      const deployIds = ["dep-1", "dep-2", "dep-3"];
+      _.each(deployIds, (id, index) => {
+        const indexAdj = 6;
+        var clusterName = "fast-rollback-cluster-" + (index + indexAdj);
+        var kubeconfigFile =
+          "/test/functional/clusters/configs/fast-rollback-kubeconfig-" +
+          (index + indexAdj) +
+          ".yaml";
+        describe(
+          "and fast-rollback-service cluster deployId=" + id,
+          function() {
+            it("should deploy without error", function(done) {
+              process.env.CONFIGS = kubeconfigFile;
+              process.env.STRATEGY = "fast-rollback";
+              process.env.DEPLOY_ID = id;
+              process.env.FASTROLLBACK_DESIRED_RESERVE = "1";
 
-          exec("./src/deployer", function(error, stdout, stderr) {
-            expect(error).to.be.a("null", stdout);
-            expect(stderr).to.be.empty;
-            expect(stdout).not.to.be.empty;
-            expect(stdout).to.contain("Generating tmp directory:");
-            expect(stdout).to.contain(
-              clusterName + " - Strategy fast-rollback"
-            );
-            expect(stdout).to.contain(
-              clusterName + " - Getting list of namespaces"
-            );
-            expect(stdout).not.to.contain(
-              clusterName + " - Apply fast-rollback namespace"
-            );
-            expect(stdout).not.to.contain(
-              clusterName + ' - namespace "fast-rollback" created'
-            );
-            expect(stdout).to.contain(
-              "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Getting list of deployment,service matching 'app in (test)'"
-            );
-            expect(stdout).to.contain(
-              clusterName + " - Strategy fast-rollback annotating nginx1-svc"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback annotating nginx1-deployment"
-            );
-            expect(stdout).to.contain(
-              clusterName + " - Differences for nginx1-svc"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Running pre-deploy check to Apply nginx1-deployment-" +
-                process.env.DEPLOY_ID
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback waiting for all deployments to be available before deploying service nginx1-svc"
-            );
-            expect(stdout).to.contain(
-              clusterName + " - Running pre-deploy check to Apply nginx1-svc"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                ' - deployment "nginx1-deployment-' +
-                process.env.DEPLOY_ID +
-                '" created'
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Deployment:nginx1-deployment-" +
-                process.env.DEPLOY_ID +
-                " is available"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback all 2 manifests are available"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,strategy=fast-rollback,id=" +
-                id
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback deployed 1 services after all deployments available"
-            );
-            if (index < 3) {
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback deleteNewer found " +
-                  (index + 1) +
-                  " deployments that match the nginx1-deployment-dep-" +
-                  (index + 1) +
-                  " deployment group label name=nginx1-pod,id!=" +
-                  id +
-                  ",strategy=fast-rollback"
-              );
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback attempting to delete 0 deployments newer than nginx1-deployment-dep-" +
-                  (index + 1)
-              );
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback deleteBackups found " +
-                  (index + 1) +
-                  " backup deployments on reserve that match the nginx1-deployment-dep-" +
-                  (index + 1) +
-                  " deployment group label name=nginx1-pod,id!=" +
-                  id +
-                  ",strategy=fast-rollback"
-              );
-              expect(stdout).to.contain(
-                clusterName + " - Found " + (index + 2) + " resources"
-              );
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback skipping delete of older deployments because insufficent backup deployments on reserve"
-              );
-            } else {
-              // expect(stdout).to.contain(clusterName + " - Found 5 resources");
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback deleteNewer found 4 deployments that match the nginx1-deployment-dep-" +
-                  (index + 1) +
-                  " deployment group label name=nginx1-pod,id!=" +
-                  id +
-                  ",strategy=fast-rollback"
-              );
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback attempting to delete 0 deployments newer than nginx1-deployment-dep-" +
-                  (index + 1)
-              );
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback deleteBackups found 4 backup deployments on reserve that match the nginx1-deployment-dep-" +
-                  (index + 1) +
-                  " deployment group label name=nginx1-pod,id!=" +
-                  id +
-                  ",strategy=fast-rollback"
-              );
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback attempting to delete 1 deployments older than nginx1-deployment-dep-" +
-                  (index + 1)
-              );
-              if (index == 3) {
+              exec("./src/deployer", function(error, stdout, stderr) {
+                expect(error).to.be.a("null", stdout);
+                expect(stderr).to.be.empty;
+                expect(stdout).not.to.be.empty;
+                expect(stdout).to.contain("Generating tmp directory:");
+                expect(stdout).to.contain(
+                  clusterName + " - Strategy fast-rollback"
+                );
+                expect(stdout).to.contain(
+                  clusterName + " - Getting list of namespaces"
+                );
+                if (index !== 0) {
+                  expect(stdout).not.to.contain(
+                    clusterName + " - Apply fast-rollback-2 namespace"
+                  );
+                  expect(stdout).not.to.contain(
+                    clusterName + ' - namespace "fast-rollback-2" created'
+                  );
+                  expect(stdout).to.contain(
+                    clusterName + " - Differences for nginx1-svc"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback waiting for all deployments to be available before deploying service nginx1-svc"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,strategy=fast-rollback,id=" +
+                      id
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deployed 1 services after all deployments available"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available"
+                  );
+                } else {
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deployed 0 services after all deployments available"
+                  );
+                }
+                expect(stdout).to.contain(
+                  "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS"
+                );
                 expect(stdout).to.contain(
                   clusterName +
-                    " - Strategy fast-rollback deleted backup deployment nginx1-deployment"
+                    " - Getting list of deployment,service matching 'app in (test)'"
                 );
-              } else {
                 expect(stdout).to.contain(
                   clusterName +
-                    " - Strategy fast-rollback deleted backup deployment nginx1-deployment-dep-" +
-                    (index - 3)
+                    " - Strategy fast-rollback annotating nginx1-svc"
                 );
-              }
-              expect(stdout).to.contain(
-                clusterName +
-                  " - Strategy fast-rollback successfully deleted 1 deployments older than nginx1-deployment-dep-" +
-                  (index + 1)
-              );
-            }
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback cleanup attempting to delete 0 deployments that match the nginx1-deployment-dep-" +
-                (index + 1) +
-                " deployment group label name=nginx1-pod,strategy!=fast-rollback"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that match the nginx1-deployment-dep-" +
-                (index + 1) +
-                " deployment group label name=nginx1-pod,strategy!=fast-rollback"
-            );
-            expect(stdout).to.contain(
-              clusterName +
-                " - Deployment:nginx1-deployment-" +
-                process.env.DEPLOY_ID +
-                " has 1/1 replicas available"
-            );
-            expect(stdout).to.contain(
-              "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
-            );
-            expect(stdout).to.contain("Finished successfully");
-            done();
-          });
-        });
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback annotating nginx1-deployment"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Running pre-deploy check to Apply nginx1-deployment-" +
+                    process.env.DEPLOY_ID
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Running pre-deploy check to Apply nginx1-svc"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    ' - deployment "nginx1-deployment-' +
+                    process.env.DEPLOY_ID +
+                    '" created'
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Deployment:nginx1-deployment-" +
+                    process.env.DEPLOY_ID +
+                    " is available"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback all 2 manifests are available"
+                );
+                if (index < 2) {
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteNewer found " +
+                      index +
+                      " deployments that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback attempting to delete 0 deployments newer than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteBackups found " +
+                      index +
+                      " backup deployments on reserve that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName + " - Found " + index * 2 + " resources"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback skipping delete of older deployments because insufficent backup deployments on reserve"
+                  );
+                } else {
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteNewer found 2 deployments that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback attempting to delete 0 deployments newer than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteBackups found 2 backup deployments on reserve that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback attempting to delete 1 deployments older than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                  if (index == 1) {
+                    expect(stdout).to.contain(
+                      clusterName +
+                        " - Strategy fast-rollback deleted backup deployment nginx1-deployment"
+                    );
+                  } else {
+                    expect(stdout).to.contain(
+                      clusterName +
+                        " - Strategy fast-rollback deleted backup deployment nginx1-deployment-dep-" +
+                        (index - 1)
+                    );
+                  }
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback successfully deleted 1 deployments older than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                }
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback cleanup attempting to delete 0 deployments that match the nginx1-deployment-dep-" +
+                    (index + 1) +
+                    " deployment group label name=nginx1-pod,strategy!=fast-rollback"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that match the nginx1-deployment-dep-" +
+                    (index + 1) +
+                    " deployment group label name=nginx1-pod,strategy!=fast-rollback"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Deployment:nginx1-deployment-" +
+                    process.env.DEPLOY_ID +
+                    " has 1/1 replicas available"
+                );
+                expect(stdout).to.contain(
+                  "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
+                );
+                expect(stdout).to.contain("Finished successfully");
+                done();
+              });
+            });
+          }
+        );
+      });
+    });
+
+    describe("and without FASTROLLBACK_DESIRED_RESERVE set", function() {
+      const deployIds = ["dep-1", "dep-2", "dep-3", "dep-4", "dep-5"];
+      _.each(deployIds, (id, index) => {
+        var clusterName = "fast-rollback-cluster-" + (index + 1);
+        var kubeconfigFile =
+          "/test/functional/clusters/configs/fast-rollback-kubeconfig-" +
+          (index + 1) +
+          ".yaml";
+        describe(
+          "and fast-rollback-service cluster deployId=" + id,
+          function() {
+            it("should deploy without error", function(done) {
+              process.env.CONFIGS = kubeconfigFile;
+              process.env.STRATEGY = "fast-rollback";
+              process.env.DEPLOY_ID = id;
+
+              exec("./src/deployer", function(error, stdout, stderr) {
+                expect(error).to.be.a("null", stdout);
+                expect(stderr).to.be.empty;
+                expect(stdout).not.to.be.empty;
+                expect(stdout).to.contain("Generating tmp directory:");
+                expect(stdout).to.contain(
+                  clusterName + " - Strategy fast-rollback"
+                );
+                expect(stdout).to.contain(
+                  clusterName + " - Getting list of namespaces"
+                );
+                expect(stdout).not.to.contain(
+                  clusterName + " - Apply fast-rollback namespace"
+                );
+                expect(stdout).not.to.contain(
+                  clusterName + ' - namespace "fast-rollback" created'
+                );
+                expect(stdout).to.contain(
+                  "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status STARTED/IN_PROGRESS"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Getting list of deployment,service matching 'app in (test)'"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback annotating nginx1-svc"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback annotating nginx1-deployment"
+                );
+                expect(stdout).to.contain(
+                  clusterName + " - Differences for nginx1-svc"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Running pre-deploy check to Apply nginx1-deployment-" +
+                    process.env.DEPLOY_ID
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback waiting for all deployments to be available before deploying service nginx1-svc"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Running pre-deploy check to Apply nginx1-svc"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    ' - deployment "nginx1-deployment-' +
+                    process.env.DEPLOY_ID +
+                    '" created'
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Deployment:nginx1-deployment-" +
+                    process.env.DEPLOY_ID +
+                    " is available"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback all 2 manifests are available"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback verified 1 pods match the service selector name=nginx1-pod,strategy=fast-rollback,id=" +
+                    id
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback successfully deployed nginx1-svc service after all deployments were available"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback deployed 1 services after all deployments available"
+                );
+                if (index < 3) {
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteNewer found " +
+                      (index + 1) +
+                      " deployments that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback attempting to delete 0 deployments newer than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteBackups found " +
+                      (index + 1) +
+                      " backup deployments on reserve that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName + " - Found " + (index + 2) + " resources"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback skipping delete of older deployments because insufficent backup deployments on reserve"
+                  );
+                } else {
+                  // expect(stdout).to.contain(clusterName + " - Found 5 resources");
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteNewer found 4 deployments that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback attempting to delete 0 deployments newer than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback deleteBackups found 4 backup deployments on reserve that match the nginx1-deployment-dep-" +
+                      (index + 1) +
+                      " deployment group label name=nginx1-pod,id!=" +
+                      id +
+                      ",strategy=fast-rollback"
+                  );
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback attempting to delete 1 deployments older than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                  if (index == 3) {
+                    expect(stdout).to.contain(
+                      clusterName +
+                        " - Strategy fast-rollback deleted backup deployment nginx1-deployment"
+                    );
+                  } else {
+                    expect(stdout).to.contain(
+                      clusterName +
+                        " - Strategy fast-rollback deleted backup deployment nginx1-deployment-dep-" +
+                        (index - 3)
+                    );
+                  }
+                  expect(stdout).to.contain(
+                    clusterName +
+                      " - Strategy fast-rollback successfully deleted 1 deployments older than nginx1-deployment-dep-" +
+                      (index + 1)
+                  );
+                }
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback cleanup attempting to delete 0 deployments that match the nginx1-deployment-dep-" +
+                    (index + 1) +
+                    " deployment group label name=nginx1-pod,strategy!=fast-rollback"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that match the nginx1-deployment-dep-" +
+                    (index + 1) +
+                    " deployment group label name=nginx1-pod,strategy!=fast-rollback"
+                );
+                expect(stdout).to.contain(
+                  clusterName +
+                    " - Deployment:nginx1-deployment-" +
+                    process.env.DEPLOY_ID +
+                    " has 1/1 replicas available"
+                );
+                expect(stdout).to.contain(
+                  "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
+                );
+                expect(stdout).to.contain("Finished successfully");
+                done();
+              });
+            });
+          }
+        );
       });
     });
 
@@ -871,6 +1091,10 @@ describe("Functional fast-rollback", function() {
       });
     });
     after(function() {
+      clean(
+        "/test/functional/clusters/configs/fast-rollback-kubeconfig-6.yaml",
+        "fast-rollback-2"
+      );
       return clean(firstKubeconfigFile, "fast-rollback");
     });
   });
