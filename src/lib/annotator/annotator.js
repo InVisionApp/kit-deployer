@@ -43,6 +43,9 @@ class Annotator {
   annotate(manifest) {
     // Do not annotate if raw manifest given
     if (this.options.raw) {
+      if (this.options.uuid) {
+        manifest.metadata.annotations[Annotations.UUID] = this.options.uuid;
+      }
       return manifest;
     }
 
