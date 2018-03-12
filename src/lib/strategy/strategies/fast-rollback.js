@@ -83,8 +83,30 @@ class FastRollback extends EventEmitter {
     return manifest;
   }
 
+  updateDeploymentUUID(kind, manifestName) {
+    this.emit(
+      "info",
+      `updating kit annotation on deployment ${manifestName} to reference the current deploy uuid`
+    );
+    // Update the UUID on the deployment so we know the deploy was processed
+    let uuidAnnotationPatch = {
+      metadata: {
+        annotations: {
+          "kit-deployer/uuid": this.options.uuid
+        }
+      }
+    };
+
+    return this.kubectl.patch(
+      kind,
+      manifestName,
+      JSON.stringify(uuidAnnotationPatch)
+    );
+  }
+
   skipDeploy(manifest, found) {
     const kind = manifest.kind.toLowerCase();
+    const manifestName = manifest.metadata.name;
     if (kind === "deployment") {
       // Keep track of deployments because we will need to query for it later
       this.deployments.push({
@@ -92,12 +114,13 @@ class FastRollback extends EventEmitter {
       });
       // If the deployment manifest already exists with the same deployId we will skip deploying it
       if (found) {
-        this.emit(
-          "info",
-          `deployment ${manifest.metadata
-            .name} already exists in the cluster so skipping`
-        );
-        return true;
+        return this.updateDeploymentUUID(kind, manifestName).then(() => {
+          this.emit(
+            "info",
+            `deployment ${manifestName} already exists in the cluster so skipping`
+          );
+          return true;
+        });
       }
     }
 
