@@ -8,6 +8,9 @@ const EventEmitter = require("events");
 
 const Name = "fast-rollback";
 
+// TODO: May want to make this configurable in the future
+const NumDesiredReserve = 3;
+
 class FastRollback extends EventEmitter {
   constructor(options) {
     super();
@@ -396,10 +399,6 @@ class FastRollback extends EventEmitter {
                   results.items,
                   deployment.manifest
                 );
-                let NumDesiredReserve = 3;
-                if (this.options.fastRollbackDesiredReserve) {
-                  NumDesiredReserve = this.options.fastRollbackDesiredReserve;
-                }
                 this.emit(
                   "info",
                   `deleteBackups found ${verified.length} backup deployments on reserve that match the ${deployment
