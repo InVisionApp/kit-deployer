@@ -2,9 +2,11 @@
 
 const sinon = require("sinon");
 const sinonChai = require("sinon-chai");
+const chaiAsPromised = require("chai-as-promised");
 const chai = require("chai");
 chai.should();
 chai.use(sinonChai);
+chai.use(chaiAsPromised);
 const expect = chai.expect;
 const Promise = require("bluebird");
 const FastRollback = require("../../../../../src/lib/strategy/strategies/fast-rollback")
@@ -36,6 +38,9 @@ describe("FastRollback Strategy", () => {
       apply: function() {
         return Promise.resolve();
       },
+      patch: function() {
+        return Promise.resolve();
+      },
       deleteByName: function() {
         return Promise.resolve();
       }
@@ -43,14 +48,17 @@ describe("FastRollback Strategy", () => {
     const kubectlGetSpy = sinon.spy(kubectl, "get");
     const kubectlListSpy = sinon.spy(kubectl, "list");
     const kubectlApplySpy = sinon.spy(kubectl, "apply");
+    const kubectlPatchSpy = sinon.spy(kubectl, "patch");
     const kubectlDeleteByNameSpy = sinon.spy(kubectl, "deleteByName");
     beforeEach(() => {
       results = [];
       kubectlGetSpy.reset();
       kubectlListSpy.reset();
       kubectlApplySpy.reset();
+      kubectlPatchSpy.reset();
       kubectlDeleteByNameSpy.reset();
       options = {
+        uuid: "abc123",
         deployId: "dep1",
         kubectl: kubectl,
         isRollback: false
@@ -200,7 +208,7 @@ describe("FastRollback Strategy", () => {
         });
       });
       describe("and manifest NOT found in cluster", () => {
-        it("should return true", () => {
+        it("should return false", () => {
           expect(
             strategy.skipDeploy(
               givenManifest,
@@ -233,14 +241,15 @@ describe("FastRollback Strategy", () => {
         });
       });
       describe("and manifest found in cluster", () => {
-        it("should return false", () => {
-          expect(
-            strategy.skipDeploy(
-              givenManifest,
-              true,
-              tmpApplyingConfigurationPath
-            )
-          ).to.be.true;
+        it("should return true", () => {
+          strategy.skipDeploy(givenManifest, true, tmpApplyingConfigurationPath)
+            .should.eventually.be.true;
+          expect(kubectlPatchSpy).to.have.been.calledOnce;
+          expect(kubectlPatchSpy).to.have.been.calledWith(
+            "deployment",
+            "test-deployment",
+            '{"metadata":{"annotations":{"kit-deployer/uuid":"abc123"}}}'
+          );
         });
       });
     });
