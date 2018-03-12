@@ -501,6 +501,20 @@ class Kubectl extends EventEmitter {
     });
   }
 
+  patch(kind, name, update) {
+    return new Promise((resolve, reject) => {
+      if (this.dryRun) {
+        return resolve(`DryRun is enabled: skipping kubectl.patch(${update})`);
+      }
+      this.spawn(["patch", kind, name, `-p ${update}`], (err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(data);
+      });
+    });
+  }
+
   recreate(filepath) {
     if (this.dryRun) {
       return Promise.resolve(

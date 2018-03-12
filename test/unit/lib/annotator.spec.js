@@ -106,6 +106,68 @@ describe("Annotator", () => {
     });
   });
 
+  describe("Create New with a raw manifest", () => {
+    let annotator;
+    const rawManifest = {
+      kind: "Deployment",
+      metadata: {
+        name: "manifest-deployment",
+        annotations: {},
+        labels: {
+          name: "manifest-deployment"
+        }
+      },
+      spec: {
+        selector: {
+          matchLabels: {
+            name: "manifest-deployment"
+          }
+        }
+      }
+    };
+    rawManifest.metadata.annotations[Annotations.UUID] =
+      "d3bd6176-eb37-4ed7-b477-6a9075855cd5";
+
+    const rawJobManifest = {
+      kind: "Job",
+      metadata: {
+        name: "manifest-job",
+        annotations: {}
+      }
+    };
+    rawJobManifest.metadata.annotations[Annotations.UUID] =
+      "d3bd6176-eb37-4ed7-b477-6a9075855cd5";
+
+    const options = {
+      raw: true,
+      uuid: "dafbe5ac-f687-4b19-ba23-8fa91f84fbb8",
+      sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a",
+      strategy: new Strategy(Strategies.RollingUpdate, {})
+    };
+    beforeEach(() => {
+      annotator = new Annotator(options);
+    });
+    it("should be cool with it", () => {
+      expect(annotator.options.sha).to.equal(options.sha);
+    });
+    describe("and calling annotate on deployment", () => {
+      it("should overwrite the UUID annotation", () => {
+        const manifest = annotator.annotate(_.cloneDeep(rawManifest));
+        expect(manifest.metadata.annotations[Annotations.UUID]).to.equal(
+          options.uuid
+        );
+      });
+    });
+    describe("and calling annotate on job", () => {
+      it("should overwrite the UUID annotation", () => {
+        const manifest = annotator.annotate(_.cloneDeep(rawJobManifest));
+        expect(manifest.metadata.annotations[Annotations.UUID]).to.equal(
+          options.uuid
+        );
+      });
+    });
+  });
+
   describe("Create New without UUID", () => {
     let annotator;
     const originalManifest = {

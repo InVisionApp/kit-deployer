@@ -749,6 +749,9 @@ describe("Functional fast-rollback", function() {
                 process.env.DEPLOY_ID
             );
             expect(stdout).to.contain(
+              `updating kit annotation on deployment nginx1-deployment-${id} to reference the current deploy uuid`
+            );
+            expect(stdout).to.contain(
               clusterName +
                 " - Strategy fast-rollback deployment nginx1-deployment-" +
                 id +
@@ -894,6 +897,9 @@ describe("Functional fast-rollback", function() {
               clusterName +
                 " - Running pre-deploy check to Apply nginx1-deployment-" +
                 process.env.DEPLOY_ID
+            );
+            expect(stdout).to.contain(
+              `updating kit annotation on deployment nginx1-deployment-${id} to reference the current deploy uuid`
             );
             expect(stdout).to.contain(
               clusterName +
