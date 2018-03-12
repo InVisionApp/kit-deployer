@@ -84,12 +84,6 @@ program
     parseBoolean(process.env.IS_ROLLBACK)
   )
   .option(
-    "--fastRollbackDesiredReserve <int>",
-    "An integer flag that specifies number of reserves to maintain for fast rollbacks",
-    parseInt,
-    parseInt(process.env.FASTROLLBACK_DESIRED_RESERVE)
-  )
-  .option(
     "--diff <boolean>",
     "Will show a diff",
     parseBoolean,
@@ -249,7 +243,6 @@ const options = {
   selector: program.selector,
   dryRun: program.dryRun,
   isRollback: program.isRollback,
-  fastRollbackDesiredReserve: program.fastRollbackDesiredReserve,
   debug: program.debug,
   diff: program.diff,
   force: program.force,
