@@ -694,13 +694,6 @@ class Manifests extends EventEmitter {
                 });
               })
               .then(() => {
-                // Update Elroy that the resource has been deployed successfully
-                return elroy.done().catch(elroyErr => {
-                  // Ignore errors from elroy (we just log them)
-                  this.emit("warn", `Elroy error: ${elroyErr}`);
-                });
-              })
-              .then(() => {
                 return res;
               });
           }
