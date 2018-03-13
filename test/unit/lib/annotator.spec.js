@@ -38,6 +38,20 @@ describe("Annotator", () => {
         }
       }
     };
+    const serviceManifest = {
+      kind: "Service",
+      metadata: {
+        name: "manifest-svc",
+        labels: {
+          name: "manifest-svc"
+        }
+      },
+      spec: {
+        selector: {
+          name: "manifest-deployment"
+        }
+      }
+    };
     const originalJobManifest = {
       kind: "Job",
       metadata: {
@@ -73,6 +87,29 @@ describe("Annotator", () => {
             Annotations.LastAppliedConfigurationHash
           ]
         ).to.equal("5fe441d20dd25a28df2c84667aa9e611df83a6c3");
+        expect(manifest.metadata.annotations[Annotations.Commit]).to.equal(
+          JSON.stringify(options.sha)
+        );
+      });
+    });
+    describe("and calling annotate on a service", () => {
+      it("should set the expected annotations", () => {
+        const manifest = annotator.annotate(_.cloneDeep(serviceManifest));
+        expect(manifest.metadata.name).to.equal(serviceManifest.metadata.name);
+        expect(manifest.metadata.annotations[Annotations.UUID]).to.equal(
+          options.uuid
+        );
+        expect(
+          manifest.metadata.annotations[Annotations.OriginalName]
+        ).to.equal(serviceManifest.metadata.name);
+        expect(
+          manifest.metadata.annotations[Annotations.LastAppliedConfiguration]
+        ).to.equal(JSON.stringify(serviceManifest));
+        expect(
+          manifest.metadata.annotations[
+            Annotations.LastAppliedConfigurationHash
+          ]
+        ).to.equal("81eda42ae6546725f6bbff95005010c7ac690fc5");
         expect(manifest.metadata.annotations[Annotations.Commit]).to.equal(
           JSON.stringify(options.sha)
         );

@@ -85,6 +85,13 @@ class Manifests extends EventEmitter {
     });
   }
 
+  availableEnabledOrIsFastRollback() {
+    return (
+      this.options.available.enabled ||
+      this.options.strategyName === Strategies.FastRollback
+    );
+  }
+
   load() {
     return new Promise((resolve, reject) => {
       this.manifestFiles = [];
@@ -506,7 +513,7 @@ class Manifests extends EventEmitter {
                               });
 
                               // Only check if resource is available if it's required
-                              if (this.options.available.enabled) {
+                              if (this.availableEnabledOrIsFastRollback()) {
                                 var availablePromise = status
                                   .available(
                                     manifest.kind,
@@ -613,7 +620,7 @@ class Manifests extends EventEmitter {
                     manifest: manifest
                   });
 
-                  if (this.options.available.enabled) {
+                  if (this.availableEnabledOrIsFastRollback()) {
                     var availablePromise = status
                       .available(manifest.kind, manifestName)
                       .then(() => {
@@ -679,7 +686,7 @@ class Manifests extends EventEmitter {
           };
           // Can only consider cluster deployment status completed if available checking is enabled,
           // otherwise it would be inaccurate
-          if (this.options.available.enabled) {
+          if (this.availableEnabledOrIsFastRollback()) {
             return Promise.all(availablePromises)
               .then(() => {
                 return this.strategy.allAvailable(generatedManifests);
@@ -691,13 +698,6 @@ class Manifests extends EventEmitter {
                   phase: "COMPLETED",
                   status: "SUCCESS",
                   manifest: this.options.cluster
-                });
-              })
-              .then(() => {
-                // Update Elroy that the resource has been deployed successfully
-                return elroy.done().catch(elroyErr => {
-                  // Ignore errors from elroy (we just log them)
-                  this.emit("warn", `Elroy error: ${elroyErr}`);
                 });
               })
               .then(() => {
