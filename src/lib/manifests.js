@@ -85,13 +85,6 @@ class Manifests extends EventEmitter {
     });
   }
 
-  availableEnabledOrIsFastRollback() {
-    return (
-      this.options.available.enabled ||
-      this.options.strategyName === Strategies.FastRollback
-    );
-  }
-
   load() {
     return new Promise((resolve, reject) => {
       this.manifestFiles = [];
@@ -513,7 +506,7 @@ class Manifests extends EventEmitter {
                               });
 
                               // Only check if resource is available if it's required
-                              if (this.availableEnabledOrIsFastRollback()) {
+                              if (this.options.available.enabled) {
                                 var availablePromise = status
                                   .available(
                                     manifest.kind,
@@ -620,7 +613,7 @@ class Manifests extends EventEmitter {
                     manifest: manifest
                   });
 
-                  if (this.availableEnabledOrIsFastRollback()) {
+                  if (this.options.available.enabled) {
                     var availablePromise = status
                       .available(manifest.kind, manifestName)
                       .then(() => {
@@ -686,7 +679,7 @@ class Manifests extends EventEmitter {
           };
           // Can only consider cluster deployment status completed if available checking is enabled,
           // otherwise it would be inaccurate
-          if (this.availableEnabledOrIsFastRollback()) {
+          if (this.options.available.enabled) {
             return Promise.all(availablePromises)
               .then(() => {
                 return this.strategy.allAvailable(generatedManifests);
