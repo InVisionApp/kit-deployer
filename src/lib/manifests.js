@@ -85,6 +85,19 @@ class Manifests extends EventEmitter {
     });
   }
 
+  /**
+   * Tests and returns whether or not the deployment contains a manifest
+   * @param {array} generatedManifests - an array of manifests to check
+   */
+  isStatefulSet(generatedManifests) {
+    for (let manifest of generatedManifests) {
+      if (manifest.kind && manifest.kind === "StatefulSet") {
+        return true;
+      }
+    }
+    return false;
+  }
+
   load() {
     return new Promise((resolve, reject) => {
       this.manifestFiles = [];
@@ -692,6 +705,15 @@ class Manifests extends EventEmitter {
                   status: "SUCCESS",
                   manifest: this.options.cluster
                 });
+              })
+              .then(() => {
+                // Update Elroy that the resource has been deployed successfully
+                if (this.isStatefulSet(generatedManifests)) {
+                  return elroy.done().catch(elroyErr => {
+                    // Ignore errors from elroy (we just log them)
+                    this.emit("warn", `Elroy error: ${elroyErr}`);
+                  });
+                }
               })
               .then(() => {
                 return res;
