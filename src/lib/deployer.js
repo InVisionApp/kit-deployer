@@ -34,6 +34,7 @@ class Deployer extends EventEmitter {
         force: false,
         createOnly: false,
         raw: false,
+        watcherUpdateBlacklist: [],
         backoff: {
           failAfter: 10,
           initialDelay: 1000,
@@ -217,7 +218,8 @@ class Deployer extends EventEmitter {
                     raw: self.options.raw,
                     backup: self.options.backup,
                     elroy: self.options.elroy,
-                    kubectl: kubectl
+                    kubectl: kubectl,
+                    watcherUpdateBlacklist: self.options.watcherUpdateBlacklist
                   });
                   manifests.on("status", status => {
                     self.emit("status", status);

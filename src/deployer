@@ -227,6 +227,12 @@ program
   )
   .option("--elroy-url <string>", "", "", process.env.ELROY_URL)
   .option("--elroy-secret <string>", "", "", process.env.ELROY_SECRET)
+  .option(
+    "--watcher-update-blacklist <string>",
+    "The kubernetes resources that want the watcher to update. You can provide multiple blacklisted items by using a JSON array of strings",
+    "",
+    process.env.WATCHER_UPDATE_BLACKLIST
+  )
   .parse(process.argv);
 
 if (program.dryRun === "true") {
@@ -248,6 +254,7 @@ const options = {
   force: program.force,
   createOnly: program.createOnly,
   raw: program.raw,
+  watcherUpdateBlacklist: convertStringToArray(program.watcherUpdateBlacklist),
   backoff: {
     failAfter: program.backoffFailAfter,
     initialDelay: program.backoffInitialDelay,
