@@ -1,49 +1,69 @@
 #!/bin/bash
 
-KUBE_VERSION=v1.6.4
-KUBERNETES_API_PORT=8080
+KUBE_VERSION=v1.8.0
+VM_DRIVER=hyperkit
 
 CMD=$1
 
+function minikubeRunning {
+	minikubeStatus=$(minikube status --format {{.MinikubeStatus}})
+	if [[ $minikubeStatus != "" ]]; then
+		echo "true"
+		return
+	fi
+
+	echo "false"
+}
+
 function stop {
 	echo "Stopping minikube..."
+	if [[ "$(minikubeRunning)" == "false" ]]; then
+		echo "Minikube wasn't running nothing to stop..."
+		return
+	fi
 	minikube stop
-	echo "Closing tunnel..."
-	remove_port_if_forwarded
+}
+
+function getTotalPods {
+	echo $(kubectl get pods -n kube-system | tail -n +2 | wc -l)
+}
+
+function getRunningPods {
+	echo $(kubectl get pods -n kube-system | grep Running | wc -l)
+}
+
+function setMiniKubeConf {
+	DELETE_MINIKUBE_INSTANCE="false"
+	if [[ $(minikube config get kubernetes-version) != "$KUBE_VERSION" ]]; then
+		minikube config set kubernetes-version $KUBE_VERSION
+		DELETE_MINIKUBE_INSTANCE="true"
+	fi
+
+	if [[ $(minikube config get vm-driver) != "$VM_DRIVER" ]]; then
+		minikube config set vm-driver $VM_DRIVER
+		DELETE_MINIKUBE_INSTANCE="true"
+	fi
+
+	if [[ $DELETE_MINIKUBE_INSTANCE == "true" ]]; then
+		minikube delete
+	fi
 }
 
 function start {
-	minikube config set kubernetes-version $KUBE_VERSION
+	setMiniKubeConf
 	minikube start
 	eval $(minikube docker-env)
 
-	echo "Setup tunnel..."
-	forward_port_if_not_forwarded $KUBERNETES_API_PORT
+	while true; do
+		if [[ $(getTotalPods) == $(getRunningPods) && $(getTotalPods) != "0" ]]; then
+			break
+		fi
 
-	echo "Waiting for Kubernetes cluster to become available..."
-	until $(curl http://127.0.0.1:$KUBERNETES_API_PORT/api/v1/pods &> /dev/null); do
+		echo "Waiting for Kubernetes cluster to become available..."
+		echo "Sleeping for 5 sec and checking again"
 		sleep 1
 	done
 	echo "Kubernetes cluster is up."
-}
-
-function remove_port_if_forwarded {
-	local port=$1
-	pkill -f "ssh.*docker.*$port:localhost:$port"
-}
-# Kube API is accessible on host at 8080, use ssh tunnel
-function forward_port_if_not_forwarded {
-	local port=$1
-
-	echo "Attempting to close tunnel if one exists..."
-	remove_port_if_forwarded
-
-	echo "Attempting to open tunnel..."
-	if ! pgrep -f "ssh.*$port:localhost" > /dev/null; then
-		ssh -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -i $(minikube ssh-key) docker@$(minikube ip) -f -N -L $port:localhost:$port
-	else
-		echo "Did not set up port forwarding to the Docker machine: An ssh tunnel on port $port already exists. The kubernetes cluster may not be reachable from local kubectl."
-	fi
 }
 
 function run_tests {

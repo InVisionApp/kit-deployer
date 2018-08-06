@@ -1,8 +1,9 @@
 test_functional:
   build: .
+  dockerfile: Functional-Dockerfile
   net: host
   volumes:
-    - ./test:/test
     - ./tmp:/tmp
+    - /var/lib/localkube/certs:/minikube/certs
   entrypoint: npm run
   command: test-functional

@@ -42,6 +42,7 @@ class Manifests extends EventEmitter {
         force: false,
         createOnly: false,
         raw: false,
+        watcherUpdateBlacklist: [],
         dryRun: false,
         available: {
           enabled: false,
@@ -86,12 +87,16 @@ class Manifests extends EventEmitter {
   }
 
   /**
-   * Tests and returns whether or not the deployment contains a manifest
+   * Returns whether or not the manifests includes a k8s resource in the elroy watcher update blacklist
    * @param {array} generatedManifests - an array of manifests to check
+   * @return {boolean} - whether or not these manifests contain a blacklisted resource
    */
-  isStatefulSet(generatedManifests) {
+  inWatcherUpdateBlacklist(generatedManifests) {
     for (let manifest of generatedManifests) {
-      if (manifest.kind && manifest.kind === "StatefulSet") {
+      if (
+        manifest.kind &&
+        this.options.watcherUpdateBlacklist.includes(manifest.kind)
+      ) {
         return true;
       }
     }
@@ -707,10 +712,10 @@ class Manifests extends EventEmitter {
                 });
               })
               .then(() => {
-                // Update Elroy that the resource has been deployed successfully
-                if (this.isStatefulSet(generatedManifests)) {
+                if (this.inWatcherUpdateBlacklist(generatedManifests)) {
                   return;
                 }
+                // Update Elroy that the resource has been deployed successfully
                 return elroy.done().catch(elroyErr => {
                   // Ignore errors from elroy (we just log them)
                   this.emit("warn", `Elroy error: ${elroyErr}`);
