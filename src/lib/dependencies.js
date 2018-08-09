@@ -126,9 +126,7 @@ class Dependencies extends EventEmitter {
                       " not available yet"
                   );
                 }
-              } else if (
-                ["Job", "ScheduledJob", "CronJob"].indexOf(resource.kind) >= 0
-              ) {
+              } else if (["Job"].indexOf(resource.kind) >= 0) {
                 // Need to verify job has completed successfully
                 if (!resource.status.succeeded) {
                   throw new Error(
