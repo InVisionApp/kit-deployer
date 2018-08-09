@@ -6,7 +6,7 @@ const Annotations = require("./annotations");
 const Labels = require("./labels");
 const Strategy = require("../strategy").Strategy;
 
-const mustBeUnique = ["Job", "ScheduledJob", "CronJob"];
+const mustBeUnique = ["Job"];
 
 class Annotator {
   constructor(options) {
