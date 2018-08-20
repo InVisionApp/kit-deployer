@@ -162,6 +162,11 @@ program
     parseInt(process.env.AVAILABLE_HEALTH_CHECK_THRESHOLD)
   )
   .option(
+    "--available-health-check-ignored-errors <string>",
+    "The error reasons that want to exclude from the health checker. You can provide multiple error reasons by using a JSON array of strings",
+    process.env.AVAILABLE_HEALTH_CHECK_IGNORED_ERRORS
+  )
+  .option(
     "--available-webhook <url>",
     "The URL you want to send the status payload of the deployment progress to. You can provide multiple endpoints by using a JSON array of URLs",
     process.env.AVAILABLE_WEBHOOK
@@ -230,7 +235,6 @@ program
   .option(
     "--watcher-update-blacklist <string>",
     "The kubernetes resources that want the watcher to update. You can provide multiple blacklisted items by using a JSON array of strings",
-    "",
     process.env.WATCHER_UPDATE_BLACKLIST
   )
   .parse(process.argv);
@@ -267,6 +271,9 @@ const options = {
     healthCheck: program.availableHealthCheck,
     healthCheckGracePeriod: program.availableHealthCheckGracePeriod,
     healthCheckThreshold: program.availableHealthCheckThreshold,
+    healthCheckIgnoredErrors: convertStringToArray(
+      program.availableHealthCheckIgnoredErrors
+    ),
     webhooks: convertStringToArray(program.availableWebhook),
     required: program.availableRequired,
     keepAlive: program.availableKeepAlive,

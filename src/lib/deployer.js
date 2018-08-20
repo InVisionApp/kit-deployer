@@ -48,6 +48,7 @@ class Deployer extends EventEmitter {
           healthCheck: true,
           healthCheckGracePeriod: undefined,
           healthCheckThreshold: undefined,
+          healthCheckIgnoredErrors: [],
           keepAlive: false,
           keepAliveInterval: 30,
           required: false,

@@ -49,6 +49,7 @@ class Manifests extends EventEmitter {
           all: false,
           healthCheck: true,
           healthCheckGracePeriod: undefined,
+          healthCheckIgnoredErrors: [],
           keepAlive: false,
           keepAliveInterval: 30,
           required: false,
@@ -228,6 +229,8 @@ class Manifests extends EventEmitter {
         healthCheck: this.options.available.healthCheck,
         healthCheckGracePeriod: this.options.available.healthCheckGracePeriod,
         healthCheckThreshold: this.options.available.healthCheckThreshold,
+        healthCheckIgnoredErrors: this.options.available
+          .healthCheckIgnoredErrors,
         keepAlive: this.options.available.keepAlive,
         keepAliveInterval: this.options.available.keepAliveInterval,
         timeout: this.options.available.timeout,
