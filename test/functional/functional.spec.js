@@ -51,6 +51,8 @@ describe("Functional misc", function() {
     process.env.AVAILABLE_WEBHOOK = "http://example.com/test";
     process.env.STRATEGY = "rolling-update";
     process.env.CREATE_ONLY = "false";
+    process.env.AVAILABLE_HEALTH_CHECK_IGNORED_ERRORS =
+      '["Unhealthy","FailedScheduling"]';
   });
 
   describe("when deploying to example cluster", function() {

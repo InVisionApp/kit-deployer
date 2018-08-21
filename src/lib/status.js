@@ -18,6 +18,7 @@ class Status extends EventEmitter {
         healthCheck: true,
         healthCheckGracePeriod: undefined,
         healthCheckThreshold: undefined,
+        healthCheckIgnoredErrors: [],
         keepAlive: false,
         keepAliveInterval: 30, // 30 seconds
         timeout: 10 * 60, // 10 minutes
@@ -71,6 +72,7 @@ class Status extends EventEmitter {
         this.options.healthCheckGracePeriod,
         since,
         this.options.healthCheckThreshold,
+        this.options.healthCheckIgnoredErrors,
         this.options.pollingInterval
       );
       healthCheck.on("info", err => {
@@ -295,6 +297,10 @@ class Status extends EventEmitter {
 
       // Start observing health of deployment
       if (this.options.healthCheck) {
+        this.emit(
+          "debug",
+          `Starting healthcheck watcher for ${resource} : ${name}...`
+        );
         healthCheck.start(name);
       }
 

@@ -13,17 +13,13 @@ const errorReasons = [
   "MissingClusterDNS",
   "NodeNotSchedulable"
 ];
-const excludeReasons = [
-  // We ignore Unhealthy events because often services can fail checks on startup/terminating and cause false positives
-  "Unhealthy"
-];
 
 /**
  * @fires HealthCheck#debug
  * @fires HealthCheck#error
  */
 class HealthCheck extends EventEmitter {
-  constructor(kubectl, gracePeriod, since, threshold, interval) {
+  constructor(kubectl, gracePeriod, since, threshold, ignoredErrors, interval) {
     super();
     this.events = kubectl.events(since, interval);
     this.error = {
@@ -34,6 +30,7 @@ class HealthCheck extends EventEmitter {
     this.gracePeriod =
       typeof gracePeriod === "undefined" ? 10 * 1000 : gracePeriod * 1000; // Default is 10 seconds
     this.threshold = typeof threshold === "undefined" ? 0 : threshold; // Default is 0
+    this.ignoredErrors = ignoredErrors;
   }
 
   start(name) {
@@ -41,6 +38,7 @@ class HealthCheck extends EventEmitter {
       this.emit("error", err);
     });
     this.events.on("new", event => {
+      // eslint-disable-next-line no-console
       if (!_.has(event, ["type"])) {
         return;
       }
@@ -89,8 +87,12 @@ class HealthCheck extends EventEmitter {
         return;
       }
 
-      // Skip reasons that are excluded from checking
-      if (excludeReasons.indexOf(event.reason) >= 0) {
+      if (this.ignoredErrors.indexOf(event.reason) >= 0) {
+        this.emit(
+          "debug",
+          `Healthcheck ignoring event for ${event.involvedObject
+            .name} because event reason ${event.reason} is in the ignoreErrors list`
+        );
         return;
       }
 

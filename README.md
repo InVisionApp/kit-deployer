@@ -216,6 +216,7 @@ The following environment variables are used by this service.
 | `AVAILABLE_HEALTH_CHECK` | Will monitor for issues during the deployment | yes | `true` |
 | `AVAILABLE_HEALTH_CHECK_GRACE_PERIOD` | The amount of time in seconds that the health check will wait for a deployment to self-heal before triggering a failure | yes | `10` |
 | `AVAILABLE_HEALTH_CHECK_THRESHOLD` | The number times a particular error event can occur before triggering a failure | yes | `0` |
+| `AVAILABLE_HEALTH_CHECK_IGNORED_ERRORS` | Errors that the built in healthchecker will ignore | yes | *empty* |
 | `AVAILABLE_WEBHOOK` | The URL you want to send the status payload of the deployment progress to. You can provide multiple endpoints by using a JSON array of URLs | no | *empty* |
 | `AVAILABLE_ALL` | When enabled it will check if all manifests are available even if no differences were deployed | yes | `false` |
 | `AVAILABLE_REQUIRED` | Will only finish once the manifest is considered available in the cluster | yes | `false` |
