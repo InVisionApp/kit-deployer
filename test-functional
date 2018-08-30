@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KUBE_VERSION=v1.8.0
+KUBE_VERSION=v1.9.8
 VM_DRIVER=hyperkit
 
 CMD=$1
