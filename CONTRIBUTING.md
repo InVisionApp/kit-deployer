@@ -33,6 +33,14 @@ We were unable to get the functional tests working via Codeship, so instead you 
 1. First install [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
 1. Then run `./test-functional`
 
+If you have problems with the version of kubelet, try changing the bootstrapper to `kubeadm` :
+
+1. `minikube stop && minikube delete`
+1. `minikube config set bootstrapper kubeadm`
+1. Then run `./test-functional`
+
+If there are problems not finding the `hyperkit` driver, try installing it manually like it's explained [here](https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#hyperkit-driver)
+
 ## Manually building and running
 
 This is an example of building the image and running it locally:
