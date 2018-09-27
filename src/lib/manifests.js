@@ -299,7 +299,8 @@ class Manifests extends EventEmitter {
         sha: this.options.sha,
         strategy: this.strategy,
         deployId: this.options.deployId,
-        raw: this.options.raw
+        raw: this.options.raw,
+        resource: this.options.resource
       });
 
       return this.load()

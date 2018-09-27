@@ -17,7 +17,8 @@ class Annotator {
         sha: undefined,
         strategy: undefined,
         deployId: undefined,
-        raw: false
+        raw: false,
+        resource: undefined
       },
       options
     );
@@ -136,6 +137,14 @@ class Annotator {
       );
     }
     manifest.metadata.labels[Labels.ID] = this.deployId;
+
+    // Add resource label if not present
+    if (
+      _.isUndefined(manifest.metadata.labels["resource"]) &&
+      this.options.resource
+    ) {
+      manifest.metadata.labels["resource"] = this.options.resource;
+    }
 
     // Require name label for deployments
     if (manifest.kind == "Deployment") {

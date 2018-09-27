@@ -296,5 +296,56 @@ describe("Annotator", () => {
         );
       });
     });
+    describe("Resource label", () => {
+      let annotator;
+      const originalJobManifest = {
+        kind: "Job",
+        metadata: {
+          name: "manifest-job"
+        }
+      };
+      const defaultOpts = {
+        sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a",
+        strategy: new Strategy(Strategies.RollingUpdate, {})
+      };
+      it("should set the label", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              resource: "test-resource"
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+
+        expect(manifest.metadata.labels.resource).to.equal("test-resource");
+      });
+      it("should NOT set the label if not resource passed", () => {
+        annotator = new Annotator(defaultOpts);
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels).to.deep.equal({
+          id: "unspecified",
+          strategy: "rolling-update"
+        });
+      });
+
+      it("should NOT modify the label if present", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              resource: "test-resource"
+            },
+            defaultOpts
+          )
+        );
+
+        originalJobManifest.metadata.labels = { name: "oe", resource: "other" };
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+
+        expect(manifest.metadata.labels.resource).to.equal("other");
+      });
+    });
   });
 });
