@@ -164,6 +164,11 @@ class Annotator {
     }
     manifest.metadata.labels[Labels.Strategy] = this.options.strategy.name;
 
+    // Add release-id label
+    if (this.options.resource && this.options.sha) {
+      manifest.metadata.labels[Annotations.ReleaseID] = `urn:inv:rel:${this
+        .options.resource}:${this.options.sha}`;
+    }
     return manifest;
   }
 

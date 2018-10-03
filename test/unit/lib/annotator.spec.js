@@ -347,5 +347,62 @@ describe("Annotator", () => {
         expect(manifest.metadata.labels.resource).to.equal("other");
       });
     });
+    describe("ReleaseID label", () => {
+      let annotator;
+      const originalJobManifest = {
+        kind: "Job",
+        metadata: {
+          name: "manifest-job"
+        }
+      };
+      const defaultOpts = {
+        strategy: new Strategy(Strategies.RollingUpdate, {})
+      };
+
+      it("should set the label", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              resource: "test-resource",
+              sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.equal(
+          "urn:inv:rel:test-resource:e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+        );
+      });
+
+      it("should NOT set the label if no SHA present", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              resource: "test-resource"
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+      });
+
+      it("should NOT set the label if no resource-name present", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+      });
+    });
   });
 });
