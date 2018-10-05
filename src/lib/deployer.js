@@ -22,6 +22,8 @@ class Deployer extends EventEmitter {
       {
         apiVersion: "v1",
         uuid: null,
+        releaseId: undefined,
+        tierDeploymentId: undefined,
         deployId: null,
         strategyName: Strategies.RollingUpdate,
         resource: null,
@@ -201,6 +203,8 @@ class Deployer extends EventEmitter {
                 namespaces.deploy().then(function() {
                   var manifests = new Manifests({
                     uuid: self.options.uuid,
+                    releaseId: self.options.releaseId,
+                    tierDeploymentId: self.options.tierDeploymentId,
                     deployId: self.options.deployId,
                     strategyName: self.options.strategyName,
                     resource: self.options.resource,

@@ -30,6 +30,8 @@ class Manifests extends EventEmitter {
     this.options = _.merge(
       {
         uuid: null,
+        releaseId: null,
+        tierDeploymentId: null,
         deployId: undefined,
         strategyName: Strategies.RollingUpdate,
         resource: null,
@@ -296,6 +298,8 @@ class Manifests extends EventEmitter {
       // Annotator
       const annotator = new Annotator({
         uuid: this.options.uuid,
+        releaseId: this.options.releaseId,
+        tierDeploymentId: this.options.tierDeploymentId,
         sha: this.options.sha,
         strategy: this.strategy,
         deployId: this.options.deployId,

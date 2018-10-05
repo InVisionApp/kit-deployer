@@ -356,15 +356,16 @@ describe("Annotator", () => {
         }
       };
       const defaultOpts = {
-        strategy: new Strategy(Strategies.RollingUpdate, {})
+        strategy: new Strategy(Strategies.RollingUpdate, {}),
+        resource: "test-resource"
       };
 
       it("should set the label", () => {
         annotator = new Annotator(
           _.merge(
             {
-              resource: "test-resource",
-              sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+              releaseId:
+                "urn:inv:rel:test-resource:e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
             },
             defaultOpts
           )
@@ -376,11 +377,17 @@ describe("Annotator", () => {
         );
       });
 
-      it("should NOT set the label if no SHA present", () => {
+      it("should NOT set the label if no value passed", () => {
+        annotator = new Annotator(defaultOpts);
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+      });
+      it("should NOT set the label if empty value passed", () => {
         annotator = new Annotator(
           _.merge(
             {
-              resource: "test-resource"
+              releaseId: ""
             },
             defaultOpts
           )
@@ -389,19 +396,56 @@ describe("Annotator", () => {
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
         expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
       });
+    });
+    describe("TierDeploymentID label", () => {
+      let annotator;
+      const originalJobManifest = {
+        kind: "Job",
+        metadata: {
+          name: "manifest-job"
+        }
+      };
+      const defaultOpts = {
+        strategy: new Strategy(Strategies.RollingUpdate, {}),
+        resource: "test-resource"
+      };
 
-      it("should NOT set the label if no resource-name present", () => {
+      it("should set the label", () => {
         annotator = new Annotator(
           _.merge(
             {
-              sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+              tierDeploymentId: "12345-abc"
             },
             defaultOpts
           )
         );
 
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.equal(
+          "12345-abc"
+        );
+      });
+
+      it("should NOT set the label if no value passed", () => {
+        annotator = new Annotator(defaultOpts);
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.be
+          .undefined;
+      });
+      it("should NOT set the label if empty value passed", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              tierDeploymentId: ""
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.be
+          .undefined;
       });
     });
   });

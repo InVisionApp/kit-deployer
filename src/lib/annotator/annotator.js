@@ -14,6 +14,8 @@ class Annotator {
     this.options = _.merge(
       {
         uuid: undefined,
+        releaseId: undefined,
+        tierDeploymentId: undefined,
         sha: undefined,
         strategy: undefined,
         deployId: undefined,
@@ -165,9 +167,15 @@ class Annotator {
     manifest.metadata.labels[Labels.Strategy] = this.options.strategy.name;
 
     // Add release-id label
-    if (this.options.resource && this.options.sha) {
-      manifest.metadata.labels[Annotations.ReleaseID] = `urn:inv:rel:${this
-        .options.resource}:${this.options.sha}`;
+    if (this.options.releaseId) {
+      manifest.metadata.labels[Annotations.ReleaseID] = this.options.releaseId;
+    }
+
+    // Add tierDeploymentId label
+    if (this.options.tierDeploymentId) {
+      manifest.metadata.labels[
+        Annotations.TierDeploymentID
+      ] = this.options.tierDeploymentId;
     }
     return manifest;
   }
