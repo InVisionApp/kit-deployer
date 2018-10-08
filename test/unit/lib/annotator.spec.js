@@ -347,5 +347,106 @@ describe("Annotator", () => {
         expect(manifest.metadata.labels.resource).to.equal("other");
       });
     });
+    describe("ReleaseID label", () => {
+      let annotator;
+      const originalJobManifest = {
+        kind: "Job",
+        metadata: {
+          name: "manifest-job"
+        }
+      };
+      const defaultOpts = {
+        strategy: new Strategy(Strategies.RollingUpdate, {}),
+        resource: "test-resource"
+      };
+
+      it("should set the label", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              releaseId:
+                "urn:inv:rel:test-resource:e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.equal(
+          "urn:inv:rel:test-resource:e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
+        );
+      });
+
+      it("should NOT set the label if no value passed", () => {
+        annotator = new Annotator(defaultOpts);
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+      });
+      it("should NOT set the label if empty value passed", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              releaseId: ""
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+      });
+    });
+    describe("TierDeploymentID label", () => {
+      let annotator;
+      const originalJobManifest = {
+        kind: "Job",
+        metadata: {
+          name: "manifest-job"
+        }
+      };
+      const defaultOpts = {
+        strategy: new Strategy(Strategies.RollingUpdate, {}),
+        resource: "test-resource"
+      };
+
+      it("should set the label", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              tierDeploymentId: "12345-abc"
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.equal(
+          "12345-abc"
+        );
+      });
+
+      it("should NOT set the label if no value passed", () => {
+        annotator = new Annotator(defaultOpts);
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.be
+          .undefined;
+      });
+      it("should NOT set the label if empty value passed", () => {
+        annotator = new Annotator(
+          _.merge(
+            {
+              tierDeploymentId: ""
+            },
+            defaultOpts
+          )
+        );
+
+        const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
+        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.be
+          .undefined;
+      });
+    });
   });
 });

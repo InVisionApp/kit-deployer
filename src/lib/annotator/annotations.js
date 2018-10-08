@@ -19,6 +19,12 @@ const Annotations = {
   },
   get LastUpdated() {
     return "kit-deployer/last-updated";
+  },
+  get ReleaseID() {
+    return "deployment.invision/release-id";
+  },
+  get TierDeploymentID() {
+    return "deployment.invision/tier-deployment-id";
   }
 };
 
