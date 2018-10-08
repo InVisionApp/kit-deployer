@@ -87,6 +87,20 @@ class Annotator {
       manifest.metadata.annotations[Annotations.UUID] = this.options.uuid;
     }
 
+    // Add release-id annotation
+    if (this.options.releaseId) {
+      manifest.metadata.annotations[
+        Annotations.ReleaseID
+      ] = this.options.releaseId;
+    }
+
+    // Add tierDeploymentId annotation
+    if (this.options.tierDeploymentId) {
+      manifest.metadata.annotations[
+        Annotations.TierDeploymentID
+      ] = this.options.tierDeploymentId;
+    }
+
     // Update manifest name before deploying (necessary for manifests we need to give a unique name to like Jobs)
     manifest.metadata.annotations[Annotations.OriginalName] =
       manifest.metadata.name;
@@ -166,17 +180,6 @@ class Annotator {
     }
     manifest.metadata.labels[Labels.Strategy] = this.options.strategy.name;
 
-    // Add release-id label
-    if (this.options.releaseId) {
-      manifest.metadata.labels[Annotations.ReleaseID] = this.options.releaseId;
-    }
-
-    // Add tierDeploymentId label
-    if (this.options.tierDeploymentId) {
-      manifest.metadata.labels[
-        Annotations.TierDeploymentID
-      ] = this.options.tierDeploymentId;
-    }
     return manifest;
   }
 

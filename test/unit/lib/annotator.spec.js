@@ -372,7 +372,7 @@ describe("Annotator", () => {
         );
 
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.equal(
+        expect(manifest.metadata.annotations[Annotations.ReleaseID]).to.equal(
           "urn:inv:rel:test-resource:e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a"
         );
       });
@@ -381,7 +381,8 @@ describe("Annotator", () => {
         annotator = new Annotator(defaultOpts);
 
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+        expect(manifest.metadata.annotations[Annotations.ReleaseID]).to.be
+          .undefined;
       });
       it("should NOT set the label if empty value passed", () => {
         annotator = new Annotator(
@@ -394,7 +395,8 @@ describe("Annotator", () => {
         );
 
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.labels[Annotations.ReleaseID]).to.be.undefined;
+        expect(manifest.metadata.annotations[Annotations.ReleaseID]).to.be
+          .undefined;
       });
     });
     describe("TierDeploymentID label", () => {
@@ -421,17 +423,17 @@ describe("Annotator", () => {
         );
 
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.equal(
-          "12345-abc"
-        );
+        expect(
+          manifest.metadata.annotations[Annotations.TierDeploymentID]
+        ).to.equal("12345-abc");
       });
 
       it("should NOT set the label if no value passed", () => {
         annotator = new Annotator(defaultOpts);
 
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.be
-          .undefined;
+        expect(manifest.metadata.annotations[Annotations.TierDeploymentID]).to
+          .be.undefined;
       });
       it("should NOT set the label if empty value passed", () => {
         annotator = new Annotator(
@@ -444,8 +446,8 @@ describe("Annotator", () => {
         );
 
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.labels[Annotations.TierDeploymentID]).to.be
-          .undefined;
+        expect(manifest.metadata.annotations[Annotations.TierDeploymentID]).to
+          .be.undefined;
       });
     });
   });
