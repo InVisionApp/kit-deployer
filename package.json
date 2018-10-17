@@ -21,13 +21,12 @@
     "prepublish": "node scripts/download-kubectl.js",
     "test-unit": "mocha test/unit --recursive",
     "test-functional": "mocha test/functional --recursive",
-    "test-kubectl":
-      "kubectl version --client | grep \\\"${KUBE_VERSION}\\\"; test $? -eq 0",
+    "test-kubectl": "kubectl version --client | grep \\\"${KUBE_VERSION}\\\"; test $? -eq 0",
     "lint": "eslint src test scripts",
     "format": "prettier -l '{scripts,src,test}/**/{deployer,*.js}'"
   },
   "dependencies": {
-    "aws-sdk": "2.7.7",
+    "aws-sdk": "2.178.0",
     "backoff": "2.5.0",
     "bluebird": "3.3.1",
     "commander": "2.9.0",
@@ -36,7 +35,7 @@
     "glob": "6.0.4",
     "js-yaml": "3.5.2",
     "kubernetes-client": "3.16.0",
-    "lodash": "4.3.0",
+    "lodash": "4.17.5",
     "log4js": "0.6.33",
     "mkdirp": "0.5.1",
     "request-promise": "3.0.0",
@@ -54,5 +53,9 @@
     "eslint-plugin-prettier": "2.3.1",
     "prettier": "1.7.4"
   },
-  "files": ["bin", "LICENSE", "src"]
+  "files": [
+    "bin",
+    "LICENSE",
+    "src"
+  ]
 }

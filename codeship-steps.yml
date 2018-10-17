@@ -2,10 +2,6 @@
   type: parallel
   encrypted_dockercfg_path: codeship-dockercfg.encrypted
   steps:
-    # TODO: disable eslint until eslint-config-invision package is public
-    # - name: Run lint tests
-    #   service: test
-    #   command: lint
     - name: Format
       service: test
       command: format
@@ -18,6 +14,10 @@
     - name: Verify kubectl binary
       service: test
       command: test-kubectl
+    - name: Execute for monitor and test
+      service: snyk
+      exclude: ^(master)$
+      command: /bin/sh -c "snyk monitor; snyk test || echo 'WARNING! Snyk found at least one vulnerable dependency, ignoring for now.'"
 
 - name: Registry
   type: serial
