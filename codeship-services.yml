@@ -3,6 +3,7 @@ app:
     image: quay.io/invision/kit-deployer
     dockerfile_path: Dockerfile
   cached: true
+
 test:
   build:
     image: quay.io/invision/kit-deployer
@@ -14,6 +15,14 @@ test:
   entrypoint: npm run
   environment:
     - KUBE_VERSION=v1.9.10
+
+snyk:
+  build:
+    dockerfile_path: Dockerfile.snyck
+  encrypted_env_file: codeship.env.encrypted
+  cached: true
+
+
 publish:
   image: quay.io/invision/docker-node-publisher:v1
   encrypted_env_file: codeship-publish.env.encrypted
