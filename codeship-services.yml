@@ -18,7 +18,7 @@ test:
 
 snyk:
   build:
-    dockerfile_path: Dockerfile.snyck
+    dockerfile_path: Dockerfile.snyk
   encrypted_env_file: codeship.env.encrypted
   cached: true
 
