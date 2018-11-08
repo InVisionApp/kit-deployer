@@ -25,11 +25,11 @@ function stop {
 }
 
 function getTotalPods {
-	echo $(kubectl get pods -n kube-system | tail -n +2 | wc -l)
+	echo $(kubectl get pods -n kube-system -l tier=control-plane | tail -n +2 | wc -l)
 }
 
 function getRunningPods {
-	echo $(kubectl get pods -n kube-system | grep Running | wc -l)
+	echo $(kubectl get pods -n kube-system -l tier=control-plane | grep Running | wc -l)
 }
 
 function setMiniKubeConf {
@@ -63,6 +63,8 @@ function start {
 		echo "Sleeping for 5 sec and checking again"
 		sleep 1
 	done
+	# This is required so that we can actually schedule pods not all versions of minikube take care of this
+	kubectl taint nodes --all node-role.kubernetes.io/master-
 	echo "Kubernetes cluster is up."
 }
 

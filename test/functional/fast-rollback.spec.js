@@ -159,7 +159,7 @@ describe("Functional fast-rollback", function() {
             clusterName +
               " - Strategy rolling-update cleanup attempting to delete 0 deployments that match the nginx1-deployment deployment group label name=nginx1-pod,strategy!=rolling-update"
           );
-          // TODO: expect(stdout).to.contain(clusterName + " - Strategy rolling-update cleanup attempting to delete 1 replicasets that match the nginx1-deployment deployment group label name=nginx1-pod,strategy!=rolling-update");
+          // TODO: expect(stdout).to.contain(clusterName + " - Strategy rolling-update cleanup attempting to delete 1 replicasets that don't match the nginx1-deployment deployment selector");
           // TODO: expect(stdout).to.contain(clusterName + " - Strategy rolling-update cleanup deleted replicaset nginx1-deployment-");
           // TODO: expect(stdout).to.contain(clusterName + " - Strategy rolling-update cleanup successfully deleted 1 replicasets");
           expect(stdout).to.contain(
@@ -269,7 +269,7 @@ describe("Functional fast-rollback", function() {
           );
           expect(stdout).to.contain(
             clusterName +
-              " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that match the nginx1-deployment-unspecified deployment group label name=nginx1-pod,strategy!=fast-rollback"
+              " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that don't match the nginx1-deployment-unspecified deployment selector"
           );
           expect(stdout).to.contain(
             "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
@@ -456,9 +456,9 @@ describe("Functional fast-rollback", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that match the nginx1-deployment-dep-" +
+                " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that don't match the nginx1-deployment-dep-" +
                 (index + 1) +
-                " deployment group label name=nginx1-pod,strategy!=fast-rollback"
+                " deployment selector"
             );
             expect(stdout).to.contain(
               clusterName +
@@ -607,7 +607,7 @@ describe("Functional fast-rollback", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that match the nginx1-deployment-dep-3 deployment group label name=nginx1-pod,strategy!=fast-rollback"
+                " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that don't match the nginx1-deployment-dep-3 deployment selector"
             );
             expect(stdout).to.contain(
               clusterName +
@@ -753,7 +753,7 @@ describe("Functional fast-rollback", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that match the nginx1-deployment-dep-2 deployment group label name=nginx1-pod,strategy!=fast-rollback"
+                " - Strategy fast-rollback cleanup attempting to delete 0 replicasets that don't match the nginx1-deployment-dep-2 deployment selector"
             );
             expect(stdout).to.contain(
               clusterName +
@@ -865,7 +865,7 @@ describe("Functional fast-rollback", function() {
             );
             expect(stdout).to.contain(
               clusterName +
-                " - Strategy rolling-update cleanup attempting to delete 0 replicasets that match the nginx1-deployment deployment group label name=nginx1-pod,strategy!=rolling-update"
+                " - Strategy rolling-update cleanup attempting to delete 0 replicasets that don't match the nginx1-deployment deployment selector"
             );
             expect(stdout).to.contain(
               "Sending payload to http://example.com/test/nginx1-deployment for nginx1-deployment with status COMPLETED/SUCCESS"
