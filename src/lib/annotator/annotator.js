@@ -2,10 +2,11 @@
 
 const _ = require("lodash");
 const crypto = require("crypto");
+const nanoid = require("nanoid");
+
 const Annotations = require("./annotations");
 const Labels = require("./labels");
 const Strategy = require("../strategy").Strategy;
-const nanoid = require("nanoid");
 
 const mustBeUnique = ["Job"];
 
@@ -60,25 +61,27 @@ class Annotator {
       return manifest;
     }
 
-    // Initialize annotations object if it doesn't have one yet
-    if (!manifest.metadata) {
-      manifest.metadata = {};
-    }
-    if (!manifest.metadata.annotations) {
-      manifest.metadata.annotations = {};
-    }
-
+    // Save configuration we're applying as metadata annotation so we can diff against
+    // on future configuration changes
     var applyingConfiguration = JSON.stringify(manifest);
     var applyingConfigurationHash = crypto
       .createHash("sha1")
       .update(applyingConfiguration, "utf8")
       .digest("hex");
 
-    // Elroy needs the metadata.name - Is it not already there from the template?
-    // We rely on k8s to ensure uniqueness jobs, deployments, etc
+    // To avoid issues with deleting/creating jobs, we instead create a new job with a unique name that is based
+    // on the contents of the manifest
     var manifestName = manifest.metadata.name;
     if (mustBeUnique.indexOf(manifest.kind) >= 0) {
       manifestName = manifest.metadata.name + "-" + nanoid(10);
+    }
+
+    // Initialize annotations object if it doesn't have one yet
+    if (!manifest.metadata) {
+      manifest.metadata = {};
+    }
+    if (!manifest.metadata.annotations) {
+      manifest.metadata.annotations = {};
     }
 
     // Add UUID as annotation
@@ -100,7 +103,7 @@ class Annotator {
       ] = this.options.tierDeploymentId;
     }
 
-    // Update manifest name before deploying necessary for Elroy
+    // Update manifest name before deploying (necessary for manifests we need to give a unique name to like Jobs)
     manifest.metadata.annotations[Annotations.OriginalName] =
       manifest.metadata.name;
     manifest.metadata.name = manifestName;

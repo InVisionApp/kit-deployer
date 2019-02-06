@@ -118,10 +118,7 @@ describe("Annotator", () => {
     describe("and calling annotate on job", () => {
       it("should set the expected annotations", () => {
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.name).to.equal(
-          originalJobManifest.metadata.name +
-            "-f94274f6bdc905825d1616fe265bc6d2de773e7c"
-        );
+        expect(manifest.metadata.name.length).to.equal(23);
         expect(manifest.metadata.annotations[Annotations.UUID]).to.equal(
           options.uuid
         );
@@ -275,10 +272,7 @@ describe("Annotator", () => {
     describe("and calling annotate on job", () => {
       it("should set the expected annotations", () => {
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
-        expect(manifest.metadata.name).to.equal(
-          originalJobManifest.metadata.name +
-            "-f94274f6bdc905825d1616fe265bc6d2de773e7c"
-        );
+        expect(manifest.metadata.name.length).to.equal(23);
         expect(manifest.metadata.annotations[Annotations.UUID]).to.be.empty;
         expect(
           manifest.metadata.annotations[Annotations.OriginalName]
