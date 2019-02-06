@@ -1,12 +1,9 @@
 "use strict";
 
 const _ = require("lodash");
-const crypto = require("crypto");
 const Annotations = require("./annotations");
 const Labels = require("./labels");
 const Strategy = require("../strategy").Strategy;
-
-const mustBeUnique = ["Job"];
 
 class Annotator {
   constructor(options) {
@@ -59,21 +56,6 @@ class Annotator {
       return manifest;
     }
 
-    // Save configuration we're applying as metadata annotation so we can diff against
-    // on future configuration changes
-    var applyingConfiguration = JSON.stringify(manifest);
-    var applyingConfigurationHash = crypto
-      .createHash("sha1")
-      .update(applyingConfiguration, "utf8")
-      .digest("hex");
-
-    // To avoid issues with deleting/creating jobs, we instead create a new job with a unique name that is based
-    // on the contents of the manifest
-    var manifestName = manifest.metadata.name;
-    if (mustBeUnique.indexOf(manifest.kind) >= 0) {
-      manifestName = manifest.metadata.name + "-" + applyingConfigurationHash;
-    }
-
     // Initialize annotations object if it doesn't have one yet
     if (!manifest.metadata) {
       manifest.metadata = {};
@@ -81,6 +63,10 @@ class Annotator {
     if (!manifest.metadata.annotations) {
       manifest.metadata.annotations = {};
     }
+
+    // Elroy needs the metadata.name - Is it not already there from the template?
+    // We rely on k8s to ensure uniqueness jobs, deployments, etc
+    // let manifestName = manifest.metadata.name;
 
     // Add UUID as annotation
     if (this.options.uuid) {
@@ -100,19 +86,6 @@ class Annotator {
         Annotations.TierDeploymentID
       ] = this.options.tierDeploymentId;
     }
-
-    // Update manifest name before deploying (necessary for manifests we need to give a unique name to like Jobs)
-    manifest.metadata.annotations[Annotations.OriginalName] =
-      manifest.metadata.name;
-    manifest.metadata.name = manifestName;
-
-    // Add our custom annotations before deploying
-    manifest.metadata.annotations[
-      Annotations.LastAppliedConfiguration
-    ] = applyingConfiguration;
-    manifest.metadata.annotations[
-      Annotations.LastAppliedConfigurationHash
-    ] = applyingConfigurationHash;
 
     // Add commit annotation to manifest we are creating/updating
     manifest.metadata.annotations[Annotations.Commit] = JSON.stringify(
