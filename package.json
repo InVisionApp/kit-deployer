@@ -40,7 +40,8 @@
     "mkdirp": "0.5.1",
     "request-promise": "3.0.0",
     "traverse": "0.6.6",
-    "uuid": "2.0.2"
+    "uuid": "2.0.2",
+    "nanoid": "2.0.1"
   },
   "devDependencies": {
     "chai": "3.5.0",

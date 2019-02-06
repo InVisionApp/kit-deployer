@@ -5,6 +5,9 @@ const crypto = require("crypto");
 const Annotations = require("./annotations");
 const Labels = require("./labels");
 const Strategy = require("../strategy").Strategy;
+const nanoid = require("nanoid");
+
+const mustBeUnique = ["Job"];
 
 class Annotator {
   constructor(options) {
@@ -74,6 +77,9 @@ class Annotator {
     // Elroy needs the metadata.name - Is it not already there from the template?
     // We rely on k8s to ensure uniqueness jobs, deployments, etc
     var manifestName = manifest.metadata.name;
+    if (mustBeUnique.indexOf(manifest.kind) >= 0) {
+      manifestName = manifest.metadata.name + "-" + nanoid(10);
+    }
 
     // Add UUID as annotation
     if (this.options.uuid) {
