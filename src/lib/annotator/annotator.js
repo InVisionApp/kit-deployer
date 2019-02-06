@@ -10,7 +10,7 @@ const Strategy = require("../strategy").Strategy;
 
 const mustBeUnique = ["Job"];
 
-const allowedChars = "01234567890abcdef";
+const allowedChars = "0123456789abcdef";
 
 class Annotator {
   constructor(options) {
