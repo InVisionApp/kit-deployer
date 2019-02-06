@@ -2,7 +2,7 @@
 
 const _ = require("lodash");
 const crypto = require("crypto");
-const nanoid = require("nanoid");
+const generate = require("nanoid/generate");
 
 const Annotations = require("./annotations");
 const Labels = require("./labels");
@@ -69,11 +69,14 @@ class Annotator {
       .update(applyingConfiguration, "utf8")
       .digest("hex");
 
-    // To avoid issues with deleting/creating jobs, we instead create a new job with a unique name that is based
-    // on the contents of the manifest
     var manifestName = manifest.metadata.name;
+
+    // To avoid issues with deleting/creating jobs,
+    // we instead create a new job adding a shortID suffix.
+    // The job suffix must start and end with an alphanumeric character.
     if (mustBeUnique.indexOf(manifest.kind) >= 0) {
-      manifestName = manifest.metadata.name + "-" + nanoid(10);
+      manifestName =
+        manifest.metadata.name + "-" + generate("1234567890abcdef", 10);
     }
 
     // Initialize annotations object if it doesn't have one yet
