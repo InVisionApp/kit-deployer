@@ -10,7 +10,7 @@ const Strategy = require("../strategy").Strategy;
 
 const mustBeUnique = ["Job"];
 
-const allowedChars = "0123456789abcdef";
+const alphabet = "1234567890abcdefghijklmnopqrstuvwxyz";
 
 class Annotator {
   constructor(options) {
@@ -77,7 +77,7 @@ class Annotator {
     // we instead create a new job adding a shortID suffix.
     // The job suffix must start and end with an alphanumeric character.
     if (mustBeUnique.indexOf(manifest.kind) >= 0) {
-      manifestName = manifest.metadata.name + "-" + generate(allowedChars, 15);
+      manifestName = manifest.metadata.name + "-" + generate(alphabet, 15);
     }
 
     // Initialize annotations object if it doesn't have one yet
