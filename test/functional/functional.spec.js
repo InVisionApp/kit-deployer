@@ -750,13 +750,13 @@ describe("Functional misc", function() {
           "single-job-cluster - Running pre-deploy check to Apply ls-job"
         );
         expect(stdout).to.match(
-          /.*single-job-cluster - job "ls-job-\b[0-9a-f]{5,40}\b" created*/
+          /.*single-job-cluster - job "ls-job-\b[0-9a-z]{5,40}\b" created*/
         );
         expect(stdout).to.match(
-          /.*single-job-cluster - Job:ls-job-\b[0-9a-f]{5,40}\b is available.*/
+          /.*single-job-cluster - Job:ls-job-\b[0-9a-z]{5,40}\b is available.*/
         );
         expect(stdout).to.match(
-          /.*single-job-cluster - Job:ls-job-\b[0-9a-f]{5,40}\b has 1\/1 succeeded.*/
+          /.*single-job-cluster - Job:ls-job-\b[0-9a-z]{5,40}\b has 1\/1 succeeded.*/
         );
         expect(stdout).to.contain(
           "Sending payload to http://example.com/test/ls-job for ls-job with status COMPLETED/SUCCESS"
