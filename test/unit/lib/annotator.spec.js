@@ -290,7 +290,7 @@ describe("Annotator", () => {
         );
       });
     });
-    describe("Resource label", () => {
+    describe("Resources label", () => {
       let annotator;
       const originalJobManifest = {
         kind: "Job",
@@ -302,7 +302,7 @@ describe("Annotator", () => {
         sha: "e05a1d976d3e5b5b42a4068b0f34be756cbd5f2a",
         strategy: new Strategy(Strategies.RollingUpdate, {})
       };
-      it("should set the label", () => {
+      it("should set the labels", () => {
         annotator = new Annotator(
           _.merge(
             {
@@ -315,8 +315,11 @@ describe("Annotator", () => {
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
 
         expect(manifest.metadata.labels.resource).to.equal("test-resource");
+        expect(manifest.metadata.labels["app.kubernetes.io/name"]).to.equal(
+          "test-resource"
+        );
       });
-      it("should NOT set the label if not resource passed", () => {
+      it("should NOT set the labels if not resource passed", () => {
         annotator = new Annotator(defaultOpts);
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
         expect(manifest.metadata.labels).to.deep.equal({
@@ -325,20 +328,28 @@ describe("Annotator", () => {
         });
       });
 
-      it("should NOT modify the label if present", () => {
+      it("should NOT modify the labels if present", () => {
         annotator = new Annotator(
           _.merge(
             {
-              resource: "test-resource"
+              resource: "other",
+              "app.kubernetes.io/name": "other"
             },
             defaultOpts
           )
         );
 
-        originalJobManifest.metadata.labels = { name: "oe", resource: "other" };
+        originalJobManifest.metadata.labels = {
+          name: "test-resource",
+          resource: "test-resource",
+          "app.kubernetes.io/name": "test-resource"
+        };
         const manifest = annotator.annotate(_.cloneDeep(originalJobManifest));
 
-        expect(manifest.metadata.labels.resource).to.equal("other");
+        expect(manifest.metadata.labels.resource).to.equal("test-resource");
+        expect(manifest.metadata.labels["app.kubernetes.io/name"]).to.equal(
+          "test-resource"
+        );
       });
     });
     describe("ReleaseID label", () => {

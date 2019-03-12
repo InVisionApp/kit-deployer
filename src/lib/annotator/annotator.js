@@ -9,8 +9,8 @@ const Labels = require("./labels");
 const Strategy = require("../strategy").Strategy;
 
 const mustBeUnique = ["Job"];
-
 const alphabet = "1234567890abcdefghijklmnopqrstuvwxyz";
+const appK8sLabelName = "app.kubernetes.io/name";
 
 class Annotator {
   constructor(options) {
@@ -166,6 +166,14 @@ class Annotator {
       this.options.resource
     ) {
       manifest.metadata.labels["resource"] = this.options.resource;
+    }
+
+    // Add k8s label resource if not present
+    if (
+      _.isUndefined(manifest.metadata.labels[appK8sLabelName]) &&
+      this.options.resource
+    ) {
+      manifest.metadata.labels[appK8sLabelName] = this.options.resource;
     }
 
     // Require name label for deployments
