@@ -224,6 +224,15 @@ class Annotator {
         Labels.Strategy
       ] = this.options.strategy.name;
 
+      if (
+        _.isUndefined(manifest.spec.template.metadata.labels[Labels.AppName]) &&
+        this.options.resource
+      ) {
+        manifest.spec.template.metadata.labels[
+          Labels.AppName
+        ] = this.options.resource;
+      }
+
       // If no selector, make the selector the same as the spec.template.metadata labels
       if (_.isEmpty(manifest.spec.selector.matchLabels)) {
         manifest.spec.selector.matchLabels =
