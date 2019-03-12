@@ -9,6 +9,9 @@ const Labels = {
   },
   get Strategy() {
     return "strategy";
+  },
+  get AppName() {
+    return "app.kubernetes.io/name";
   }
 };
 
