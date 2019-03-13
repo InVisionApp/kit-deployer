@@ -9,7 +9,6 @@ const Labels = require("./labels");
 const Strategy = require("../strategy").Strategy;
 
 const mustBeUnique = ["Job"];
-
 const alphabet = "1234567890abcdefghijklmnopqrstuvwxyz";
 
 class Annotator {
@@ -168,6 +167,14 @@ class Annotator {
       manifest.metadata.labels["resource"] = this.options.resource;
     }
 
+    // Add k8s label resource if not present
+    if (
+      _.isUndefined(manifest.metadata.labels[Labels.AppName]) &&
+      this.options.resource
+    ) {
+      manifest.metadata.labels[Labels.AppName] = this.options.resource;
+    }
+
     // Require name label for deployments
     if (manifest.kind == "Deployment") {
       if (_.isUndefined(manifest.metadata.labels[Labels.Name])) {
@@ -216,6 +223,15 @@ class Annotator {
       manifest.spec.template.metadata.labels[
         Labels.Strategy
       ] = this.options.strategy.name;
+
+      if (
+        _.isUndefined(manifest.spec.template.metadata.labels[Labels.AppName]) &&
+        this.options.resource
+      ) {
+        manifest.spec.template.metadata.labels[
+          Labels.AppName
+        ] = this.options.resource;
+      }
 
       // If no selector, make the selector the same as the spec.template.metadata labels
       if (_.isEmpty(manifest.spec.selector.matchLabels)) {

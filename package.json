@@ -35,7 +35,7 @@
     "glob": "6.0.4",
     "js-yaml": "3.5.2",
     "kubernetes-client": "3.16.0",
-    "lodash": "4.17.5",
+    "lodash": "4.17.11",
     "log4js": "0.6.33",
     "mkdirp": "0.5.1",
     "request-promise": "3.0.0",
