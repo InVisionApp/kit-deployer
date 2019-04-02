@@ -5,6 +5,10 @@
 </p>
 
 # kit-deployer
+
+**[DEPRECATED] Thanks for using this package, but we will no longer support it.**
+
+
 [ ![Codeship Status for InVisionApp/kit-deployer](https://codeship.com/projects/71a53610-0fe1-0134-46a8-063ac029d855/status?branch=master)](https://codeship.com/projects/156809)
 [![Build Status](https://travis-ci.org/InVisionApp/kit-deployer.svg?branch=master)](https://travis-ci.org/InVisionApp/kit-deployer)
 [![Docker Repository on Quay](https://quay.io/repository/invision/kit-deployer/status "Docker Repository on Quay")](https://quay.io/repository/invision/kit-deployer)
