@@ -54,7 +54,7 @@ var options = {
 	dryRun: true,
 	diff: true,
 	github: {
-		token: "ccd50691c75bc7bae0a5490ea08ff9dcc9c264a5",
+		token: "<OAUTH_TOKEN_HERE>",
 		user: "chesleybrown",
 		repo: "my-app"
 	}
