@@ -3,3 +3,7 @@ owner:
   active:
     team: engineering-velocity
     since: 2016-11-29
+
+code-coverage:
+  # please see https://invisionapp.atlassian.net/wiki/spaces/ICT/pages/888799838/Establishing+code+coverage+goals for how to set this value appropriately
+  goal-percent: 100
